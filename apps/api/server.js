@@ -68,9 +68,10 @@ app.use("/api", imagesRoutes);
 // ✅ Admin routes (role-based: requires logged-in user with profiles.is_admin = true)
 app.use("/api/admin", requireAuth, requireAdminUser, adminRoutes);
 
-app.get('/healthz', (req, res) => {
-  res.send('ok');
-});
+// Health checks (supports both direct and /api/*)
+app.get('/healthz', (_req, res) => res.type('text').send('ok'));
+app.get('/api/healthz', (_req, res) => res.type('text').send('ok'));
+
 
 // ---- Route list ----
 console.log("\n📡 Available Routes:");
