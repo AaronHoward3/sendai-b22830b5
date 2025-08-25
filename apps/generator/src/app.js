@@ -29,30 +29,33 @@ if (!process.env.AWS_LAMBDA_FUNCTION_NAME) {
         retryAfter: 30,
       });
     }
-
     activeRequests++;
-
-    res.on("finish", () => {
-      activeRequests--;
-    });
-
+    res.on("finish", () => { activeRequests--; });
     next();
   });
 }
 
-// Optimize CORS for production
+// CORS
+const PROD_ORIGINS = [
+  "https://irios-a-i-web.vercel.app",        // your web app
+  // add your custom domain here later if you map one
+  // "https://app.irios.ai"
+  // keep any existing allowlist origins you truly need:
+  // "https://mjml-generator-service.springbot.com",
+  // "https://springbot.com"
+];
 const corsOptions = {
-  origin:
-    process.env.NODE_ENV === "production"
-      ? ["https://mjml-generator-service.springbot.com", "https://springbot.com"]
-      : true,
+  origin: (origin, cb) => {
+    if (!origin) return cb(null, true); // same-origin / server-to-server / curl
+    if (process.env.NODE_ENV !== "production") return cb(null, true);
+    return PROD_ORIGINS.includes(origin) ? cb(null, true) : cb(new Error("CORS not allowed"));
+  },
   credentials: true,
   optionsSuccessStatus: 200,
 };
-
 app.use(cors(corsOptions));
 
-// Optimize JSON parsing
+// JSON parsing
 app.use(
   express.json({
     limit: "10mb",
@@ -61,7 +64,7 @@ app.use(
   })
 );
 
-// Add compression for production
+// Compression in production
 if (process.env.NODE_ENV === "production") {
   try {
     const compression = await import("compression");
@@ -79,16 +82,17 @@ if (process.env.NODE_ENV === "production") {
     );
     logger.info("Compression middleware enabled (SSE disabled)");
   } catch (error) {
-    logger.warn("Compression not available, continuing without it", {
-      error: error.message,
-    });
+    logger.warn("Compression not available, continuing without it", { error: error.message });
   }
 }
 
-// Root health check for Amplify
+// ---------- Health endpoints (must be before 404) ----------
+app.get("/healthz", (_req, res) => res.type("text").send("ok"));
+app.head("/healthz", (_req, res) => res.sendStatus(200));
+
+// Root health check
 app.get("/", (req, res) => {
   const startTime = performance.now();
-
   const healthData = {
     status: "healthy",
     service: "SBEmailGenerator API",
@@ -98,10 +102,8 @@ app.get("/", (req, res) => {
     activeRequests: process.env.AWS_LAMBDA_FUNCTION_NAME ? "N/A (Lambda)" : activeRequests,
     maxConcurrentRequests: process.env.AWS_LAMBDA_FUNCTION_NAME ? "N/A (Lambda)" : MAX_CONCURRENT_REQUESTS,
   };
-
   const duration = performance.now() - startTime;
   logger.performance("Health check", duration, { requestId: req.headers["x-request-id"] });
-
   res.json(healthData);
 });
 
@@ -113,19 +115,12 @@ app.use("/api", brandRoutes);
 // This directly calls the same controller used by /api/generate-emails.
 app.post("/generate", generateEmails);
 
-// Extra health endpoint
+// Extra health endpoint (JSON)
 app.get("/health", (req, res) => {
   const startTime = performance.now();
-
-  const healthData = {
-    status: "healthy",
-    activeRequests,
-    maxConcurrentRequests: MAX_CONCURRENT_REQUESTS,
-  };
-
+  const healthData = { status: "healthy", activeRequests, maxConcurrentRequests: MAX_CONCURRENT_REQUESTS };
   const duration = performance.now() - startTime;
   logger.performance("Health endpoint", duration, { requestId: req.headers["x-request-id"] });
-
   res.json(healthData);
 });
 
@@ -138,25 +133,13 @@ app.use((error, req, res, next) => {
     url: error?.url || req.url,
     method: req.method,
   });
-
-  res.status(500).json({
-    error: "Internal server error",
-    requestId: req.headers["x-request-id"],
-  });
+  res.status(500).json({ error: "Internal server error", requestId: req.headers["x-request-id"] });
 });
 
-// 404 handler
+// 404 handler (must remain last)
 app.use((req, res) => {
-  logger.warn("Route not found", {
-    requestId: req.headers["x-request-id"],
-    url: req.url,
-    method: req.method,
-  });
-
-  res.status(404).json({
-    error: "Route not found",
-    requestId: req.headers["x-request-id"],
-  });
+  logger.warn("Route not found", { requestId: req.headers["x-request-id"], url: req.url, method: req.method });
+  res.status(404).json({ error: "Route not found", requestId: req.headers["x-request-id"] });
 });
 
 export default app;
