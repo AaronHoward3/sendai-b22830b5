@@ -41,7 +41,7 @@ export const Step4Generation: React.FC<Step4GenerationProps> = ({
         const { data: { session } } = await supabase.auth.getSession();
         const token = session?.access_token;
 
-        const res = await fetch(`${API_ROOT}/api/generate`, {
+        const res = await fetch(`${API_ROOT}/generate`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",

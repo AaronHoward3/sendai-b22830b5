@@ -75,7 +75,9 @@ const Admin: React.FC = () => {
   async function fetchWithAuth(path: string, init?: RequestInit) {
     const { data: { session } } = await supabase.auth.getSession();
     const token = session?.access_token;
-    return fetch(`${API_ROOT}${path}`, {
+    const normalized = path.replace(/^\/?api\//, '');
+    const urlStr = `${API_ROOT}/${normalized}`.replace(/\/{2,}/g, '/');
+    return fetch(urlStr, {
       ...(init || {}),
       headers: {
         "Content-Type": "application/json",
@@ -83,7 +85,7 @@ const Admin: React.FC = () => {
         ...(init?.headers || {}),
       },
     });
-  }
+}
 
   // Load default list
   const loadPage = async (p: number) => {

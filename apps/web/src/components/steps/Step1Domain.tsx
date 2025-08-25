@@ -4,7 +4,8 @@ import { FormData } from '../EmailGenerator';
 import { ArrowRight } from 'lucide-react';
 import { useTheme } from '@/contexts/ThemeContext';
 import { supabase } from '@/lib/supabaseClient'; // ➜ added
-import Background from "../Background.tsx"; // ✅ uses the blobs variant below
+import Background from "../Background.tsx";
+import { apiPath } from "@/lib/api";
 
 const API_ROOT = '/api';
 
@@ -41,16 +42,16 @@ export const Step1Domain: React.FC<Step1DomainProps> = ({
 
     try {
       // brand check (unchanged design, updated URL)
-      const brandRes = await fetch(`${API_ROOT}/api/brand/check`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ domain: domain.trim() }),
-      });
+      const brandRes = await fetch(apiPath("brand/check"), {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({ domain }),
+});
       if (!brandRes.ok) throw new Error('Failed to fetch brand');
       const brandData = await brandRes.json();
 
       // product scrape (unchanged design, updated URL)
-      const productRes = await fetch(`${API_ROOT}/api/products/scrape`, {
+      const productRes = await fetch(`${API_ROOT}/products/scrape`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ domain: domain.trim() }),
@@ -63,7 +64,7 @@ export const Step1Domain: React.FC<Step1DomainProps> = ({
         const { data: { session } } = await supabase.auth.getSession();
         const token = session?.access_token;
         if (token) {
-          const claimRes = await fetch(`${API_ROOT}/api/credits/claim-brand`, {
+          const claimRes = await fetch(`${API_ROOT}/credits/claim-brand`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
             body: JSON.stringify({ domain: domain.trim() }),

@@ -212,7 +212,7 @@ const Settings: React.FC = () => {
     (async () => {
       const { data: { session } } = await supabase.auth.getSession();
       const token = session?.access_token;
-      const res = await fetch(`${API_ROOT}/api/credits/me`, { headers: { Authorization: `Bearer ${token}` } });
+      const res = await fetch(`${API_ROOT}/credits/me`, { headers: { Authorization: `Bearer ${token}` } });
       if (res.ok) {
         const json = await res.json();
         setCredits(json.balance as Credits);
@@ -228,7 +228,7 @@ const Settings: React.FC = () => {
     }
     const { data: { session } } = await supabase.auth.getSession();
     const token = session?.access_token;
-    const res = await fetch(`${API_ROOT}/api/billing/checkout`, {
+    const res = await fetch(`${API_ROOT}/billing/checkout`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
       body: JSON.stringify({ price_id: priceId }),
@@ -269,7 +269,7 @@ const Settings: React.FC = () => {
       const imagesMap: Record<string, SavedImage[]> = {};
       for (const b of brands) {
         try {
-          const resp = await fetch(`${API_ROOT}/api/images?domain=${encodeURIComponent(b.domain)}`, {
+          const resp = await fetch(`${API_ROOT}/images?domain=${encodeURIComponent(b.domain)}`, {
             headers: token ? { Authorization: `Bearer ${token}` } : {},
           });
           if (!resp.ok) continue;
@@ -295,7 +295,7 @@ const Settings: React.FC = () => {
     const domain = normalizeDomain(brandDomain);
     if (!domain) return;
     try {
-      const res = await fetch(`${API_ROOT}/api/brand/colors`, {
+      const res = await fetch(`${API_ROOT}/brand/colors`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ domain, primary_color: color1, link_color: color2 }),

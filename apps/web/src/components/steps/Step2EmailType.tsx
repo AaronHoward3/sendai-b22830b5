@@ -132,7 +132,7 @@ export const Step2EmailType: React.FC<Step2EmailTypeProps> = ({
       try {
         const { data: { session } } = await supabase.auth.getSession();
         const token = session?.access_token;
-        const res = await fetch(`${API_ROOT}/api/images?domain=${encodeURIComponent(domain)}`, {
+        const res = await fetch(`${API_ROOT}/images?domain=${encodeURIComponent(domain)}`, {
           headers: token ? { Authorization: `Bearer ${token}` } : {},
         });
         if (res.ok) {
