@@ -11,7 +11,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useSupabaseAuth } from "@/hooks/useSupabaseAuth";
 import { supabase } from "@/lib/supabaseClient";
 
-const API_ROOT = import.meta.env.VITE_API_URL ?? "http://localhost:3001";
+const API_ROOT = '/api';
 
 type FoundUser = {
   id: string;

@@ -2,7 +2,8 @@ import React, { useEffect, useRef, useState } from "react";
 import { FormData } from "../EmailGenerator";
 import { AnimatedBlobLoader } from "@/components/ui/AnimatedBlobLoader";
 import { supabase } from "@/lib/supabaseClient";
-const API_ROOT = import.meta.env.VITE_API_URL ?? "http://localhost:3001";
+
+const API_ROOT = '/api';
 
 interface Step4GenerationProps {
   formData: FormData;

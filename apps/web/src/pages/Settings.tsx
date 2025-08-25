@@ -53,7 +53,7 @@ type SavedImage = {
   height?: number | null;
 };
 
-const API_ROOT = import.meta.env.VITE_API_URL ?? 'http://localhost:3001';
+const API_ROOT = '/api';
 
 // ---- Plan definitions ----
 const PLANS = [

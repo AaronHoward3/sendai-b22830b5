@@ -22,7 +22,8 @@ import {
 } from '../EmailGenerator';
 
 import { supabase } from '@/lib/supabaseClient';
-const API_ROOT = import.meta.env.VITE_API_URL ?? 'http://localhost:3001';
+
+const API_ROOT = '/api';
 
 interface Step2EmailTypeProps {
   formData: FormData;

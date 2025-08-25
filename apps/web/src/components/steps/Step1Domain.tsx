@@ -6,7 +6,7 @@ import { useTheme } from '@/contexts/ThemeContext';
 import { supabase } from '@/lib/supabaseClient'; // ➜ added
 import Background from "../Background.tsx"; // ✅ uses the blobs variant below
 
-const API_ROOT = import.meta.env.VITE_API_URL ?? 'http://localhost:3001'; // ➜ added
+const API_ROOT = '/api';
 
 interface Step1DomainProps {
   formData: FormData;
