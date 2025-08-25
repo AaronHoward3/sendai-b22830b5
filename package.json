@@ -21,8 +21,7 @@
     "check:unused": "knip && unimported && depcheck",
     "check:exports": "ts-prune",
     "check:cycles": "madge --extensions ts,tsx,js,jsx --circular .",
-    "check:all": "pnpm run check:unused && pnpm run check:exports && pnpm run check:cycles",
-    "preinstall": "npx -y only-allow pnpm"
+    "check:all": "pnpm run check:unused && pnpm run check:exports && pnpm run check:cycles"
   },
   "devDependencies": {
     "concurrently": "^9.2.0",
