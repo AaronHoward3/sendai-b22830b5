@@ -1,10 +1,16 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
+import { fileURLToPath, URL } from 'node:url'
 
-// Dev: Vite serves on 5173 and proxies /api/* to your local API (3001).
-// Prod: Vercel rewrites /api/* to your Render API (via vercel.json).
+// Dev: /api/* -> http://localhost:3001
+// Prod: /api/* -> Render API via vercel.json
 export default defineConfig({
   plugins: [react()],
+  resolve: {
+    alias: {
+      '@': fileURLToPath(new URL('./src', import.meta.url)),
+    },
+  },
   server: {
     port: 5173,
     proxy: {
