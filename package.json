@@ -1,7 +1,6 @@
 {
   "name": "irios",
   "private": true,
-  "packageManager": "pnpm@9.12.0",
   "workspaces": [
     "apps/*",
     "packages/*"
@@ -10,18 +9,18 @@
     "node": ">=20.10.0"
   },
   "scripts": {
-    "dev": "concurrently --kill-others-on-fail --names \"WEB,API,GEN\" --prefix-colors \"blue,green,magenta\" \"pnpm --filter ./apps/web dev\" \"pnpm --filter ./apps/api dev\" \"pnpm --filter ./apps/generator dev\"",
-    "dev:web": "pnpm --filter ./apps/web dev",
-    "dev:api": "pnpm --filter ./apps/api dev",
-    "dev:generator": "pnpm --filter ./apps/generator dev",
-    "build": "pnpm -r run build",
-    "build:web": "pnpm --filter ./apps/web build",
-    "build:api": "pnpm --filter ./apps/api build",
-    "build:generator": "pnpm --filter ./apps/generator build",
+    "dev": "concurrently --kill-others-on-fail --names \"WEB,API,GEN\" --prefix-colors \"blue,green,magenta\" \"npm --workspace apps/web run dev\" \"npm --workspace apps/api run dev\" \"npm --workspace apps/generator run dev\"",
+    "dev:web": "npm --workspace apps/web run dev",
+    "dev:api": "npm --workspace apps/api run dev",
+    "dev:generator": "npm --workspace apps/generator run dev",
+    "build": "npm -ws run build",
+    "build:web": "npm --workspace apps/web run build",
+    "build:api": "npm --workspace apps/api run build",
+    "build:generator": "npm --workspace apps/generator run build",
     "check:unused": "knip && unimported && depcheck",
     "check:exports": "ts-prune",
     "check:cycles": "madge --extensions ts,tsx,js,jsx --circular .",
-    "check:all": "pnpm run check:unused && pnpm run check:exports && pnpm run check:cycles"
+    "check:all": "npm run check:unused && npm run check:exports && npm run check:cycles"
   },
   "devDependencies": {
     "concurrently": "^9.2.0",
@@ -31,8 +30,5 @@
     "npm-run-all": "^4.1.5",
     "ts-prune": "^0.10.3",
     "unimported": "^1.31.0"
-  },
-  "overrides": {
-    "rollup": "^4.24.0"
   }
 }
