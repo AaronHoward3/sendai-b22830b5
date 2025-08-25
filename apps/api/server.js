@@ -68,6 +68,10 @@ app.use("/api", imagesRoutes);
 // ✅ Admin routes (role-based: requires logged-in user with profiles.is_admin = true)
 app.use("/api/admin", requireAuth, requireAdminUser, adminRoutes);
 
+app.get('/healthz', (req, res) => {
+  res.send('ok');
+});
+
 // ---- Route list ----
 console.log("\n📡 Available Routes:");
 console.log("- POST /api/brand/check");
@@ -77,6 +81,7 @@ console.log("- /api/admin/*         (protected + admin)");
 console.log("- POST /api/billing/checkout");
 console.log("- POST /api/billing/portal");
 console.log("- POST /webhooks/stripe (raw body)");
+
 
 // ---- Start server ----
 app.listen(PORT, () => {
