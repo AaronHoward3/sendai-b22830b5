@@ -1,11 +1,7 @@
 {
   "version": 2,
-  "routes": [
-    {
-      "src": "/api/(.*)",
-      "dest": "https://iriosa-i-api.onrender.com/api/$1"
-    }
-  ],
-  "rewrites": [{ "source": "/(.*)", "destination": "/" }]
+  "rewrites": [
+    { "source": "/api/(.*)", "destination": "https://iriosa-i-api.onrender.com/api/$1" },
+    { "source": "/(.*)", "destination": "/" }
+  ]
 }
-
