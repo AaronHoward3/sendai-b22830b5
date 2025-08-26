@@ -67,7 +67,7 @@ const Navigation: React.FC<NavigationProps> = ({ onHomeClick }) => {
         </Button>
 
         {/* Center Title */}
-        <div className="text-lg font-zen text-foreground">Irios A.I.</div>
+        <div className="text-lg font-zen text-foreground">IRIOS A.I.</div>
 
         {/* Profile Dropdown (click to open) */}
         <DropdownMenu>
