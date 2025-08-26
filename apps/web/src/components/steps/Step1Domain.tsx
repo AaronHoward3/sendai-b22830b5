@@ -1,11 +1,11 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { motion, easeOut } from 'framer-motion';
-import { FormData } from '../EmailGenerator';
+import type { FormData } from '../EmailGenerator';
 import { ArrowRight } from 'lucide-react';
 import { useTheme } from '@/contexts/ThemeContext';
 import { supabase } from '@/lib/supabaseClient';
-import Background from "../Background.tsx";
-import { apiPath } from "@/lib/api";
+import Background from '../Background';
+import { apiPath } from '@/lib/api';
 
 const API_ROOT = '/api';
 
@@ -33,14 +33,17 @@ export const Step1Domain: React.FC<Step1DomainProps> = ({
   const inputText = isDark ? 'text-white' : 'text-[#111111]';
   const placeholderText = isDark ? 'placeholder-white/50' : 'placeholder-black/40';
 
-  const [domain, setDomain] = useState(formData.domain);
+  const [domain, setDomain] = useState(formData.domain || '');
   const [isLoading, setIsLoading] = useState(false);
 
-  // ➜ added: saved domains + dropdown state
+  // saved domains + dropdown state
   const [savedDomains, setSavedDomains] = useState<string[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
 
-  // ➜ added: fetch saved domains (brands the user has saved)
+  // NEW: upgrade modal
+  const [noBrandsOpen, setNoBrandsOpen] = useState(false);
+
+  // fetch saved domains (brands the user has saved)
   useEffect(() => {
     let cancelled = false;
 
@@ -50,7 +53,6 @@ export const Step1Domain: React.FC<Step1DomainProps> = ({
         const userId = session?.user?.id;
         if (!userId) return;
 
-        // Try primary table
         const tryBrands = async () => {
           const { data, error } = await supabase
             .from('brands')
@@ -59,10 +61,9 @@ export const Step1Domain: React.FC<Step1DomainProps> = ({
             .order('updated_at', { ascending: false })
             .limit(25);
           if (error) throw error;
-          return data?.map((r: any) => r.domain).filter(Boolean) as string[];
+          return (data || []).map((r: any) => r.domain).filter(Boolean) as string[];
         };
 
-        // Fallback table name (if your schema differs)
         const tryUserBrands = async () => {
           const { data, error } = await supabase
             .from('user_brands')
@@ -71,21 +72,14 @@ export const Step1Domain: React.FC<Step1DomainProps> = ({
             .order('updated_at', { ascending: false })
             .limit(25);
           if (error) throw error;
-          return data?.map((r: any) => r.domain).filter(Boolean) as string[];
+          return (data || []).map((r: any) => r.domain).filter(Boolean) as string[];
         };
 
         let domains: string[] = [];
-        try {
-          domains = await tryBrands();
-        } catch {
-          try {
-            domains = await tryUserBrands();
-          } catch {
-            domains = [];
-          }
+        try { domains = await tryBrands(); } catch { 
+          try { domains = await tryUserBrands(); } catch { domains = []; } 
         }
 
-        // Optional final fallback via API if you expose something like /api/brands/list
         if (!domains.length) {
           try {
             const res = await fetch(apiPath('brands/list'), { headers: { 'Accept': 'application/json' } });
@@ -95,46 +89,81 @@ export const Step1Domain: React.FC<Step1DomainProps> = ({
               domains = apiDomains;
             }
           } catch {
-            /* ignore */
+            // ignore
           }
         }
 
-        // Deduplicate + normalize
         const unique = Array.from(new Set(domains.map((d) => String(d).trim()))).filter(Boolean);
-
         if (!cancelled) setSavedDomains(unique);
       } catch {
-        /* non-fatal; suggestions just won't show */
+        // ignore
       }
     })();
 
     return () => { cancelled = true; };
   }, []);
 
+  // helper: compute available brand slots
+  async function getAvailableBrandSlots(): Promise<number> {
+    const { data: { session } } = await supabase.auth.getSession();
+    const userId = session?.user?.id;
+    if (!userId) return 0;
+
+    // brand_limit
+    const { data: bal, error: e1 } = await supabase
+      .from('credit_balances')
+      .select('brand_limit')
+      .eq('user_id', userId)
+      .single();
+    if (e1) {
+      // if row missing or RLS prevents read, treat as 0 available
+      return 0;
+    }
+    const limit = bal?.brand_limit ?? 0;
+
+    // used count
+    const { count, error: e2 } = await supabase
+      .from('user_brands')
+      .select('id', { count: 'exact', head: true })
+      .eq('user_id', userId);
+    if (e2) return 0;
+
+    const used = count ?? 0;
+    return Math.max(limit - used, 0);
+  }
+
   const handleContinue = async () => {
-    if (!domain.trim()) return;
+    const trimmed = domain.trim();
+    if (!trimmed) return;
     setIsLoading(true);
 
     try {
-      // brand check (unchanged design, updated URL)
-      const brandRes = await fetch(apiPath("brand/check"), {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ domain }),
+      // ✅ pre-check brand availability to avoid 404 flows
+      const available = await getAvailableBrandSlots();
+      if (available <= 0) {
+        setNoBrandsOpen(true);
+        return;
+      }
+
+      // brand info
+      const brandRes = await fetch(apiPath('brand/check'), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ domain: trimmed }),
       });
       if (!brandRes.ok) throw new Error('Failed to fetch brand');
       const brandData = await brandRes.json();
 
-      // product scrape (unchanged design, updated URL)
+      // product scrape
       const productRes = await fetch(`${API_ROOT}/products/scrape`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ domain: domain.trim() }),
+        body: JSON.stringify({ domain: trimmed }),
       });
       if (!productRes.ok) throw new Error('Failed to fetch products');
       const productSuggestions = await productRes.json();
 
-      // ➜ claim brand against user's limit (redirect on 402)
+      // claim brand (charge against limit); handle 402 + 409 gracefully
       try {
         const { data: { session } } = await supabase.auth.getSession();
         const token = session?.access_token;
@@ -142,27 +171,33 @@ export const Step1Domain: React.FC<Step1DomainProps> = ({
           const claimRes = await fetch(`${API_ROOT}/credits/claim-brand`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-            body: JSON.stringify({ domain: domain.trim() }),
+            body: JSON.stringify({ domain: trimmed }),
           });
+
           if (claimRes.status === 402) {
             window.location.href = '/settings?plan=1';
             return;
+          } else if (claimRes.status === 409) {
+            setNoBrandsOpen(true);
+            return;
           }
         }
-      } catch {
-        // non-fatal, keep going
+      } catch (err) {
+        // Non-fatal: proceed but log for debugging
+        console.warn('claim-brand check failed', err);
       }
 
+      // proceed
       updateFormData({
-        domain: domain.trim(),
+        domain: trimmed,
         brandData,
         products: productSuggestions.products,
       });
-
       onNext();
     } catch (error) {
       console.error('Failed to fetch brand info:', error);
-      updateFormData({ domain: domain.trim() });
+      // still move on with domain captured so the user can continue
+      updateFormData({ domain: trimmed });
       onNext();
     } finally {
       setIsLoading(false);
@@ -182,17 +217,9 @@ export const Step1Domain: React.FC<Step1DomainProps> = ({
     ${glowColor1}
   )`;
 
-  const containerVariants = {
-    hidden: {},
-    show: { transition: { staggerChildren: 0.2 } },
-  };
+  const containerVariants = { hidden: {}, show: { transition: { staggerChildren: 0.2 } } };
+  const fadeInUp = { hidden: { opacity: 0, y: 30 }, show: { opacity: 1, y: 0, transition: { duration: 0.8, ease: easeOut } } };
 
-  const fadeInUp = {
-    hidden: { opacity: 0, y: 30 },
-    show: { opacity: 1, y: 0, transition: { duration: 0.8, ease: easeOut } },
-  };
-
-  // ➜ added: filter suggestions as user types
   const filteredSuggestions = useMemo(() => {
     if (!domain.trim()) return savedDomains;
     const q = domain.trim().toLowerCase();
@@ -201,36 +228,21 @@ export const Step1Domain: React.FC<Step1DomainProps> = ({
 
   return (
     <div className="fixed inset-0 overflow-hidden z-0 bg-transparent">
-      {/* ✅ Hardcoded to blobs */}
+      {/* Hardcoded to blobs */}
       <Background variant="blobs" />
 
       <div className="relative z-10 h-screen flex items-center justify-center px-4">
-        <motion.div
-          className="text-center max-w-lg w-full"
-          variants={containerVariants}
-          initial="hidden"
-          animate="show"
-        >
+        <motion.div className="text-center max-w-lg w-full" variants={containerVariants} initial="hidden" animate="show">
           <motion.div className="space-y-2" variants={fadeInUp}>
-            <h1 className="text-4xl font-semibold text-foreground tracking-tight">
-              Let's create amazing emails
-            </h1>
-            <p className="text-lg text-muted-foreground max-w-md mx-auto">
-              Enter your website domain to get started
-            </p>
+            <h1 className="text-4xl font-semibold text-foreground tracking-tight">Let's create amazing emails</h1>
+            <p className="text-lg text-muted-foreground max-w-md mx-auto">Enter your website domain to get started</p>
           </motion.div>
 
-          <motion.div
-            className="relative w-full max-w-md mx-auto mt-10"
-            variants={fadeInUp}
-          >
-            {/* glow border */}
+          <motion.div className="relative w-full max-w-md mx-auto mt-10" variants={fadeInUp}>
             <div
               className="absolute inset-0 rounded-full p-[2px] blur-xl opacity-90 bg-repeat bg-[length:800%_100%] animate-gradient-sweep pointer-events-none"
               style={{ backgroundImage: gradientBg }}
             />
-
-            {/* input + button */}
             <div
               className="relative z-10 flex items-center rounded-full ring-1 ring-white/20 pl-5 pr-2 py-2 shadow-xl transition"
               style={{ backgroundColor: inputBg }}
@@ -241,26 +253,20 @@ export const Step1Domain: React.FC<Step1DomainProps> = ({
                 value={domain}
                 onChange={(e) => setDomain(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && handleContinue()}
-                onFocus={() => setShowSuggestions(true)}        // ➜ added
-                onBlur={() => setTimeout(() => setShowSuggestions(false), 120)} // ➜ added (delay to allow click)
+                onFocus={() => setShowSuggestions(true)}
+                onBlur={() => setTimeout(() => setShowSuggestions(false), 120)}
                 className={`bg-transparent text-base w-full focus:outline-none placeholder-opacity-50 ${inputText} ${placeholderText}`}
               />
-
               <button
                 onClick={handleContinue}
                 disabled={!domain.trim() || isLoading}
                 className="ml-2 p-2 rounded-full bg-gradient-to-r from-[#00ffc3] to-[#a3f2d9] hover:scale-105 transition-transform disabled:opacity-50"
                 aria-label="Continue to Step 2"
               >
-                {isLoading ? (
-                  <div className="loader" />
-                ) : (
-                  <ArrowRight className="w-5 h-5 text-black" />
-                )}
+                {isLoading ? <div className="loader" /> : <ArrowRight className="w-5 h-5 text-black" />}
               </button>
             </div>
 
-            {/* ➜ added: suggestions dropdown */}
             {showSuggestions && filteredSuggestions.length > 0 && (
               <ul
                 className={`absolute z-20 mt-2 w-full max-h-56 overflow-auto rounded-xl border shadow-xl ${
@@ -270,15 +276,11 @@ export const Step1Domain: React.FC<Step1DomainProps> = ({
                 {filteredSuggestions.map((s) => (
                   <li
                     key={s}
-                    className={`px-4 py-2 text-left cursor-pointer hover:bg-white/10 ${
-                      isDark ? 'text-white' : 'text-black'
-                    }`}
-                    // use mousedown so blur doesn't swallow the click
+                    className={`px-4 py-2 text-left cursor-pointer hover:bg-white/10 ${isDark ? 'text-white' : 'text-black'}`}
                     onMouseDown={(e) => {
                       e.preventDefault();
                       setDomain(s);
                       setShowSuggestions(false);
-                      // auto-continue for convenience
                       handleContinue();
                     }}
                   >
@@ -288,25 +290,41 @@ export const Step1Domain: React.FC<Step1DomainProps> = ({
               </ul>
             )}
 
-            {/* ➜ added: tiny status under the bar */}
-            {isLoading && (
-              <p className="mt-3 text-xs text-muted-foreground text-center">
-                Fetching brand…
-              </p>
-            )}
+            {isLoading && <p className="mt-3 text-xs text-muted-foreground text-center">Fetching brand…</p>}
           </motion.div>
         </motion.div>
       </div>
+
+      {/* NEW: Upgrade modal */}
+      {noBrandsOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm">
+          <div className="w-full max-w-md rounded-2xl bg-background border border-border shadow-xl p-6">
+            <h3 className="text-lg font-semibold">No more brand slots</h3>
+            <p className="mt-2 text-sm text-muted-foreground">
+              You’ve reached your plan’s brand limit. Upgrade your plan to add more brands.
+            </p>
+            <div className="mt-6 flex justify-end gap-2">
+              <button className="btn bg-secondary text-secondary-foreground" onClick={() => setNoBrandsOpen(false)}>Cancel</button>
+              <button
+                className="btn"
+                onClick={() => { setNoBrandsOpen(false); window.location.href = '/settings?plan=1'; }}
+              >
+                Upgrade
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <style>{`
         @keyframes gradient-sweep {
           0% { background-position: 0% 50%; }
           100% { background-position: 100% 50%; }
         }
-        .animate-gradient-sweep {
-          animation: gradient-sweep 10s linear infinite;
-        }
+        .animate-gradient-sweep { animation: gradient-sweep 10s linear infinite; }
       `}</style>
     </div>
   );
 };
+
+export default Step1Domain;

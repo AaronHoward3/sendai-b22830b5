@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
+import { useLocation } from 'react-router-dom';
 import Navigation from '@/components/Navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -169,6 +170,16 @@ const Settings: React.FC = () => {
 
   // Plan picker modal
   const [showPlanModal, setShowPlanModal] = useState(false);
+
+
+  // Auto-open plan modal when arriving with ?plan=1
+  const location = useLocation();
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    if (params.get('plan')) {
+      setShowPlanModal(true);
+    }
+  }, [location.search]);
 
   // --- Profile: load & save ---
   useEffect(() => {
