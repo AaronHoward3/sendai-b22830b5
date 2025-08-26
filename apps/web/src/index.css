@@ -368,3 +368,8 @@ body {
   border: 1px solid var(--input, var(--border, #2a2a2a)) !important;
   background: var(--background, transparent) !important;
 }
+/* Brand font utility */
+.font-zen {
+  font-family: "Zen Kurenaido", sans-serif;
+  font-weight: 400; /* Only weight available */
+}
