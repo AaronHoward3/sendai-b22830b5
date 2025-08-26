@@ -1,0 +1,12 @@
+<mj-section mj-class="prod">
+  <mj-column width="50%" vertical-align="middle">
+    <mj-image mj-class="img" src="{{P1_IMAGE_URL}}" alt="{{P1_TITLE}}" title="{{P1_TITLE}}" padding="0"></mj-image>
+  </mj-column>
+  <mj-column width="50%" vertical-align="middle">
+    <mj-text mj-class="product-title">{{P1_TITLE}}</mj-text>
+    <mj-text mj-class="product-price">{{P1_PRICE}}</mj-text>
+    <!-- Optional CTA:
+    <mj-button mj-class="btn" href="{{P1_BUTTON_URL}}">{{P1_BUTTON_TEXT}}</mj-button>
+    -->
+  </mj-column>
+</mj-section>
