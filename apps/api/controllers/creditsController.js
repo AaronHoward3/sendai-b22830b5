@@ -1,7 +1,11 @@
 import { supabase } from "../utils/supabaseClient.js";
 
 function normDomain(d) {
-  return String(d || "").trim().toLowerCase().replace(/^https?:\/\//, "").replace(/\/.*$/, "");
+  return String(d || "")
+    .trim()
+    .toLowerCase()
+    .replace(/^https?:\/\//, "")
+    .replace(/\/.*$/, "");
 }
 
 // GET /api/credits/me
@@ -59,9 +63,27 @@ export async function claimBrand(req, res) {
   const domain = normDomain(req.body?.domain);
   if (!domain) return res.status(400).json({ error: "domain required" });
 
+  // ✅ If user already owns this domain, treat as success (idempotent)
+  const { data: existing, error: exErr } = await supabase
+    .from("user_brands")
+    .select("id")
+    .eq("user_id", uid)
+    .eq("domain", domain)
+    .maybeSingle();
+
+  if (!exErr && existing) {
+    return res.json({ ok: true, domain, alreadyOwned: true });
+  }
+
   const { data: ok, error } = await supabase.rpc("claim_brand_admin", { uid, p_domain: domain });
   if (error) return res.status(500).json({ error: error.message });
-  if (!ok) return res.status(402).json({ error: "Brand limit reached. Upgrade your plan to add more brands." });
+
+  if (!ok) {
+    return res.status(402).json({
+      code: "NO_BRAND_SLOTS",
+      error: "Brand limit reached. Upgrade your plan to add more brands."
+    });
+  }
 
   res.json({ ok: true, domain });
 }
