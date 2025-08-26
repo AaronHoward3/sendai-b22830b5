@@ -15,6 +15,17 @@ interface Step1DomainProps {
   onNext: () => void;
 }
 
+// Normalize domains to a comparable canonical form
+function normalizeDomain(dom: string): string {
+  let d = String(dom || '').trim().toLowerCase();
+  d = d.replace(/^https?:\/\//, '');      // strip protocol
+  d = d.replace(/^www\./, '');            // strip www
+  d = d.replace(/\/.*$/, '');             // strip path
+  d = d.replace(/\s+/g, '');              // strip internal spaces
+  if (d.endsWith('.')) d = d.slice(0, -1);
+  return d;
+}
+
 export const Step1Domain: React.FC<Step1DomainProps> = ({
   formData,
   updateFormData,
@@ -59,7 +70,7 @@ export const Step1Domain: React.FC<Step1DomainProps> = ({
             .select('domain')
             .eq('user_id', userId)
             .order('updated_at', { ascending: false })
-            .limit(25);
+            .limit(50);
           if (error) throw error;
           return (data || []).map((r: any) => r.domain).filter(Boolean) as string[];
         };
@@ -70,7 +81,7 @@ export const Step1Domain: React.FC<Step1DomainProps> = ({
             .select('domain')
             .eq('user_id', userId)
             .order('updated_at', { ascending: false })
-            .limit(25);
+            .limit(50);
           if (error) throw error;
           return (data || []).map((r: any) => r.domain).filter(Boolean) as string[];
         };
@@ -93,6 +104,7 @@ export const Step1Domain: React.FC<Step1DomainProps> = ({
           }
         }
 
+        // Keep raw domains; we'll normalize when comparing
         const unique = Array.from(new Set(domains.map((d) => String(d).trim()))).filter(Boolean);
         if (!cancelled) setSavedDomains(unique);
       } catch {
@@ -110,39 +122,73 @@ export const Step1Domain: React.FC<Step1DomainProps> = ({
     if (!userId) return 0;
 
     // brand_limit
-    const { data: bal, error: e1 } = await supabase
+    const { data: bal } = await supabase
       .from('credit_balances')
       .select('brand_limit')
       .eq('user_id', userId)
-      .single();
-    if (e1) {
-      // if row missing or RLS prevents read, treat as 0 available
-      return 0;
-    }
+      .maybeSingle();
     const limit = bal?.brand_limit ?? 0;
 
     // used count
-    const { count, error: e2 } = await supabase
+    const { count } = await supabase
       .from('user_brands')
       .select('id', { count: 'exact', head: true })
       .eq('user_id', userId);
-    if (e2) return 0;
 
     const used = count ?? 0;
     return Math.max(limit - used, 0);
   }
 
+  // NEW: check if this domain is already owned by the user
+  async function domainOwnedByUser(dom: string): Promise<boolean> {
+    const target = normalizeDomain(dom);
+    if (!target) return false;
+
+    // 1) Client-side quick check using savedDomains (already fetched)
+    if (savedDomains.length) {
+      const owned = savedDomains.some((d) => normalizeDomain(d) === target);
+      if (owned) return true;
+    }
+
+    // 2) DB fallback: user_brands
+    const { data: ub } = await supabase
+      .from('user_brands')
+      .select('domain')
+      .eq('user_id', (await supabase.auth.getUser()).data.user?.id || '')
+      .limit(100);
+    if (Array.isArray(ub) && ub.some((r: any) => normalizeDomain(r.domain) === target)) {
+      return true;
+    }
+
+    // 3) DB fallback: brands (some projects store ownership here too)
+    const { data: br } = await supabase
+      .from('brands')
+      .select('domain')
+      .eq('user_id', (await supabase.auth.getUser()).data.user?.id || '')
+      .limit(100);
+    if (Array.isArray(br) && br.some((r: any) => normalizeDomain(r.domain) === target)) {
+      return true;
+    }
+
+    return false;
+  }
+
   const handleContinue = async () => {
-    const trimmed = domain.trim();
+    const trimmed = normalizeDomain(domain);
     if (!trimmed) return;
     setIsLoading(true);
 
     try {
-      // ✅ pre-check brand availability to avoid 404 flows
-      const available = await getAvailableBrandSlots();
-      if (available <= 0) {
-        setNoBrandsOpen(true);
-        return;
+      // ✅ If user already owns this domain, bypass slot check and skip claim
+      const alreadyOwned = await domainOwnedByUser(trimmed);
+
+      if (!alreadyOwned) {
+        // ✅ pre-check brand availability to avoid 404 flows
+        const available = await getAvailableBrandSlots();
+        if (available <= 0) {
+          setNoBrandsOpen(true);
+          return;
+        }
       }
 
       // brand info
@@ -163,28 +209,30 @@ export const Step1Domain: React.FC<Step1DomainProps> = ({
       if (!productRes.ok) throw new Error('Failed to fetch products');
       const productSuggestions = await productRes.json();
 
-      // claim brand (charge against limit); handle 402 + 409 gracefully
-      try {
-        const { data: { session } } = await supabase.auth.getSession();
-        const token = session?.access_token;
-        if (token) {
-          const claimRes = await fetch(`${API_ROOT}/credits/claim-brand`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-            body: JSON.stringify({ domain: trimmed }),
-          });
+      // claim brand (charge against limit) only if not already owned
+      if (!alreadyOwned) {
+        try {
+          const { data: { session } } = await supabase.auth.getSession();
+          const token = session?.access_token;
+          if (token) {
+            const claimRes = await fetch(`${API_ROOT}/credits/claim-brand`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+              body: JSON.stringify({ domain: trimmed }),
+            });
 
-          if (claimRes.status === 402) {
-            window.location.href = '/settings?plan=1';
-            return;
-          } else if (claimRes.status === 409) {
-            setNoBrandsOpen(true);
-            return;
+            if (claimRes.status === 402) {
+              window.location.href = '/settings?plan=1';
+              return;
+            } else if (claimRes.status === 409) {
+              setNoBrandsOpen(true);
+              return;
+            }
           }
+        } catch (err) {
+          // Non-fatal
+          console.warn('claim-brand check failed', err);
         }
-      } catch (err) {
-        // Non-fatal: proceed but log for debugging
-        console.warn('claim-brand check failed', err);
       }
 
       // proceed
@@ -222,8 +270,8 @@ export const Step1Domain: React.FC<Step1DomainProps> = ({
 
   const filteredSuggestions = useMemo(() => {
     if (!domain.trim()) return savedDomains;
-    const q = domain.trim().toLowerCase();
-    return savedDomains.filter((d) => d.toLowerCase().includes(q));
+    const q = normalizeDomain(domain);
+    return savedDomains.filter((d) => normalizeDomain(d).includes(q));
   }, [domain, savedDomains]);
 
   return (
