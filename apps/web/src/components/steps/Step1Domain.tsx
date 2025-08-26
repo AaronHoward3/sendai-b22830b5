@@ -304,7 +304,7 @@ export const Step1Domain: React.FC<Step1DomainProps> = ({
           100% { background-position: 100% 50%; }
         }
         .animate-gradient-sweep {
-          animation: gradient-sweep 6s linear infinite;
+          animation: gradient-sweep 10s linear infinite;
         }
       `}</style>
     </div>
