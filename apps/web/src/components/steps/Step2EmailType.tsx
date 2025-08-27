@@ -419,7 +419,7 @@ export const Step2EmailType: React.FC<Step2EmailTypeProps> = ({
       <motion.div className="space-y-2" variants={fadeInUp}>
         <label className="text-lg font-medium text-foreground">User Context</label>
         <textarea
-          placeholder="Tell us about your audience..."
+          placeholder="Tell us abut what you want to convey"
           value={userContext}
           onChange={(e) => setUserContext(e.target.value)}
           rows={4}
