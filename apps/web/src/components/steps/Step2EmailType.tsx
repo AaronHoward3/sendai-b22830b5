@@ -256,12 +256,81 @@ function buildUserContext(opts: {
     `${cta} while it’s fresh.`,
   ];
 
-  // 2–3 short, human sentences.
   return [
     opener,
     typeLine[type] + descBit + productLine,
     pick(closes),
   ].filter(Boolean).join(' ');
+}
+
+// --- Product normalization helpers ---
+type AnyProduct = any;
+
+function normalizeProductLink(p: AnyProduct): ProductLink | null {
+  if (!p || typeof p !== 'object') return null;
+  const name =
+    p.name ?? p.title ?? p.product_name ?? p.heading ?? p.label ?? p.text ?? '';
+  const url =
+    p.url ?? p.link ?? p.href ?? p.product_url ?? '';
+  const image =
+    p.image ?? p.image_url ?? p.img ?? p.thumbnail ?? p.thumb ?? p.imageSrc ?? p.src ?? '';
+
+  if (!(name || url || image)) return null;
+
+  return {
+    name: String(name || 'Unnamed product').trim(),
+    url: String(url || '').trim(),
+    image: image ? String(image).trim() : undefined,
+  };
+}
+
+function uniqProducts(list: ProductLink[]): ProductLink[] {
+  const seen = new Set<string>();
+  const out: ProductLink[] = [];
+  for (const p of list) {
+    const key = (p.url || p.name || '').toLowerCase();
+    if (!key) continue;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    out.push(p);
+  }
+  return out;
+}
+
+/** Scan common places for scraped products and normalize them */
+function getScrapedProductsFromFormData(fd: FormData): ProductLink[] {
+  const candidates: any[] = [];
+
+  if (Array.isArray((fd as any).products)) candidates.push(...(fd as any).products);
+
+  const bd = (fd as any).brandData || {};
+  const bdd = bd.brandData || bd;
+
+  const maybeArrays = [
+    bd.products,
+    bdd.products,
+    bdd.top_products,
+    bdd.sample_products,
+    bd.scraped_products,
+    bdd.scraped_products,
+    bdd.catalog?.items,
+    bdd.catalog?.products,
+  ];
+
+  for (const m of maybeArrays) {
+    if (Array.isArray(m)) {
+      candidates.push(...m);
+    } else if (m && typeof m === 'object') {
+      const vals = Object.values(m);
+      if (Array.isArray(vals)) candidates.push(...(vals as any[]));
+    }
+  }
+
+  const normalized = candidates
+    .map(normalizeProductLink)
+    .filter(Boolean) as ProductLink[];
+
+  return uniqProducts(normalized);
 }
 
 /** Crisp, visual image context (no text) */
@@ -271,8 +340,9 @@ function buildImageContext(opts: {
   design: DesignAesthetic;
   brandPrimary?: string;
   brandLink?: string;
+  products?: ProductLink[];
 }) {
-  const { occasion, brandName, design, brandPrimary, brandLink } = opts;
+  const { occasion, brandName, design, brandPrimary, brandLink, products } = opts;
   const key = occasion.key in OCCASION_VISUALS ? occasion.key : 'new_year';
   const visuals = OCCASION_VISUALS[key];
   const traits = STYLE_TRAITS[design] || [];
@@ -282,8 +352,11 @@ function buildImageContext(opts: {
   const motif = pick(visuals.motifs);
   const trait = pick(traits);
 
-  // Single clean sentence that guides composition but stays free of text/logos.
-  return `${occasion.short || occasion.label} hero for ${brandName} — ${motif}, ${trait}, ${paletteLine}; cinematic product focus if applicable; no text, no logos, no watermark, uncluttered background.`;
+  // Optional focal cue using first product name (still: no text/logos in the image)
+  const firstProductName = (products && products[0]?.name) ? String(products[0].name).trim() : '';
+  const focal = firstProductName ? ` focal object: ${firstProductName} (generic pack shot),` : '';
+
+  return `${occasion.short || occasion.label} hero for ${brandName} — ${motif}, ${trait}, ${paletteLine};${focal} cinematic product focus if applicable; no text, no logos, no watermark, uncluttered background.`;
 }
 
 /* ----------------- Component ----------------- */
@@ -301,20 +374,6 @@ export const Step2EmailType: React.FC<Step2EmailTypeProps> = ({
   const [tone, setTone] = useState<Tone>(formData.tone ?? 'bold');
   const [designAesthetic, setDesignAesthetic] =
     useState<DesignAesthetic>(formData.designAesthetic ?? 'bold_contrasting');
-
-  const [products, setProducts] = useState<ProductLink[]>(
-    Array.isArray(formData.products) ? formData.products : []
-  );
-  const [showProductForm, setShowProductForm] = useState<boolean>(false);
-  const [newProductName, setNewProductName] = useState<string>('');
-  const [newProductUrl, setNewProductUrl] = useState<string>('');
-  const [newProductImage, setNewProductImage] = useState<string>('');
-
-  // Inline edit state
-  const [editingIndex, setEditingIndex] = useState<number | null>(null);
-  const [editName, setEditName] = useState<string>('');
-  const [editUrl, setEditUrl] = useState<string>('');
-  const [editImage, setEditImage] = useState<string>('');
 
   // From Step 1 brand payload
   const scrapedPrimary = formData?.brandData?.brandData?.primary_color || '';
@@ -375,26 +434,40 @@ export const Step2EmailType: React.FC<Step2EmailTypeProps> = ({
     })();
   }, [formData.domain]);
 
+  // ------------ Scraped products + seed ------------
+  const scrapedProducts = useMemo(() => getScrapedProductsFromFormData(formData), [formData]);
+
+  const [products, setProducts] = useState<ProductLink[]>(
+    Array.isArray(formData.products) && (formData.products as any[]).length
+      ? (formData.products as ProductLink[])
+      : scrapedProducts
+  );
+
   /* ---------- Auto-suggest contexts on entry (human-friendly) ---------- */
   const generateContexts = React.useCallback(() => {
     const occ = nearestOccasion(new Date());
+    const productsForContext = (products && products.length) ? products : scrapedProducts;
+
     const uc = buildUserContext({
       occasion: occ,
       brandName,
       brandDesc,
       emailType: selectedEmailType,
       tone,
-      products,
+      products: productsForContext,
     });
+
     const ic = buildImageContext({
       occasion: occ,
       brandName,
       design: designAesthetic,
       brandPrimary,
       brandLink,
+      products: productsForContext,
     });
+
     return { uc, ic, occ };
-  }, [brandName, brandDesc, selectedEmailType, tone, designAesthetic, brandPrimary, brandLink, products]);
+  }, [brandName, brandDesc, selectedEmailType, tone, designAesthetic, brandPrimary, brandLink, products, scrapedProducts]);
 
   useEffect(() => {
     // Prefill only if empty so we never overwrite user text when returning to Step 2
@@ -405,6 +478,17 @@ export const Step2EmailType: React.FC<Step2EmailTypeProps> = ({
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); // run once on mount
+
+  const [showProductForm, setShowProductForm] = useState<boolean>(false);
+  const [newProductName, setNewProductName] = useState<string>('');
+  const [newProductUrl, setNewProductUrl] = useState<string>('');
+  const [newProductImage, setNewProductImage] = useState<string>('');
+
+  // Inline edit state
+  const [editingIndex, setEditingIndex] = useState<number | null>(null);
+  const [editName, setEditName] = useState<string>('');
+  const [editUrl, setEditUrl] = useState<string>('');
+  const [editImage, setEditImage] = useState<string>('');
 
   const handleAddProduct = () => {
     if (!newProductName.trim() || !newProductUrl.trim()) return;
@@ -465,7 +549,7 @@ export const Step2EmailType: React.FC<Step2EmailTypeProps> = ({
       imageContext,
       tone,
       designAesthetic,
-      products,
+      products, // persist current (possibly scraped) list
       ...(useCustomHero ? { savedHeroImageUrl: null as any } : {}),
       ...(!useCustomHero && selectedSavedUrl ? ({ savedHeroImageUrl: selectedSavedUrl } as any) : {}),
     });
@@ -718,7 +802,7 @@ export const Step2EmailType: React.FC<Step2EmailTypeProps> = ({
         />
       </motion.div>
 
-      {/* Products (unchanged) */}
+      {/* Products */}
       <motion.div className="space-y-4" variants={fadeInUp}>
         <label className="text-lg font-medium text-foreground">Products</label>
         {products.length === 0 && (
