@@ -139,34 +139,132 @@ function nearestOccasion(now = new Date()): Occasion {
   const year = now.getFullYear();
   const list = [...getOccasionsForYear(year), ...getOccasionsForYear(year + 1)];
   const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-
-  // pure “next holiday” — no seasons, no sticky ranges
   const upcoming = list.filter(o => o.date >= today).sort((a, b) => a.date.getTime() - b.date.getTime());
   return upcoming[0] || list[0];
 }
-/* ---------- Context builders (short & calm) ---------- */
 
-function truncate(s: string, n = 120) {
+/* ---------- Prompt helpers (make it sound human) ---------- */
+
+function pick<T>(arr: T[]): T {
+  return arr[Math.floor(Math.random() * arr.length)];
+}
+function truncate(s: string, n = 140) {
   if (!s) return '';
   const t = String(s).replace(/\s+/g, ' ').trim();
   return t.length > n ? t.slice(0, n - 1) + '…' : t;
 }
+function joinAnd(items: string[], max = 3) {
+  const uniq = Array.from(new Set(items.filter(Boolean)));
+  const take = uniq.slice(0, max);
+  if (take.length <= 1) return take.join('');
+  return take.slice(0, -1).join(', ') + ' and ' + take.slice(-1);
+}
 
+const STYLE_TRAITS: Record<DesignAesthetic, string[]> = {
+  bold_contrasting: ['high contrast', 'dramatic lighting', 'rich shadows'],
+  minimal_clean: ['clean background', 'soft light', 'plenty of whitespace'],
+  magazine_serif: ['editorial feel', 'subtle film grain', 'artful composition'],
+  warm_editorial: ['warm light', 'paper texture', 'cozy editorial vibe'],
+  neo_brutalist: ['hard edges', 'flat planes', 'graphic balance'],
+  gradient_glow: ['glowing gradients', 'dark canvas', 'atmospheric depth'],
+  pastel_soft: ['soft tones', 'gentle lighting', 'rounded shapes'],
+  luxe_mono: ['monochrome palette', 'refined minimalism', 'crisp contrast'],
+};
+
+const OCCASION_VISUALS: Record<string, { palette: string[]; motifs: string[] }> = {
+  labor:       { palette: ['deep navy', 'white', 'cherry red'], motifs: ['subtle stars/stripes geometry', 'clean ribbon accents'] },
+  memorial:    { palette: ['navy', 'silver', 'white'], motifs: ['clean bands', 'subtle flag-inspired angles'] },
+  independence:{ palette: ['red', 'white', 'blue'], motifs: ['confetti bokeh', 'sparks (abstract)'] },
+  black_friday:{ palette: ['near-black', 'charcoal', 'white'], motifs: ['spotlight contrast', 'sleek shadows'] },
+  cyber_monday:{ palette: ['ink', 'electric blue', 'white'], motifs: ['neon glow', 'grids (subtle)'] },
+  halloween:   { palette: ['coal', 'pumpkin', 'bone'], motifs: ['soft haze', 'crescent arcs'] },
+  christmas:   { palette: ['pine', 'cranberry', 'cream'], motifs: ['soft snow grain', 'garland curve (abstract)'] },
+  valentines:  { palette: ['rose', 'cream', 'claret'], motifs: ['bokeh hearts (very subtle)', 'ribbons'] },
+  fathers:     { palette: ['slate', 'steel', 'ivory'], motifs: ['diagonal stripes', 'ticket-corner blocks'] },
+  mothers:     { palette: ['blush', 'pearl', 'sage'], motifs: ['soft petals (abstract)', 'paper texture'] },
+  stpats:      { palette: ['emerald', 'linen', 'charcoal'], motifs: ['leaf shapes (abstract)', 'soft grain'] },
+  easter:      { palette: ['pastel mix', 'ivory', 'mist'], motifs: ['soft gradients', 'rounded shapes'] },
+  presidents:  { palette: ['navy', 'cream', 'scarlet'], motifs: ['rosette arcs', 'bold banners'] },
+  thanksgiving:{ palette: ['maple', 'wheat', 'espresso'], motifs: ['grain texture', 'leaf silhouettes (abstract)'] },
+  new_year:    { palette: ['ink', 'champagne', 'white'], motifs: ['confetti blur', 'light streaks'] },
+};
+
+const CTA_ALTS_COMMON = [
+  'Shop Deals',
+  'See the Collection',
+  'Save Now',
+  'Get Yours',
+  'Explore Now',
+  'Claim the Offer',
+];
+
+function ctaForOccasion(occ: Occasion) {
+  return occ.defaultCTA || pick(CTA_ALTS_COMMON);
+}
+
+function shortTimeHint(occ: Occasion) {
+  const now = new Date();
+  const days = Math.ceil((occ.date.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+  if (days <= 0) return 'Ends soon';
+  if (days === 1) return 'Ends tomorrow';
+  if (days <= 3) return 'This week only';
+  return undefined;
+}
+
+/** Human-y user context */
 function buildUserContext(opts: {
   occasion: Occasion;
   brandName: string;
   brandDesc?: string;
   emailType: EmailType | null;
   tone: Tone;
+  products?: ProductLink[];
 }) {
-  const { occasion, brandName, brandDesc, emailType, tone } = opts;
+  const { occasion, brandName, brandDesc, emailType, tone, products } = opts;
   const type = emailType || 'Promotion';
-  const descBit = brandDesc ? ` Brand: ${truncate(brandDesc)}.` : '';
-  const cta = occasion.defaultCTA || 'Shop Now';
-  // 1–2 clean sentences, no fluff.
-  return `${occasion.short || occasion.label} ${type} for ${brandName}.${descBit} Tone: ${tone}. End with “${cta}”.`;
+
+  const toneOpeners: Record<Tone, string[]> = {
+    bold:     ['Big savings, zero fluff.', 'Go big on value.', 'Turn it up.'],
+    friendly: ['Hey there — deal time!', 'A little pick-me-up.', 'Sharing something good.'],
+    formal:   ['Seasonal savings have arrived.', 'A timely offer for you.', 'Valuable updates inside.'],
+    fun:      ['Let’s make it a win.', 'Deal mode: ON.', 'A tasty little treat.'],
+  };
+
+  const opener = pick(toneOpeners[tone]);
+  const descBit = brandDesc ? ` ${truncate(brandDesc)}` : '';
+  const occName = occasion.short || occasion.label;
+  const timeHint = shortTimeHint(occasion);
+  const cta = ctaForOccasion(occasion);
+
+  const productNames = (products || [])
+    .map(p => p?.name?.trim())
+    .filter(Boolean);
+
+  const productLine = productNames.length
+    ? ` Spotlight on ${joinAnd(productNames)}.`
+    : '';
+
+  const typeLine: Record<EmailType, string> = {
+    Promotion:    `${occName} savings are live for ${brandName}.`,
+    Productgrid:  `Browse ${brandName} picks for ${occName}.`,
+    Newsletter:   `${brandName} updates for ${occName}.`,
+  };
+
+  const closes = [
+    `Ready when you are — ${cta}.`,
+    `${timeHint ? timeHint + '. ' : ''}${cta}.`,
+    `${cta} while it’s fresh.`,
+  ];
+
+  // 2–3 short, human sentences.
+  return [
+    opener,
+    typeLine[type] + descBit + productLine,
+    pick(closes),
+  ].filter(Boolean).join(' ');
 }
 
+/** Crisp, visual image context (no text) */
 function buildImageContext(opts: {
   occasion: Occasion;
   brandName: string;
@@ -175,10 +273,17 @@ function buildImageContext(opts: {
   brandLink?: string;
 }) {
   const { occasion, brandName, design, brandPrimary, brandLink } = opts;
-  const style = String(design).replace(/_/g, ' ');
-  const accents = [brandPrimary, brandLink].filter(Boolean).join(' / ') || 'brand colors';
-  // One clean line.
-  return `${occasion.short || occasion.label} hero for ${brandName}. Style: ${style}. Clean, no text. Use ${accents}.`;
+  const key = occasion.key in OCCASION_VISUALS ? occasion.key : 'new_year';
+  const visuals = OCCASION_VISUALS[key];
+  const traits = STYLE_TRAITS[design] || [];
+
+  const palette = [brandPrimary, brandLink, ...visuals.palette].filter(Boolean);
+  const paletteLine = `palette: ${palette.slice(0, 3).join(', ')}`;
+  const motif = pick(visuals.motifs);
+  const trait = pick(traits);
+
+  // Single clean sentence that guides composition but stays free of text/logos.
+  return `${occasion.short || occasion.label} hero for ${brandName} — ${motif}, ${trait}, ${paletteLine}; cinematic product focus if applicable; no text, no logos, no watermark, uncluttered background.`;
 }
 
 /* ----------------- Component ----------------- */
@@ -270,7 +375,7 @@ export const Step2EmailType: React.FC<Step2EmailTypeProps> = ({
     })();
   }, [formData.domain]);
 
-  /* ---------- Auto-suggest contexts on entry ---------- */
+  /* ---------- Auto-suggest contexts on entry (human-friendly) ---------- */
   const generateContexts = React.useCallback(() => {
     const occ = nearestOccasion(new Date());
     const uc = buildUserContext({
@@ -279,6 +384,7 @@ export const Step2EmailType: React.FC<Step2EmailTypeProps> = ({
       brandDesc,
       emailType: selectedEmailType,
       tone,
+      products,
     });
     const ic = buildImageContext({
       occasion: occ,
@@ -288,7 +394,7 @@ export const Step2EmailType: React.FC<Step2EmailTypeProps> = ({
       brandLink,
     });
     return { uc, ic, occ };
-  }, [brandName, brandDesc, selectedEmailType, tone, designAesthetic, brandPrimary, brandLink]);
+  }, [brandName, brandDesc, selectedEmailType, tone, designAesthetic, brandPrimary, brandLink, products]);
 
   useEffect(() => {
     // Prefill only if empty so we never overwrite user text when returning to Step 2
@@ -492,7 +598,7 @@ export const Step2EmailType: React.FC<Step2EmailTypeProps> = ({
         </div>
       </motion.div>
 
-      {/* Saved images appear ONLY when NOT using custom hero */}
+      {/* Saved images (only when NOT using custom hero) */}
       {!useCustomHero && (
         <motion.div className="space-y-3" variants={fadeInUp}>
           <label className="text-lg font-medium text-foreground">Use a saved hero image (optional)</label>
@@ -576,7 +682,7 @@ export const Step2EmailType: React.FC<Step2EmailTypeProps> = ({
             </div>
           </div>
           <textarea
-            placeholder="Describe the type of imagery..."
+            placeholder="Describe the hero vibe (e.g., “Dynamic splash shot with icy droplets; bold contrast; clean background; no text.”)"
             value={imageContext}
             onChange={(e) => setImageContext(e.target.value)}
             rows={4}
@@ -604,7 +710,7 @@ export const Step2EmailType: React.FC<Step2EmailTypeProps> = ({
           </div>
         </div>
         <textarea
-          placeholder="Tell us abut what you want to convey"
+          placeholder="In 2–3 short sentences, say what this email should do (offer, audience, vibe). Avoid labels like “Tone: …”. End with a natural CTA (e.g., “Shop Deals”)."
           value={userContext}
           onChange={(e) => setUserContext(e.target.value)}
           rows={4}
