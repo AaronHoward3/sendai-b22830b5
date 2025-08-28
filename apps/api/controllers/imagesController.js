@@ -7,7 +7,15 @@ const BUCKET = process.env.SUPABASE_IMAGES_BUCKET || "image-hosting-braanddev";
 
 // --- utils ---
 function normDomain(d) {
-  return String(d || "").trim().toLowerCase().replace(/^https?:\/\//, "").replace(/\/.*$/, "");
+  const raw = String(d || "").trim().toLowerCase();
+  try {
+    const u = new URL(raw.startsWith("http") ? raw : `https://${raw}`);
+    return u.host;
+  } catch {
+    const noProto = raw.replace(/^https?:\/\//i, "");
+    const slash = noProto.indexOf("/");
+    return slash === -1 ? noProto : noProto.slice(0, slash);
+  }
 }
 function safeSeg(s) {
   return String(s || "")
@@ -24,11 +32,15 @@ function guessExtFromContentType(ct = "") {
   return "png";
 }
 function guessExtFromUrl(u = "") {
-  const p = new URL(u);
-  const name = p.pathname.split("/").pop() || "";
-  const ext = name.split(".").pop()?.toLowerCase();
-  if (["png", "jpg", "jpeg", "webp", "gif"].includes(ext)) return ext === "jpeg" ? "jpg" : ext;
-  return "";
+  try {
+    const p = new URL(u);
+    const name = p.pathname.split("/").pop() || "";
+    const ext = name.split(".").pop()?.toLowerCase();
+    if (["png", "jpg", "jpeg", "webp", "gif"].includes(ext)) return ext === "jpeg" ? "jpg" : ext;
+    return "";
+  } catch {
+    return "";
+  }
 }
 
 async function ensureBucket() {

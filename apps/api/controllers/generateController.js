@@ -5,12 +5,39 @@ import fs from "node:fs/promises";
 import { storeUserImageFromUrl, storeUserImageFromDataUrl } from "./imagesController.js";
 import { supabase } from "../utils/supabaseClient.js";
 
+// ---- helpers to avoid heavy regex on untrusted strings ----
+function trimTrailingSlashes(p) {
+  let out = String(p || "");
+  while (out.endsWith("/") && out.length > 1) out = out.slice(0, -1);
+  return out;
+}
+function normalizeUrl(u = "") {
+  try {
+    const url = new URL(String(u).trim());
+    url.pathname = trimTrailingSlashes(url.pathname);
+    return url.toString();
+  } catch {
+    const s = String(u || "").trim();
+    return trimTrailingSlashes(s);
+  }
+}
+function safeSlice(s, max = 65536) {
+  // bound the haystack so any regex scans stay linear-time in practice
+  return String(s || "").slice(0, max);
+}
+
 function normalizeDomain(input) {
-  return (input || "")
-    .trim()
-    .toLowerCase()
-    .replace(/^https?:\/\//, "")
-    .replace(/\/$/, "");
+  const raw = String(input || "").trim().toLowerCase();
+  try {
+    const u = new URL(raw.startsWith("http") ? raw : `https://${raw}`);
+    // strip first path segment entirely without regex
+    return u.host;
+  } catch {
+    // manual fallback
+    const noProto = raw.replace(/^https?:\/\//i, "");
+    const slash = noProto.indexOf("/");
+    return slash === -1 ? noProto : noProto.slice(0, slash);
+  }
 }
 
 const COLOR_KEYS = [
@@ -39,20 +66,8 @@ function resolveEffectiveColors(brandJson) {
   return { top, under, resolved };
 }
 
-// Normalize URL minimally for equality checks (strip trailing slashes, ignore trivial query empties)
-function normalizeUrl(u = "") {
-  try {
-    const url = new URL(String(u).trim());
-    // Keep host + pathname + search; don’t drop query because Supabase public URLs may include versioning
-    // But normalize trailing slash on pathname
-    url.pathname = url.pathname.replace(/\/+$/, "");
-    return url.toString();
-  } catch {
-    return String(u || "").trim().replace(/\/+$/, "");
-  }
-}
-
 // Pull a likely hero image URL from several places (MJML and compiled HTML)
+// Regexes are constant (not user-controlled) and run on bounded strings via safeSlice().
 function extractHeroUrl({ generated, headerHero, mjml, html }) {
   const candidates = [];
 
@@ -62,47 +77,49 @@ function extractHeroUrl({ generated, headerHero, mjml, html }) {
 
   // 2) MJML-side clues (before compile)
   if (typeof mjml === "string" && mjml) {
+    const s = safeSlice(mjml);
     // <mj-section background-url="..."> / <mj-hero background-url="...">
-    const bgAttr = mjml.match(/background-url=["']([^"']+)["']/i);
+    const bgAttr = s.match(/background-url=["']([^"']+)["']/i);
     if (bgAttr?.[1]) candidates.push(bgAttr[1]);
 
     // Legacy MJML background="https://..."
-    const bgAttr2 = mjml.match(/\bbackground=["'](https?:\/\/[^"']+)["']/i);
+    const bgAttr2 = s.match(/\bbackground=["'](https?:\/\/[^"']+)["']/i);
     if (bgAttr2?.[1]) candidates.push(bgAttr2[1]);
 
     // Inline CSS url(...)
-    const cssUrl = mjml.match(/url\((['"]?)(https?:\/\/[^'")]+)\1\)/i);
-    if (cssUrl?.[2]) candidates.push(cssUrl[2]);
+    const cssUrl = s.match(/url\((?:"|')?(https?:\/\/[^'")]+)(?:"|')?\)/i); // no backrefs
+    if (cssUrl?.[1]) candidates.push(cssUrl[1]);
 
     // Any <img src="..."> in MJML
-    const imgMj = mjml.match(/<img[^>]+src=["']([^"']+)["']/i);
+    const imgMj = s.match(/<img[^>]+src=["']([^"']+)["']/i);
     if (imgMj?.[1]) candidates.push(imgMj[1]);
 
     // Data attributes sometimes used by templates
-    const dataBg = mjml.match(/\bdata-(?:bg|background|background-image)=["'](https?:\/\/[^"']+)["']/i);
+    const dataBg = s.match(/\bdata-(?:bg|background|background-image)=["'](https?:\/\/[^"']+)["']/i);
     if (dataBg?.[1]) candidates.push(dataBg[1]);
   }
 
   // 3) Compiled HTML-side clues (after mjml2html)
   if (typeof html === "string" && html) {
+    const s = safeSlice(html);
     // First <img src="...">
-    const imgHtml = html.match(/<img[^>]+src=["']([^"']+)["']/i);
+    const imgHtml = s.match(/<img[^>]+src=["']([^"']+)["']/i);
     if (imgHtml?.[1]) candidates.push(imgHtml[1]);
 
     // CSS background-image: url(...)
-    const cssHtml = html.match(/background(?:-image)?:\s*url\((['"]?)(https?:\/\/[^'")]+)\1\)/i);
-    if (cssHtml?.[2]) candidates.push(cssHtml[2]);
+    const cssHtml = s.match(/background(?:-image)?:\s*url\((?:"|')?(https?:\/\/[^'")]+)(?:"|')?\)/i);
+    if (cssHtml?.[1]) candidates.push(cssHtml[1]);
 
     // HTML attribute background="https://..."
-    const htmlBgAttr = html.match(/\bbackground=["'](https?:\/\/[^"']+)["']/i);
+    const htmlBgAttr = s.match(/\bbackground=["'](https?:\/\/[^"']+)["']/i);
     if (htmlBgAttr?.[1]) candidates.push(htmlBgAttr[1]);
 
     // Outlook VML: <v:fill src="https://...">
-    const vmlFill = html.match(/<v:fill[^>]+src=["'](https?:\/\/[^"']+)["']/i);
+    const vmlFill = s.match(/<v:fill[^>]+src=["'](https?:\/\/[^"']+)["']/i);
     if (vmlFill?.[1]) candidates.push(vmlFill[1]);
 
     // srcset (take the first URL)
-    const srcset = html.match(/\bsrcset=["']([^"']+)["']/i);
+    const srcset = s.match(/\bsrcset=["']([^"']+)["']/i);
     if (srcset?.[1]) {
       const first = srcset[1].split(",")[0]?.trim().split(" ")[0];
       if (first) candidates.push(first);

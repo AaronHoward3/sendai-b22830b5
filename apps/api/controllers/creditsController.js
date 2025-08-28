@@ -1,11 +1,15 @@
 import { supabase } from "../utils/supabaseClient.js";
 
 function normDomain(d) {
-  return String(d || "")
-    .trim()
-    .toLowerCase()
-    .replace(/^https?:\/\//, "")
-    .replace(/\/.*$/, "");
+  const raw = String(d || "").trim().toLowerCase();
+  try {
+    const u = new URL(raw.startsWith("http") ? raw : `https://${raw}`);
+    return u.host;
+  } catch {
+    const noProto = raw.replace(/^https?:\/\//i, "");
+    const slash = noProto.indexOf("/");
+    return slash === -1 ? noProto : noProto.slice(0, slash);
+  }
 }
 
 // GET /api/credits/me

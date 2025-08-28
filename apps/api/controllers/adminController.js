@@ -3,11 +3,15 @@ import { supabase } from "../utils/supabaseClient.js";
 import { supabaseAdmin } from "../utils/supabaseAdmin.js"; // service role client
 
 function normalizeDomain(input = "") {
-  return String(input)
-    .trim()
-    .toLowerCase()
-    .replace(/^https?:\/\//, "")
-    .replace(/\/.*$/, "");
+  const raw = String(input || "").trim().toLowerCase();
+  try {
+    const u = new URL(raw.startsWith("http") ? raw : `https://${raw}`);
+    return u.host;
+  } catch {
+    const noProto = raw.replace(/^https?:\/\//i, "");
+    const slash = noProto.indexOf("/");
+    return slash === -1 ? noProto : noProto.slice(0, slash);
+  }
 }
 
 const CREDIT_FIELDS = ["emails_remaining", "images_remaining", "revisions_remaining", "brand_limit"];
@@ -110,8 +114,9 @@ export async function adminSearchUsers(req, res) {
     if (email) {
       // Use Admin API (service role) to list+filter
       const { data: list } = await supabaseAdmin.auth.admin.listUsers({ page: 1, perPage: 10000 });
+      const q = String(email).toLowerCase();
       const matches = (list?.users || []).filter(u =>
-        (u.email || "").toLowerCase().includes(String(email).toLowerCase())
+        (u.email || "").toLowerCase().includes(q)
       );
 
       const ids = matches.map(u => u.id);
