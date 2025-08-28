@@ -1,6 +1,6 @@
 // src/components/steps/Step2EmailType.tsx
 import React, { useEffect, useMemo, useState } from 'react';
-import { ChevronDown, Pencil, Save, X, Check } from 'lucide-react';
+import { ChevronDown, Pencil, Save, X, Check, Sparkles, RotateCcw } from 'lucide-react';
 import { motion, easeOut } from 'framer-motion';
 
 import { GradientButton } from '../ui/gradient-button';
@@ -69,6 +69,170 @@ function normalizeDomain(input: string) {
   return String(input || '').trim().toLowerCase().replace(/^https?:\/\//, '').replace(/\/.*$/, '');
 }
 
+/* ---------- Occasion helpers (US + retail/corporate) ---------- */
+
+function nthWeekdayOfMonth(year: number, monthIdx: number, weekday: number, n: number) {
+  const d = new Date(year, monthIdx, 1);
+  const add = (7 + weekday - d.getDay()) % 7;
+  d.setDate(1 + add + 7 * (n - 1));
+  return d;
+}
+function lastWeekdayOfMonth(year: number, monthIdx: number, weekday: number) {
+  const d = new Date(year, monthIdx + 1, 0);
+  const sub = (7 + (d.getDay() - weekday)) % 7;
+  d.setDate(d.getDate() - sub);
+  return d;
+}
+function computeEaster(year: number) {
+  // Anonymous Gregorian algorithm
+  const a = year % 19;
+  const b = Math.floor(year / 100);
+  const c = year % 100;
+  const d = Math.floor(b / 4);
+  const e = b % 4;
+  const f = Math.floor((b + 8) / 25);
+  const g = Math.floor((b - f + 1) / 3);
+  const h = (19 * a + b - d - g + 15) % 30;
+  const i = Math.floor(c / 4);
+  const k = c % 4;
+  const l = (32 + 2 * e + 2 * i - h - k) % 7;
+  const m = Math.floor((a + 11 * h + 22 * l) / 451);
+  const month = Math.floor((h + l - 7 * m + 114) / 31); // 3=March, 4=April
+  const day = ((h + l - 7 * m + 114) % 31) + 1;
+  return new Date(year, month - 1, day);
+}
+
+type Occasion = {
+  key: string;
+  label: string;
+  date: Date;
+  short?: string;
+  imageryHints?: string[];
+  defaultCTA?: string;
+};
+
+function getOccasionsForYear(year: number): Occasion[] {
+  const easter = computeEaster(year);
+  const thanksgiving = nthWeekdayOfMonth(year, 10, 4, 4); // Nov, Thu, 4th
+  const blackFriday = new Date(thanksgiving); blackFriday.setDate(blackFriday.getDate() + 1);
+  const smallBizSat = new Date(thanksgiving); smallBizSat.setDate(smallBizSat.getDate() + 2);
+  const cyberMonday = new Date(thanksgiving); cyberMonday.setDate(cyberMonday.getDate() + 4);
+
+  const memorialDay = lastWeekdayOfMonth(year, 4, 1);   // May, Mon
+  const laborDay = nthWeekdayOfMonth(year, 8, 1, 1);    // Sep, Mon, 1st
+  const mlk = nthWeekdayOfMonth(year, 0, 1, 3);         // Jan, Mon, 3rd
+  const presidents = nthWeekdayOfMonth(year, 1, 1, 3);  // Feb, Mon, 3rd
+  const mothers = nthWeekdayOfMonth(year, 4, 0, 2);     // May, Sun, 2nd
+  const fathers = nthWeekdayOfMonth(year, 5, 0, 3);     // Jun, Sun, 3rd
+  const indigenous = nthWeekdayOfMonth(year, 9, 1, 2);  // Oct, Mon, 2nd
+
+  // “Ranges” represented by start-of-range anchor
+  const backToSchool = new Date(year, 7, 1); // Aug 1
+  const backToSchoolEnd = new Date(year, 8, 10); // Sep 10
+
+  return [
+    { key: 'new_year', label: 'New Year', date: new Date(year, 0, 1), short: 'New Year', imageryHints: ['confetti', 'sparklers', 'clean minimal “fresh start”'], defaultCTA: 'Shop New Arrivals' },
+    { key: 'mlk', label: "MLK Day", date: mlk, short: 'MLK Day', imageryHints: ['abstract equality motif', 'subtle doves'], defaultCTA: 'Learn More' },
+    { key: 'valentines', label: 'Valentine’s Day', date: new Date(year, 1, 14), short: 'Valentine’s', imageryHints: ['hearts', 'soft gradients'], defaultCTA: 'Find a Gift' },
+    { key: 'presidents', label: 'Presidents’ Day', date: presidents, short: 'Presidents’ Day', imageryHints: ['subtle stars/stripes accents'], defaultCTA: 'Save Today' },
+    { key: 'stpats', label: "St. Patrick’s Day", date: new Date(year, 2, 17), short: 'St. Patrick’s', imageryHints: ['greens', 'clover textures'], defaultCTA: 'Shop the Drop' },
+    { key: 'easter', label: 'Easter', date: easter, short: 'Easter', imageryHints: ['pastels', 'spring florals'], defaultCTA: 'Celebrate Spring' },
+    { key: 'mothers', label: "Mother’s Day", date: mothers, short: 'Mother’s Day', imageryHints: ['soft florals', 'warm light'], defaultCTA: 'Gift Mom' },
+    { key: 'memorial', label: 'Memorial Day', date: memorialDay, short: 'Memorial Day', imageryHints: ['early summer vibes'], defaultCTA: 'Kick Off Summer' },
+    { key: 'fathers', label: "Father’s Day", date: fathers, short: 'Father’s Day', imageryHints: ['bold textures'], defaultCTA: 'Gift Dad' },
+    { key: 'independence', label: 'Independence Day', date: new Date(year, 6, 4), short: '4th of July', imageryHints: ['subtle red/white/blue accents'], defaultCTA: 'Summer Deals' },
+    { key: 'back_to_school', label: 'Back to School', date: backToSchool, short: 'Back to School', imageryHints: ['notebook textures', 'chalk accents'], defaultCTA: 'Get Ready' },
+    { key: 'labor', label: 'Labor Day', date: laborDay, short: 'Labor Day', imageryHints: ['late-summer palette'], defaultCTA: 'Long Weekend Deals' },
+    { key: 'indigenous', label: 'Indigenous Peoples’ Day', date: indigenous, short: 'Indigenous Peoples’ Day', imageryHints: ['earthy tones'], defaultCTA: 'Learn More' },
+    { key: 'halloween', label: 'Halloween', date: new Date(year, 9, 31), short: 'Halloween', imageryHints: ['subtle spooky glow'], defaultCTA: 'Spooky Picks' },
+    { key: 'veterans', label: 'Veterans Day', date: new Date(year, 10, 11), short: 'Veterans Day', imageryHints: ['patriotic minimal'], defaultCTA: 'Thank You' },
+    { key: 'thanksgiving', label: 'Thanksgiving', date: thanksgiving, short: 'Thanksgiving', imageryHints: ['warm fall palette'], defaultCTA: 'Grateful Picks' },
+    { key: 'black_friday', label: 'Black Friday', date: blackFriday, short: 'Black Friday', imageryHints: ['high contrast', 'bold graphics'], defaultCTA: 'Shop Doorbusters' },
+    { key: 'small_biz_sat', label: 'Small Business Saturday', date: smallBizSat, short: 'Small Biz Saturday', imageryHints: ['neighborhood vibe'], defaultCTA: 'Support Local' },
+    { key: 'cyber_monday', label: 'Cyber Monday', date: cyberMonday, short: 'Cyber Monday', imageryHints: ['neon glow', 'tech lines'], defaultCTA: 'Online Only' },
+    { key: 'christmas', label: 'Christmas', date: new Date(year, 11, 25), short: 'Holiday', imageryHints: ['cozy lights', 'evergreen'], defaultCTA: 'Holiday Shop' },
+    { key: 'eoy', label: 'Year-End / Q4 Close', date: new Date(year, 11, 31), short: 'Year-End', imageryHints: ['gold accents', 'confetti'], defaultCTA: 'Final Deals' },
+    { key: 'q1_end', label: 'End of Q1', date: new Date(year, 2, 31), short: 'Q1 Close', imageryHints: ['clean progress motif'], defaultCTA: 'Quarter-End Offers' },
+    { key: 'q2_end', label: 'End of Q2', date: new Date(year, 5, 30), short: 'Q2 Close', imageryHints: ['mid-year refresh'], defaultCTA: 'Mid-Year Offers' },
+    { key: 'q3_end', label: 'End of Q3', date: new Date(year, 8, 30), short: 'Q3 Close', imageryHints: ['early fall vibe'], defaultCTA: 'Quarter-End Offers' },
+    // Back-to-school “range”: if we’re between Aug 1–Sep 10, keep it sticky/active with a near “now” date
+    ...(new Array(0)), // placeholder for readability
+  ];
+}
+
+function nearestOccasion(now = new Date()): Occasion {
+  const year = now.getFullYear();
+  const list = [...getOccasionsForYear(year), ...getOccasionsForYear(year + 1)];
+  // Make Back-to-School sticky if within window
+  const btsStart = new Date(year, 7, 1);
+  const btsEnd = new Date(year, 8, 10);
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+
+  const withinBTS = today >= btsStart && today <= btsEnd;
+  const augmented = withinBTS
+    ? [{ key: 'back_to_school', label: 'Back to School', date: today, short: 'Back to School', imageryHints: ['notebook textures', 'chalk accents'], defaultCTA: 'Get Ready' }, ...list]
+    : list;
+
+  // Pick the earliest on/after today
+  const upcoming = augmented
+    .filter(o => o.date >= today)
+    .sort((a, b) => a.date.getTime() - b.date.getTime());
+
+  return upcoming[0] || augmented[0];
+}
+
+/* ---------- Context builders ---------- */
+
+function truncate(s: string, n = 180) {
+  if (!s) return '';
+  const t = String(s).replace(/\s+/g, ' ').trim();
+  return t.length > n ? t.slice(0, n - 1) + '…' : t;
+}
+
+function buildUserContext(opts: {
+  occasion: Occasion;
+  brandName: string;
+  brandDesc?: string;
+  emailType: EmailType | null;
+  tone: Tone;
+}) {
+  const { occasion, brandName, brandDesc, emailType, tone } = opts;
+  const goalsByType: Record<string, string> = {
+    Promotion: 'announce a timely offer and drive immediate clicks',
+    Productgrid: 'showcase a tight selection of best-fit products',
+    Newsletter: 'share timely updates with light merchandising',
+  };
+  const goal = goalsByType[emailType || 'Promotion'] || goalsByType.Promotion;
+  const desc = brandDesc ? ` ${truncate(brandDesc, 220)}` : '';
+
+  // small variety
+  const openers = [
+    `Plan a ${occasion.label} campaign for ${brandName}.`,
+    `Create a ${occasion.short || occasion.label} email for ${brandName}.`,
+    `Draft a ${occasion.label.toLowerCase()} themed email for ${brandName}.`,
+  ];
+  const opener = openers[Math.floor(Math.random() * openers.length)];
+
+  return `${opener}${desc ? ` Brand snapshot:${desc}` : ''} Goal: ${goal}. Include: 1) punchy hook tied to ${occasion.short || occasion.label}, 2) concise value props, 3) ${occasion.defaultCTA || 'Shop Now'} CTA. Keep tone ${tone}. Keep copy skimmable (short sentences, scannable subheads).`;
+}
+
+function buildImageContext(opts: {
+  occasion: Occasion;
+  brandName: string;
+  design: DesignAesthetic;
+  brandPrimary?: string;
+  brandLink?: string;
+}) {
+  const { occasion, brandName, design, brandPrimary, brandLink } = opts;
+  const palette = [brandPrimary, brandLink].filter(Boolean).join(' & ');
+  const hints = occasion.imageryHints?.slice(0, 2).join(', ');
+  const style = String(design).replace(/_/g, ' ');
+
+  return `Hero image for ${brandName} — ${occasion.short || occasion.label} theme. Style: ${style}. Visual hints: ${hints || 'seasonal accents'}. Clean composition, product-agnostic, no text, brand-aligned accents${palette ? ` (${palette})` : ''}. Portrait orientation.`;
+}
+
+/* ----------------- Component ----------------- */
+
 export const Step2EmailType: React.FC<Step2EmailTypeProps> = ({
   formData,
   updateFormData,
@@ -100,6 +264,17 @@ export const Step2EmailType: React.FC<Step2EmailTypeProps> = ({
   // From Step 1 brand payload
   const scrapedPrimary = formData?.brandData?.brandData?.primary_color || '';
   const scrapedSecondary = formData?.brandData?.brandData?.link_color || '';
+  const brandName =
+    formData?.brandData?.brandData?.name ||
+    formData?.brandData?.name ||
+    normalizeDomain(formData.domain || 'your brand');
+  const brandDesc =
+    formData?.brandData?.brandData?.description ||
+    formData?.brandData?.description ||
+    formData?.brandData?.brandData?.tagline ||
+    '';
+  const brandPrimary = scrapedPrimary || formData?.brandData?.primary_color;
+  const brandLink = scrapedSecondary || formData?.brandData?.link_color;
 
   const handleColorsChange = (colors: { primary_color: string; link_color: string }) => {
     const existing = formData.brandData || {};
@@ -144,6 +319,36 @@ export const Step2EmailType: React.FC<Step2EmailTypeProps> = ({
       }
     })();
   }, [formData.domain]);
+
+  /* ---------- Auto-suggest contexts on entry ---------- */
+  const generateContexts = React.useCallback(() => {
+    const occ = nearestOccasion(new Date());
+    const uc = buildUserContext({
+      occasion: occ,
+      brandName,
+      brandDesc,
+      emailType: selectedEmailType,
+      tone,
+    });
+    const ic = buildImageContext({
+      occasion: occ,
+      brandName,
+      design: designAesthetic,
+      brandPrimary,
+      brandLink,
+    });
+    return { uc, ic, occ };
+  }, [brandName, brandDesc, selectedEmailType, tone, designAesthetic, brandPrimary, brandLink]);
+
+  useEffect(() => {
+    // Prefill only if empty so we never overwrite user text when returning to Step 2
+    if (!userContext?.trim() || !imageContext?.trim()) {
+      const { uc, ic } = generateContexts();
+      if (!userContext?.trim()) setUserContext(uc);
+      if (!imageContext?.trim()) setImageContext(ic);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // run once on mount
 
   const handleAddProduct = () => {
     if (!newProductName.trim() || !newProductUrl.trim()) return;
@@ -404,7 +609,22 @@ export const Step2EmailType: React.FC<Step2EmailTypeProps> = ({
       {/* Image Context only when using custom hero */}
       {useCustomHero && (
         <motion.div className="space-y-2" variants={fadeInUp}>
-          <label className="text-lg font-medium text-foreground">Image Context</label>
+          <div className="flex items-center justify-between">
+            <label className="text-lg font-medium text-foreground">Image Context</label>
+            <div className="flex gap-2">
+              <GradientButton
+                variant="white-outline"
+                onClick={() => {
+                  const { ic } = generateContexts();
+                  setImageContext(ic);
+                }}
+                className="!bg-background !text-foreground !border !border-border hover:!bg-muted px-3 py-1.5 text-sm"
+                title="Regenerate Image Context"
+              >
+                <Sparkles className="w-4 h-4 mr-1.5" /> Regenerate
+              </GradientButton>
+            </div>
+          </div>
           <textarea
             placeholder="Describe the type of imagery..."
             value={imageContext}
@@ -417,7 +637,22 @@ export const Step2EmailType: React.FC<Step2EmailTypeProps> = ({
 
       {/* User Context */}
       <motion.div className="space-y-2" variants={fadeInUp}>
-        <label className="text-lg font-medium text-foreground">User Context</label>
+        <div className="flex items-center justify-between">
+          <label className="text-lg font-medium text-foreground">User Context</label>
+          <div className="flex gap-2">
+            <GradientButton
+              variant="white-outline"
+              onClick={() => {
+                const { uc } = generateContexts();
+                setUserContext(uc);
+              }}
+              className="!bg-background !text-foreground !border !border-border hover:!bg-muted px-3 py-1.5 text-sm"
+              title="Regenerate User Context"
+            >
+              <RotateCcw className="w-4 h-4 mr-1.5" /> Regenerate
+            </GradientButton>
+          </div>
+        </div>
         <textarea
           placeholder="Tell us abut what you want to convey"
           value={userContext}
