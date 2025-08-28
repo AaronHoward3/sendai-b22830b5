@@ -69,7 +69,7 @@ function normalizeDomain(input: string) {
   return String(input || '').trim().toLowerCase().replace(/^https?:\/\//, '').replace(/\/.*$/, '');
 }
 
-/* ---------- Occasion helpers (US + retail/corporate) ---------- */
+/* ---------- Occasion helpers (US holidays only) ---------- */
 
 function nthWeekdayOfMonth(year: number, monthIdx: number, weekday: number, n: number) {
   const d = new Date(year, monthIdx, 1);
@@ -116,24 +116,22 @@ function getOccasionsForYear(year: number): Occasion[] {
   const fathers = nthWeekdayOfMonth(year, 5, 0, 3);       // Jun, Sun (3rd)
 
   return [
-    { key: 'new_year',      label: 'New Year',          date: new Date(year, 0, 1),  short: 'New Year',      defaultCTA: 'Shop Now' },
-    { key: 'mlk',           label: 'MLK Day',           date: mlk,                   short: 'MLK Day',       defaultCTA: 'Learn More' },
-    { key: 'valentines',    label: 'Valentine’s Day',   date: new Date(year, 1, 14), short: 'Valentine’s',   defaultCTA: 'Find a Gift' },
+    { key: 'new_year',      label: 'New Year',          date: new Date(year, 0, 1),  short: 'New Year',        defaultCTA: 'Shop Now' },
+    { key: 'mlk',           label: 'MLK Day',           date: mlk,                   short: 'MLK Day',         defaultCTA: 'Learn More' },
+    { key: 'valentines',    label: 'Valentine’s Day',   date: new Date(year, 1, 14), short: 'Valentine’s',     defaultCTA: 'Find a Gift' },
     { key: 'presidents',    label: 'Presidents’ Day',   date: presidents,            short: 'Presidents’ Day', defaultCTA: 'Save Today' },
-    { key: 'stpats',        label: 'St. Patrick’s Day', date: new Date(year, 2, 17), short: 'St. Patrick’s', defaultCTA: 'Shop Now' },
-    { key: 'easter',        label: 'Easter',            date: easter,                 short: 'Easter',        defaultCTA: 'Celebrate' },
-    { key: 'mothers',       label: 'Mother’s Day',      date: mothers,                short: 'Mother’s Day',  defaultCTA: 'Shop Gifts' },
-    { key: 'memorial',      label: 'Memorial Day',      date: memorialDay,            short: 'Memorial Day',  defaultCTA: 'Shop Deals' },
-    { key: 'fathers',       label: 'Father’s Day',      date: fathers,                short: 'Father’s Day',  defaultCTA: 'Shop Gifts' },
-    { key: 'independence',  label: 'Independence Day',  date: new Date(year, 6, 4),   short: '4th of July',   defaultCTA: 'Shop Summer' },
-    // Back-to-School treated as a “season” (Aug 1 anchor; we’ll pin to today if within window)
-    { key: 'back_to_school',label: 'Back to School',    date: new Date(year, 7, 1),   short: 'Back to School', defaultCTA: 'Get Ready' },
-    { key: 'labor',         label: 'Labor Day',         date: laborDay,               short: 'Labor Day',     defaultCTA: 'Shop Deals' },
-    { key: 'halloween',     label: 'Halloween',         date: new Date(year, 9, 31),  short: 'Halloween',     defaultCTA: 'Shop Now' },
-    { key: 'thanksgiving',  label: 'Thanksgiving',      date: thanksgiving,           short: 'Thanksgiving',  defaultCTA: 'See Picks' },
-    { key: 'black_friday',  label: 'Black Friday',      date: blackFriday,            short: 'Black Friday',  defaultCTA: 'Shop Doorbusters' },
-    { key: 'cyber_monday',  label: 'Cyber Monday',      date: cyberMonday,            short: 'Cyber Monday',  defaultCTA: 'Online Only' },
-    { key: 'christmas',     label: 'Christmas',         date: new Date(year, 11, 25), short: 'Holiday',       defaultCTA: 'Holiday Shop' },
+    { key: 'stpats',        label: 'St. Patrick’s Day', date: new Date(year, 2, 17), short: 'St. Patrick’s',   defaultCTA: 'Shop Now' },
+    { key: 'easter',        label: 'Easter',            date: easter,                short: 'Easter',          defaultCTA: 'Celebrate' },
+    { key: 'mothers',       label: 'Mother’s Day',      date: mothers,               short: 'Mother’s Day',    defaultCTA: 'Shop Gifts' },
+    { key: 'memorial',      label: 'Memorial Day',      date: memorialDay,           short: 'Memorial Day',    defaultCTA: 'Shop Deals' },
+    { key: 'fathers',       label: 'Father’s Day',      date: fathers,               short: 'Father’s Day',    defaultCTA: 'Shop Gifts' },
+    { key: 'independence',  label: 'Independence Day',  date: new Date(year, 6, 4),  short: '4th of July',     defaultCTA: 'Shop Summer' },
+    { key: 'labor',         label: 'Labor Day',         date: laborDay,              short: 'Labor Day',       defaultCTA: 'Shop Deals' },
+    { key: 'halloween',     label: 'Halloween',         date: new Date(year, 9, 31), short: 'Halloween',       defaultCTA: 'Shop Now' },
+    { key: 'thanksgiving',  label: 'Thanksgiving',      date: thanksgiving,          short: 'Thanksgiving',    defaultCTA: 'See Picks' },
+    { key: 'black_friday',  label: 'Black Friday',      date: blackFriday,           short: 'Black Friday',    defaultCTA: 'Shop Doorbusters' },
+    { key: 'cyber_monday',  label: 'Cyber Monday',      date: cyberMonday,           short: 'Cyber Monday',    defaultCTA: 'Online Only' },
+    { key: 'christmas',     label: 'Christmas',         date: new Date(year, 11, 25),short: 'Holiday',         defaultCTA: 'Holiday Shop' },
   ];
 }
 
@@ -142,17 +140,10 @@ function nearestOccasion(now = new Date()): Occasion {
   const list = [...getOccasionsForYear(year), ...getOccasionsForYear(year + 1)];
   const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
 
-  // Keep Back-to-School “sticky” Aug 1–Sep 10
-  const btsStart = new Date(year, 7, 1), btsEnd = new Date(year, 8, 10);
-  const withinBTS = today >= btsStart && today <= btsEnd;
-  const augmented = withinBTS
-    ? [{ key: 'back_to_school', label: 'Back to School', date: today, short: 'Back to School', defaultCTA: 'Get Ready' }, ...list]
-    : list;
-
-  const upcoming = augmented.filter(o => o.date >= today).sort((a, b) => a.date.getTime() - b.date.getTime());
-  return upcoming[0] || augmented[0];
+  // pure “next holiday” — no seasons, no sticky ranges
+  const upcoming = list.filter(o => o.date >= today).sort((a, b) => a.date.getTime() - b.date.getTime());
+  return upcoming[0] || list[0];
 }
-
 /* ---------- Context builders (short & calm) ---------- */
 
 function truncate(s: string, n = 120) {
