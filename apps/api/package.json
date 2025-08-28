@@ -20,6 +20,7 @@
     "cors": "^2.8.5",
     "dotenv": "^17.0.1",
     "express": "^5.1.0",
+    "express-rate-limit": "^7.4.0",
     "mjml": "^4.15.3",
     "mjml-cli": "^4.15.3",
     "mjml-core": "^4.15.3",
