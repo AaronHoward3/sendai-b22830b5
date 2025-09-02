@@ -46,7 +46,7 @@ export const Step1Domain: React.FC<{
   // NEW: upgrade modal
   const [noBrandsOpen, setNoBrandsOpen] = useState(false);
 
-  // -------- Saved brand domains (client-only; no custom API route) --------
+  // -------- Saved brand domains (client-only; user_brands only; safe alphabetical order) --------
   useEffect(() => {
     let cancelled = false;
 
@@ -56,45 +56,24 @@ export const Step1Domain: React.FC<{
         const userId = session?.user?.id;
         if (!userId) return;
 
-        async function loadFrom(table: 'brands' | 'user_brands') {
-          // Try updated_at first, then created_at, then no order
-          let rows: any[] = [];
-          let error: any = null;
+        // Read from user_brands only (brands table not present in your project)
+        // Order safely by domain to avoid 400s from missing timestamp columns
+        const { data, error } = await supabase
+          .from('user_brands')
+          .select('domain')
+          .eq('user_id', userId)
+          .order('domain', { ascending: true, nullsFirst: true })
+          .limit(100);
 
-          const base = supabase.from(table).select('domain,updated_at,created_at').eq('user_id', userId).limit(50);
+        if (error) throw error;
 
-          // 1) updated_at order
-          ({ data: rows, error } = await base.order('updated_at', { ascending: false, nullsFirst: true }));
-          if (error && /updated_at/.test(error.message || '')) {
-            // 2) created_at order
-            ({ data: rows, error } = await supabase.from(table)
-              .select('domain,created_at')
-              .eq('user_id', userId)
-              .order('created_at', { ascending: false, nullsFirst: true })
-              .limit(50));
-          }
-          if (error) {
-            // 3) no order
-            ({ data: rows, error } = await supabase.from(table)
-              .select('domain')
-              .eq('user_id', userId)
-              .limit(50));
-          }
-          if (error) throw error;
-          return (rows || []).map((r: any) => r.domain).filter(Boolean) as string[];
-        }
+        const unique = Array.from(
+          new Set((data || []).map((r: any) => String(r.domain || '').trim()))
+        ).filter(Boolean);
 
-        // Prefer `brands`, then `user_brands`
-        let domains: string[] = [];
-        try { domains = await loadFrom('brands'); } catch { /* ignore and try next */ }
-        if (!domains.length) {
-          try { domains = await loadFrom('user_brands'); } catch { /* ignore */ }
-        }
-
-        const unique = Array.from(new Set(domains.map((d) => String(d).trim()))).filter(Boolean);
         if (!cancelled) setSavedDomains(unique);
       } catch {
-        // ignore
+        // ignore; suggestions are optional
       }
     })();
 
@@ -125,7 +104,7 @@ export const Step1Domain: React.FC<{
     return Math.max(limit - used, 0);
   }
 
-  // NEW: check if this domain is already owned by the user
+  // NEW: check if this domain is already owned by the user (user_brands only)
   async function domainOwnedByUser(dom: string): Promise<boolean> {
     const target = normalizeDomain(dom);
     if (!target) return false;
@@ -141,18 +120,9 @@ export const Step1Domain: React.FC<{
       .from('user_brands')
       .select('domain')
       .eq('user_id', (await supabase.auth.getUser()).data.user?.id || '')
-      .limit(100);
-    if (Array.isArray(ub) && ub.some((r: any) => normalizeDomain(r.domain) === target)) {
-      return true;
-    }
+      .limit(200);
 
-    // 3) DB fallback: brands (some projects store ownership here too)
-    const { data: br } = await supabase
-      .from('brands')
-      .select('domain')
-      .eq('user_id', (await supabase.auth.getUser()).data.user?.id || '')
-      .limit(100);
-    if (Array.isArray(br) && br.some((r: any) => normalizeDomain(r.domain) === target)) {
+    if (Array.isArray(ub) && ub.some((r: any) => normalizeDomain(r.domain) === target)) {
       return true;
     }
 
@@ -169,7 +139,7 @@ export const Step1Domain: React.FC<{
       const alreadyOwned = await domainOwnedByUser(trimmed);
 
       if (!alreadyOwned) {
-        // ✅ pre-check brand availability to avoid 404 flows
+        // ✅ pre-check brand availability to avoid 402/409 flows late
         const available = await getAvailableBrandSlots();
         if (available <= 0) {
           setNoBrandsOpen(true);
@@ -215,9 +185,8 @@ export const Step1Domain: React.FC<{
               return;
             }
           }
-        } catch (err) {
+        } catch {
           // Non-fatal
-          console.warn('claim-brand check failed', err);
         }
       }
 
@@ -230,7 +199,7 @@ export const Step1Domain: React.FC<{
       onNext();
     } catch (error) {
       console.error('Failed to fetch brand info:', error);
-      // still move on with domain captured so the user can continue
+      // Still move on with domain captured so the user can continue
       updateFormData({ domain: trimmed });
       onNext();
     } finally {
@@ -262,7 +231,7 @@ export const Step1Domain: React.FC<{
 
   return (
     <div className="fixed inset-0 overflow-hidden z-0 bg-transparent">
-      {/* Hardcoded to blobs */}
+      {/* Background blobs */}
       <Background variant="blobs" />
 
       <div className="relative z-10 h-screen flex items-center justify-center px-4">
@@ -329,7 +298,7 @@ export const Step1Domain: React.FC<{
         </motion.div>
       </div>
 
-      {/* NEW: Upgrade modal */}
+      {/* Upgrade modal */}
       {noBrandsOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm">
           <div className="w-full max-w-md rounded-2xl bg-background border border-border shadow-xl p-6">
