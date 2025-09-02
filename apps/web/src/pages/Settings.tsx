@@ -69,7 +69,7 @@ const PLANS = [
   { key: 'GROWTH', title: 'Growth', priceLabel: '$49 / mo', blurb: 'For growing teams and higher volume.',
     priceId: import.meta.env.VITE_STRIPE_PRICE_GROWTH as string | undefined,
     bullets: ['120 emails', '25 images', '300 revisions', '5 brands'],
-    quotas: { emails: 300/2, images: 25, revisions: 300, brands: 5 } }, // keep your original numbers if different
+    quotas: { emails: 300/2, images: 25, revisions: 300, brands: 5 } },
   { key: 'SCALE', title: 'Scale', priceLabel: '$99 / mo', blurb: 'For scale and frequent iterations.',
     priceId: import.meta.env.VITE_STRIPE_PRICE_SCALE as string | undefined,
     bullets: ['300 emails', '75 images', '900 revisions', '15 brands'],
@@ -127,9 +127,9 @@ const Bar: React.FC<{ label: string; remaining: number; total: number; className
 const Settings: React.FC = () => {
   const { user } = useSupabaseAuth();
   const { toast } = useToast();
-  const { theme, setTheme } = useTheme(); // from your ThemeProvider
+  const { theme, setTheme } = useTheme();
 
-  // Theme local state (mirrors context + <html class="dark">)
+  // Theme local state
   const [isDark, setIsDark] = useState<boolean>(() => {
     if (typeof window === 'undefined') return false;
     const stored = localStorage.getItem('theme');
@@ -139,12 +139,19 @@ const Settings: React.FC = () => {
   });
   useEffect(() => {
     const next = isDark ? 'dark' : 'light';
-    // Update provider if present
     try { setTheme?.(next as any); } catch {}
-    // Always update DOM + persist
     document.documentElement.classList.toggle('dark', isDark);
     localStorage.setItem('theme', next);
   }, [isDark, setTheme]);
+
+  // Image preview modal state
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  useEffect(() => {
+    if (!previewUrl) return;
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setPreviewUrl(null); };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [previewUrl]);
 
   // Profile
   const [name, setName] = useState('');
@@ -170,7 +177,6 @@ const Settings: React.FC = () => {
 
   // Plan picker modal
   const [showPlanModal, setShowPlanModal] = useState(false);
-
 
   // Auto-open plan modal when arriving with ?plan=1
   const location = useLocation();
@@ -249,7 +255,7 @@ const Settings: React.FC = () => {
     else toast({ title: 'Checkout error', description: json?.error || 'Unable to start checkout', variant: 'destructive' });
   };
 
-  // --- Brands list + colors ---
+  // --- Brands list + colors + images ---
   useEffect(() => {
     if (!user) return;
     (async () => {
@@ -316,7 +322,6 @@ const Settings: React.FC = () => {
       setUsedBrands(prev => prev.map(b => (b.domain === domain ? { ...b, primary_color: color1, link_color: color2 } : b)));
       closeBrandModal();
     } catch (e: any) {
-      // eslint-disable-next-line no-console
       console.error(e);
     }
   };
@@ -456,24 +461,34 @@ const Settings: React.FC = () => {
                                 {imgs.length === 0 ? (
                                   <div className="text-xs italic text-muted-foreground">None yet — generate or reuse a hero image to save it here.</div>
                                 ) : (
-                                  /* --- SCROLLABLE STRIP OF IMAGE BOXES (no URLs shown) --- */
-                                  <div className="relative -mx-2">
-                                    <div className="overflow-x-auto px-2">
-                                      <div className="flex gap-3 pb-1">
+                                  /* --- VERTICAL SCROLL: 2-column grid of image boxes (no URLs shown) --- */
+                                  <div className="relative -mx-1">
+                                    <div className="max-h-56 overflow-y-auto px-1">
+                                      <div className="grid grid-cols-2 gap-3">
                                         {imgs.map((img) => (
                                           <div
                                             key={img.id}
-                                            className="relative shrink-0 w-40 aspect-[4/3] overflow-hidden rounded-lg border border-border"
+                                            className="relative overflow-hidden rounded-lg border border-border"
                                           >
-                                            <img
-                                              src={img.public_url}
-                                              alt="Saved"
-                                              className="h-full w-full object-cover"
-                                              onError={(e) => { (e.currentTarget as HTMLImageElement).style.visibility = 'hidden'; }}
-                                            />
                                             <button
                                               type="button"
-                                              onClick={() => copy(img.public_url)}
+                                              onClick={() => setPreviewUrl(img.public_url)}
+                                              className="block w-full focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                                            >
+                                              <div className="aspect-[4/3] w-full">
+                                                <img
+                                                  src={img.public_url}
+                                                  alt="Saved"
+                                                  className="h-full w-full object-cover"
+                                                  onError={(e) => { (e.currentTarget as HTMLImageElement).style.visibility = 'hidden'; }}
+                                                />
+                                              </div>
+                                            </button>
+
+                                            {/* Copy button (doesn't trigger preview) */}
+                                            <button
+                                              type="button"
+                                              onClick={(e) => { e.stopPropagation(); copy(img.public_url); }}
                                               aria-label="Copy image URL"
                                               className="absolute right-1 top-1 inline-flex h-7 w-7 items-center justify-center rounded-md border border-border bg-background/80 backdrop-blur text-foreground hover:bg-muted"
                                             >
@@ -588,6 +603,43 @@ const Settings: React.FC = () => {
               </div>
             </CardContent>
           </Card>
+        </div>
+      )}
+
+      {/* Image Preview Modal */}
+      {previewUrl && (
+        <div
+          className="fixed inset-0 z-[60] flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm"
+          role="dialog"
+          aria-modal="true"
+          onClick={() => setPreviewUrl(null)}
+        >
+          <div
+            className="relative w-full max-w-5xl max-h-[90vh]"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <img
+              src={previewUrl}
+              alt="Preview"
+              className="w-full max-h-[90vh] object-contain rounded-xl border border-border"
+            />
+            <button
+              type="button"
+              onClick={() => setPreviewUrl(null)}
+              aria-label="Close"
+              className="absolute right-2 top-2 inline-flex h-9 w-9 items-center justify-center rounded-md border border-border bg-background/90 text-foreground hover:bg-muted"
+            >
+              <X className="h-5 w-5" />
+            </button>
+            <button
+              type="button"
+              onClick={() => copy(previewUrl)}
+              aria-label="Copy image URL"
+              className="absolute right-2 bottom-2 inline-flex h-9 w-9 items-center justify-center rounded-md border border-border bg-background/90 text-foreground hover:bg-muted"
+            >
+              <Copy className="h-5 w-5" />
+            </button>
+          </div>
         </div>
       )}
     </>
