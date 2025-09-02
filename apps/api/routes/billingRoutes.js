@@ -8,9 +8,23 @@ import {
 
 const router = Router();
 
-// Authenticated billing endpoints
-router.post("/checkout", requireAuth, createCheckoutSession);
-router.post("/portal", requireAuth, createPortalSession);
+// Copies query params into req.body so controllers keep the same shape
+function normalizeBodyFromQuery(req, _res, next) {
+  if (!req.body || typeof req.body !== "object") req.body = {};
+  for (const [k, v] of Object.entries(req.query || {})) {
+    if (req.body[k] === undefined) req.body[k] = v;
+  }
+  next();
+}
 
-// Export DEFAULT so `import billingRoutes from ...` works
+// --- Checkout ---
+router.post("/checkout", requireAuth, createCheckoutSession);
+// Optional GET shim (lets you hit /api/billing/checkout?planId=...)
+router.get("/checkout", requireAuth, normalizeBodyFromQuery, createCheckoutSession);
+
+// --- Customer Portal ---
+router.post("/portal", requireAuth, createPortalSession);
+// Optional GET shim
+router.get("/portal", requireAuth, normalizeBodyFromQuery, createPortalSession);
+
 export default router;

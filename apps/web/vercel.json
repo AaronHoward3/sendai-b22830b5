@@ -1,7 +1,7 @@
 {
   "version": 2,
   "rewrites": [
-    { "source": "/api/(.*)", "destination": "https://iriosa-i-api.onrender.com/api/$1" },
-    { "source": "/(.*)", "destination": "/" }
+    { "source": "/api/:path*", "destination": "https://iriosa-i-api.onrender.com/api/:path*" },
+    { "source": "/:path*", "destination": "/" }
   ]
 }
