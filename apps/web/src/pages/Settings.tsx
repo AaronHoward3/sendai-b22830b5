@@ -456,23 +456,33 @@ const Settings: React.FC = () => {
                                 {imgs.length === 0 ? (
                                   <div className="text-xs italic text-muted-foreground">None yet — generate or reuse a hero image to save it here.</div>
                                 ) : (
-                                  <div className="grid grid-cols-2 gap-3">
-                                    {imgs.slice(0, 4).map((img) => (
-                                      <div key={img.id} className="rounded-lg border border-border p-2">
-                                        <img
-                                          src={img.public_url}
-                                          alt="Saved"
-                                          className="h-24 w-full rounded object-cover"
-                                          onError={(e) => { (e.currentTarget as HTMLImageElement).style.visibility = 'hidden'; }}
-                                        />
-                                        <div className="mt-2 break-all text-[11px] text-muted-foreground">{img.public_url}</div>
-                                        <div className="mt-1 flex justify-end">
-                                          <Button size="sm" variant="outline" className="h-7 px-2" onClick={() => copy(img.public_url)}>
-                                            <Copy className="mr-1 h-3.5 w-3.5" /> Copy URL
-                                          </Button>
-                                        </div>
+                                  /* --- SCROLLABLE STRIP OF IMAGE BOXES (no URLs shown) --- */
+                                  <div className="relative -mx-2">
+                                    <div className="overflow-x-auto px-2">
+                                      <div className="flex gap-3 pb-1">
+                                        {imgs.map((img) => (
+                                          <div
+                                            key={img.id}
+                                            className="relative shrink-0 w-40 aspect-[4/3] overflow-hidden rounded-lg border border-border"
+                                          >
+                                            <img
+                                              src={img.public_url}
+                                              alt="Saved"
+                                              className="h-full w-full object-cover"
+                                              onError={(e) => { (e.currentTarget as HTMLImageElement).style.visibility = 'hidden'; }}
+                                            />
+                                            <button
+                                              type="button"
+                                              onClick={() => copy(img.public_url)}
+                                              aria-label="Copy image URL"
+                                              className="absolute right-1 top-1 inline-flex h-7 w-7 items-center justify-center rounded-md border border-border bg-background/80 backdrop-blur text-foreground hover:bg-muted"
+                                            >
+                                              <Copy className="h-3.5 w-3.5" />
+                                            </button>
+                                          </div>
+                                        ))}
                                       </div>
-                                    ))}
+                                    </div>
                                   </div>
                                 )}
                               </div>
