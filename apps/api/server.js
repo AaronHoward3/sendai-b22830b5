@@ -53,14 +53,21 @@ app.use(express.json());
 app.use("/api/brand", brandRoutes);
 app.use("/api/products", productRoutes);
 app.use("/api/generate", requireAuth, generateRoutes);
-app.use("/api", billingRoutes);
+
+// ✅ FIX: mount billing under /api/billing so /api/billing/checkout exists
+app.use("/api/billing", billingRoutes);
+
 app.use("/api", creditsRoutes);
 app.use("/api", imagesRoutes);
 app.use("/api/admin", requireAuth, requireAdminUser, adminRoutes);
 
 // --------- Health checks (both direct and /api/*) ----------
-app.get(["/healthz", "/api/healthz"], (_req, res) => res.type("text").send("ok"));
-app.head(["/healthz", "/api/healthz"], (_req, res) => res.status(200).end());
+app.get(["/health", "/healthz", "/api/health", "/api/healthz"], (_req, res) =>
+  res.type("text").send("ok")
+);
+app.head(["/health", "/healthz", "/api/health", "/api/healthz"], (_req, res) =>
+  res.status(200).end()
+);
 
 // --------- Startup logs ----------
 console.log("🔐 API Keys / Config:");
