@@ -7,14 +7,6 @@ import { supabase } from '@/lib/supabaseClient';
 import Background from '../Background';
 import { apiPath } from '@/lib/api';
 
-const API_ROOT = '/api';
-
-interface Step1DomainProps {
-  formData: FormData;
-  updateFormData: (updates: Partial<FormData>) => void;
-  onNext: () => void;
-}
-
 // Normalize domains to a comparable canonical form
 function normalizeDomain(dom: string): string {
   let d = String(dom || '').trim().toLowerCase();
@@ -26,11 +18,11 @@ function normalizeDomain(dom: string): string {
   return d;
 }
 
-export const Step1Domain: React.FC<Step1DomainProps> = ({
-  formData,
-  updateFormData,
-  onNext,
-}) => {
+export const Step1Domain: React.FC<{
+  formData: FormData;
+  updateFormData: (updates: Partial<FormData>) => void;
+  onNext: () => void;
+}> = ({ formData, updateFormData, onNext }) => {
   const { theme } = useTheme();
   const isDark = theme === 'dark';
 
@@ -54,7 +46,7 @@ export const Step1Domain: React.FC<Step1DomainProps> = ({
   // NEW: upgrade modal
   const [noBrandsOpen, setNoBrandsOpen] = useState(false);
 
-  // fetch saved domains (brands the user has saved)
+  // -------- Saved brand domains (client-only; no custom API route) --------
   useEffect(() => {
     let cancelled = false;
 
@@ -64,47 +56,41 @@ export const Step1Domain: React.FC<Step1DomainProps> = ({
         const userId = session?.user?.id;
         if (!userId) return;
 
-        const tryBrands = async () => {
-          const { data, error } = await supabase
-            .from('brands')
-            .select('domain')
-            .eq('user_id', userId)
-            .order('updated_at', { ascending: false })
-            .limit(50);
-          if (error) throw error;
-          return (data || []).map((r: any) => r.domain).filter(Boolean) as string[];
-        };
+        async function loadFrom(table: 'brands' | 'user_brands') {
+          // Try updated_at first, then created_at, then no order
+          let rows: any[] = [];
+          let error: any = null;
 
-        const tryUserBrands = async () => {
-          const { data, error } = await supabase
-            .from('user_brands')
-            .select('domain')
-            .eq('user_id', userId)
-            .order('updated_at', { ascending: false })
-            .limit(50);
-          if (error) throw error;
-          return (data || []).map((r: any) => r.domain).filter(Boolean) as string[];
-        };
+          const base = supabase.from(table).select('domain,updated_at,created_at').eq('user_id', userId).limit(50);
 
-        let domains: string[] = [];
-        try { domains = await tryBrands(); } catch { 
-          try { domains = await tryUserBrands(); } catch { domains = []; } 
-        }
-
-        if (!domains.length) {
-          try {
-            const res = await fetch(apiPath('brands/list'), { headers: { 'Accept': 'application/json' } });
-            if (res.ok) {
-              const json = await res.json();
-              const apiDomains = (json?.brands || []).map((b: any) => b.domain).filter(Boolean);
-              domains = apiDomains;
-            }
-          } catch {
-            // ignore
+          // 1) updated_at order
+          ({ data: rows, error } = await base.order('updated_at', { ascending: false, nullsFirst: true }));
+          if (error && /updated_at/.test(error.message || '')) {
+            // 2) created_at order
+            ({ data: rows, error } = await supabase.from(table)
+              .select('domain,created_at')
+              .eq('user_id', userId)
+              .order('created_at', { ascending: false, nullsFirst: true })
+              .limit(50));
           }
+          if (error) {
+            // 3) no order
+            ({ data: rows, error } = await supabase.from(table)
+              .select('domain')
+              .eq('user_id', userId)
+              .limit(50));
+          }
+          if (error) throw error;
+          return (rows || []).map((r: any) => r.domain).filter(Boolean) as string[];
         }
 
-        // Keep raw domains; we'll normalize when comparing
+        // Prefer `brands`, then `user_brands`
+        let domains: string[] = [];
+        try { domains = await loadFrom('brands'); } catch { /* ignore and try next */ }
+        if (!domains.length) {
+          try { domains = await loadFrom('user_brands'); } catch { /* ignore */ }
+        }
+
         const unique = Array.from(new Set(domains.map((d) => String(d).trim()))).filter(Boolean);
         if (!cancelled) setSavedDomains(unique);
       } catch {
@@ -191,7 +177,7 @@ export const Step1Domain: React.FC<Step1DomainProps> = ({
         }
       }
 
-      // brand info
+      // brand info (singular route)
       const brandRes = await fetch(apiPath('brand/check'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -201,7 +187,7 @@ export const Step1Domain: React.FC<Step1DomainProps> = ({
       const brandData = await brandRes.json();
 
       // product scrape
-      const productRes = await fetch(`${API_ROOT}/products/scrape`, {
+      const productRes = await fetch(apiPath('products/scrape'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ domain: trimmed }),
@@ -215,7 +201,7 @@ export const Step1Domain: React.FC<Step1DomainProps> = ({
           const { data: { session } } = await supabase.auth.getSession();
           const token = session?.access_token;
           if (token) {
-            const claimRes = await fetch(`${API_ROOT}/credits/claim-brand`, {
+            const claimRes = await fetch(apiPath('credits/claim-brand'), {
               method: 'POST',
               headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
               body: JSON.stringify({ domain: trimmed }),
