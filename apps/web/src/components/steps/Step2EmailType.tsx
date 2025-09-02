@@ -542,6 +542,10 @@ export const Step2EmailType: React.FC<Step2EmailTypeProps> = ({
 
   const handleContinue = () => {
     if (!selectedEmailType) return;
+
+    // Safety: ensure we always carry products even if local state is momentarily empty.
+    const safeProducts = (products && products.length) ? products : scrapedProducts;
+
     updateFormData({
       emailType: selectedEmailType,
       useCustomHero,
@@ -549,7 +553,7 @@ export const Step2EmailType: React.FC<Step2EmailTypeProps> = ({
       imageContext,
       tone,
       designAesthetic,
-      products, // persist current (possibly scraped) list
+      products: safeProducts,
       ...(useCustomHero ? { savedHeroImageUrl: null as any } : {}),
       ...(!useCustomHero && selectedSavedUrl ? ({ savedHeroImageUrl: selectedSavedUrl } as any) : {}),
     });
@@ -700,13 +704,13 @@ export const Step2EmailType: React.FC<Step2EmailTypeProps> = ({
                       type="button"
                       key={img.id}
                       onClick={() => setSelectedSavedUrl(active ? null : img.public_url)}
-                      className={`relative rounded-lg border transition overflow-hidden ${active ? 'border-primary ring-2 ring-primary' : 'border-border hover:bg-muted/40'}`}
-                      title={img.public_url}
+                      className={`relative rounded-lg border transition overflow-hidden aspect-[4/3] ${active ? 'border-primary ring-2 ring-primary' : 'border-border hover:bg-muted/40'}`}
+                      aria-pressed={active}
                     >
                       <img
                         src={img.public_url}
                         alt="Saved"
-                        className="w-full h-28 object-cover"
+                        className="w-full h-full object-cover"
                         onError={(e) => { (e.currentTarget as HTMLImageElement).style.visibility = 'hidden'; }}
                       />
                       {active && (
@@ -714,24 +718,13 @@ export const Step2EmailType: React.FC<Step2EmailTypeProps> = ({
                           <Check className="w-3 h-3" /> Selected
                         </div>
                       )}
-                      <div className="text-[11px] px-2 py-1 text-muted-foreground break-all bg-background/80">
-                        {img.public_url}
-                      </div>
                     </button>
                   );
                 })}
               </div>
 
-              <div className="flex gap-2">
-                <GradientButton
-                  variant="solid"
-                  className="disabled:opacity-60"
-                  onClick={() => selectedSavedUrl && setSelectedSavedUrl(selectedSavedUrl)}
-                  disabled={!selectedSavedUrl}
-                >
-                  Use selected image
-                </GradientButton>
-                {selectedSavedUrl && (
+              {selectedSavedUrl && (
+                <div className="flex gap-2">
                   <GradientButton
                     variant="white-outline"
                     onClick={() => setSelectedSavedUrl(null)}
@@ -739,8 +732,8 @@ export const Step2EmailType: React.FC<Step2EmailTypeProps> = ({
                   >
                     Clear selection
                   </GradientButton>
-                )}
-              </div>
+                </div>
+              )}
             </>
           )}
         </motion.div>
