@@ -75,6 +75,20 @@ const PLATFORM_PATTERNS = {
     nameSelectors: ['.ProductList-title', '.grid-title'],
     priceSelectors: ['.product-price', '.ProductList-price'],
     descriptionSelectors: ['.ProductList-description']
+  },
+  nike: {
+    meta: ['nike'],
+    selectors: [
+      'a[href*="/t/"]',
+      '.product-card a',
+      '.grid-item a',
+      '[data-testid*="product"] a'
+    ],
+    productUrl: /\/t\//,
+    imageSelectors: ['.product-card img', '.grid-item img', '[data-testid*="product"] img'],
+    nameSelectors: ['.product-card__title', '.grid-item__title', 'h3', 'h2'],
+    priceSelectors: ['.product-price', '.price'],
+    descriptionSelectors: ['.product-card__subtitle', '.grid-item__subtitle']
   }
 };
 
@@ -98,6 +112,11 @@ const GENERIC_PATTERNS = {
     /\/store\//,
     /\/catalog\//,
     /\/p\//,
+    /\/t\//,  // Nike uses /t/ for products
+    /\/buy\//,
+    /\/detail[s]?\//,
+    /\/goods\//,
+    /\/merchandise\//,
     /\.html$/
   ],
   imageSelectors: [
@@ -148,7 +167,7 @@ export async function scrapeProductsFromDomain(domain) {
     const $ = cheerio.load(html);
 
     // Step 1: Detect platform
-    const platform = detectPlatform($);
+    const platform = detectPlatform($, domain);
     console.log(`🎯 Detected platform: ${platform || 'Generic'}`);
 
     let products = [];
@@ -188,7 +207,7 @@ export async function scrapeProductsFromDomain(domain) {
   }
 }
 
-function detectPlatform($) {
+function detectPlatform($, domain) {
   const generatorMeta = $('meta[name="generator"]').attr("content") || "";
   const poweredBy = $('meta[name="powered-by"]').attr("content") || "";
   const allMeta = (generatorMeta + " " + poweredBy).toLowerCase();
@@ -213,6 +232,7 @@ function detectPlatform($) {
   if (allContent.includes('magento')) return 'magento';
   if (allContent.includes('bigcommerce')) return 'bigcommerce';
   if (allContent.includes('squarespace')) return 'squarespace';
+  if (allContent.includes('nike') || domain.includes('nike.com')) return 'nike';
   
   return null;
 }
@@ -228,11 +248,13 @@ function extractStructuredData($, domain) {
       
       for (const item of items) {
         if (item['@type'] === 'Product') {
-          products.push(processStructuredProduct(item, domain));
+          const product = processStructuredProduct(item, domain);
+          if (product) products.push(product);
         } else if (item['@graph']) {
           for (const graphItem of item['@graph']) {
             if (graphItem['@type'] === 'Product') {
-              products.push(processStructuredProduct(graphItem, domain));
+              const product = processStructuredProduct(graphItem, domain);
+              if (product) products.push(product);
             }
           }
         }
@@ -254,7 +276,7 @@ function extractStructuredData($, domain) {
     const description = $product.find('[itemprop="description"]').text().trim();
     const price = $product.find('[itemprop="price"]').text().trim();
     
-    if (name && url && image) {
+    if (name && url && image && isValidProductName(name) && !isIgnoredUrl(url)) {
       products.push({
         name,
         url,
@@ -270,9 +292,17 @@ function extractStructuredData($, domain) {
 }
 
 function processStructuredProduct(item, domain) {
+  const name = item.name;
+  const url = absolute(item.url, domain);
+  
+  // Validate product before processing
+  if (!name || !url || !isValidProductName(name) || isIgnoredUrl(url)) {
+    return null;
+  }
+  
   return {
-    name: item.name,
-    url: absolute(item.url, domain),
+    name,
+    url,
     image_url: absolute(getImageFromStructured(item.image), domain),
     description: item.description || '',
     price: item.offers ? (item.offers.price || item.offers[0]?.price) : '',
@@ -307,7 +337,7 @@ function extractProductsPlatformSpecific($, domain, platform) {
       const description = extractDescription($parent, config.descriptionSelectors);
       const price = extractPrice($parent, config.priceSelectors);
       
-      if (name && image && name.length > 2) {
+      if (name && image && isValidProductName(name) && !isIgnoredUrl(url)) {
         products.push({
           name,
           url,
@@ -342,7 +372,7 @@ function extractProductsGeneric($, domain) {
       const description = extractDescription($parent, ['.description', '.excerpt', 'p']);
       const price = extractPrice($parent, GENERIC_PATTERNS.priceSelectors);
       
-      if (name && image && name.length > 2) {
+      if (name && image && isValidProductName(name) && !isIgnoredUrl(url)) {
         products.push({
           name,
           url,
@@ -373,7 +403,7 @@ function extractLinksWithImages($, domain) {
     const image = extractBestImage($el, ['img'], domain);
     const description = $('meta[property="og:description"]').attr("content") || "";
     
-    if (url && image && name && name.length > 2 && !isIgnoredUrl(url)) {
+    if (url && image && name && isValidProductName(name) && !isIgnoredUrl(url)) {
       products.push({
         name,
         url,
@@ -467,10 +497,68 @@ function isGenericProductUrl(url) {
 
 function isIgnoredUrl(url) {
   const ignored = [
-    '/cart', '/checkout', '/account', '/login', '/register',
-    '/search', '/contact', '/about', '/blog', '/news',
-    '/privacy', '/terms', '/shipping', '/returns',
-    'mailto:', 'tel:', '#', 'javascript:'
+    // E-commerce navigation
+    '/cart', '/checkout', '/account', '/login', '/register', '/signup',
+    '/search', '/contact', '/about', '/blog', '/news', '/faq',
+    
+    // Legal/Policy pages
+    '/privacy', '/terms', '/shipping', '/returns', '/policy',
+    '/do-not-share', '/settings', '/preferences', '/cookies',
+    
+    // Common non-product pages
+    '/help', '/support', '/customer-service', '/size-guide',
+    '/store-locator', '/careers', '/investors', '/press',
+    
+    // Social/External
+    'mailto:', 'tel:', '#', 'javascript:', 'facebook.com', 'instagram.com',
+    'twitter.com', 'youtube.com', 'tiktok.com',
+    
+    // File types
+    '.pdf', '.doc', '.zip', '.mp4', '.mp3'
   ];
-  return ignored.some(pattern => url.toLowerCase().includes(pattern));
+  
+  const lowerUrl = url.toLowerCase();
+  return ignored.some(pattern => lowerUrl.includes(pattern));
+}
+
+function isValidProductName(name) {
+  if (!name || name.length < 3) return false;
+  
+  // Filter out common non-product text
+  const invalidNames = [
+    // Navigation/UI elements
+    'menu', 'search', 'cart', 'account', 'login', 'register',
+    'home', 'back', 'next', 'previous', 'close', 'open',
+    
+    // Legal/Policy text
+    'privacy', 'terms', 'policy', 'cookies', 'settings',
+    'your privacy choices', 'do not share', 'preferences',
+    
+    // Common UI text
+    'learn more', 'read more', 'view all', 'see all',
+    'sign up', 'subscribe', 'newsletter', 'follow us',
+    
+    // Empty or generic
+    'image', 'photo', 'picture', 'logo', 'icon',
+    'loading', 'placeholder', 'default'
+  ];
+  
+  const lowerName = name.toLowerCase().trim();
+  
+  // Check for exact matches or if name is mostly these words
+  if (invalidNames.some(invalid => 
+    lowerName === invalid || 
+    lowerName.includes(invalid) && lowerName.length < invalid.length + 10
+  )) {
+    return false;
+  }
+  
+  // Check for names that are mostly numbers or special characters
+  if (/^[\d\s\-_.,]+$/.test(lowerName)) return false;
+  
+  // Check for names that are just single words that are likely UI elements
+  const singleWords = ['more', 'all', 'new', 'sale', 'hot', 'best'];
+  if (singleWords.includes(lowerName)) return false;
+  
+  return true;
 }
