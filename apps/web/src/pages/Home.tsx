@@ -4,13 +4,13 @@ import { Link } from 'react-router-dom';
 import { GradientButton } from '@/components/ui/gradient-button';
 import { ArrowRight } from 'lucide-react';
 import Navigation from '@/components/Navigation';
-import { useTheme } from '@/contexts/ThemeContext';
+import { useTheme } from '@/hooks/useTheme';
 import { motion } from 'framer-motion';
 
 export const DotBackground: React.FC = () => {
   const { theme } = useTheme();
   const isDark = theme === "dark";
-  const dots = Array.from({ length: 40 });
+  const dots = Array.from({ length: 40 }, (_, i) => ({ id: `home-dot-${i}` }));
 
   return (
     <>
@@ -18,7 +18,7 @@ export const DotBackground: React.FC = () => {
         className="absolute inset-0 z-0 overflow-hidden"
         style={{ backgroundColor: isDark ? "#0a1426" : "#eeeeeeff" }}
       >
-        {dots.map((_, i) => {
+        {dots.map((dot) => {
           const size = Math.random() * 200 + 200; // 40px to 80px
           const x = Math.random() * 100;
           const y = Math.random() * 100;
@@ -26,7 +26,7 @@ export const DotBackground: React.FC = () => {
 
           return (
             <div
-              key={i}
+              key={dot.id}
               className={`absolute rounded-full animate-dot-float ${isDark ? "mix-blend-screen" : ""}`}
               style={{
                 top: `${y}vh`,

@@ -1,12 +1,13 @@
 import React, { useMemo } from 'react';
-import { useTheme } from '@/contexts/ThemeContext';
+import { useTheme } from '@/hooks/useTheme';
 
 const DotBackground: React.FC = () => {
   const { theme } = useTheme();
   const isDark = theme === 'dark';
 
   const dots = useMemo(() => {
-    return Array.from({ length: 40 }).map(() => ({
+    return Array.from({ length: 40 }).map((_, index) => ({
+      id: `dot-${index}`,
       size: Math.random() * 200 + 200,
       x: Math.random() * 100,
       y: Math.random() * 100,
@@ -20,9 +21,9 @@ const DotBackground: React.FC = () => {
         className="fixed inset-0 z-0 overflow-hidden"
         style={{ backgroundColor: isDark ? '#070e1bff' : '#e2e2e2ff' }}
       >
-        {dots.map((dot, i) => (
+        {dots.map((dot) => (
           <div
-            key={i}
+            key={dot.id}
             className={`absolute rounded-full animate-dot-float ${
               isDark ? 'mix-blend-screen' : ''
             }`}

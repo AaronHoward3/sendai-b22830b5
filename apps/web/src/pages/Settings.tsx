@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import Navigation from '@/components/Navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -6,9 +6,9 @@ import { Button } from '@/components/ui/button';
 import { GradientButton } from '@/components/ui/gradient-button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Badge } from '@/components/ui/badge';
+
 import { Pencil, X, Check, Copy, Sun, Moon } from 'lucide-react';
-import { useTheme } from '@/contexts/ThemeContext';
+import { useTheme } from '@/hooks/useTheme';
 import { supabase } from '@/lib/supabaseClient';
 import { useSupabaseAuth } from '@/hooks/useSupabaseAuth';
 import { useToast } from '@/hooks/use-toast';
@@ -17,7 +17,7 @@ import { useToast } from '@/hooks/use-toast';
 function ThemeSwitch({
   checked,
   onChange,
-}: { checked: boolean; onChange: (next: boolean) => void }) {
+}: { readonly checked: boolean; readonly onChange: (next: boolean) => void }) {
   return (
     <button
       type="button"
@@ -127,7 +127,7 @@ const Bar: React.FC<{ label: string; remaining: number; total: number; className
 const Settings: React.FC = () => {
   const { user } = useSupabaseAuth();
   const { toast } = useToast();
-  const { theme, setTheme } = useTheme();
+  const { setTheme } = useTheme();
 
   // Theme local state
   const [isDark, setIsDark] = useState<boolean>(() => {
@@ -139,15 +139,21 @@ const Settings: React.FC = () => {
   });
   useEffect(() => {
     const next = isDark ? 'dark' : 'light';
-    try { setTheme?.(next as any); } catch {}
+    try { setTheme?.(next); } catch { /* ignore */ }
     document.documentElement.classList.toggle('dark', isDark);
     localStorage.setItem('theme', next);
   }, [isDark, setTheme]);
 
   // Image preview modal state
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const dialogRef = useRef<HTMLDialogElement>(null);
+  
   useEffect(() => {
-    if (!previewUrl) return;
+    if (!previewUrl) {
+      dialogRef.current?.close();
+      return;
+    }
+    dialogRef.current?.showModal();
     const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setPreviewUrl(null); };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
@@ -265,7 +271,7 @@ const Settings: React.FC = () => {
         .eq('user_id', user.id)
         .order('created_at', { ascending: false });
 
-      const domains = Array.from(new Set((domainsRows || []).map((r: any) => normalizeDomain(r?.brand_domain || '')).filter(Boolean)));
+      const domains = Array.from(new Set((domainsRows || []).map((r: { brand_domain?: string }) => normalizeDomain(r?.brand_domain || '')).filter(Boolean)));
 
       if (domains.length === 0) { setUsedBrands([]); setImagesByDomain({}); return; }
 
@@ -274,7 +280,7 @@ const Settings: React.FC = () => {
         .select('domain, primary_color, link_color')
         .in('domain', domains);
 
-      const brands = (cacheRows || []).map((r: any) => ({
+      const brands = (cacheRows || []).map((r: { domain: string; primary_color?: string | null; link_color?: string | null }) => ({
         domain: r.domain,
         primary_color: r.primary_color ?? null,
         link_color: r.link_color ?? null,
@@ -292,7 +298,7 @@ const Settings: React.FC = () => {
           if (!resp.ok) continue;
           const json = await resp.json();
           imagesMap[b.domain] = json?.images || [];
-        } catch {}
+        } catch { /* ignore */ }
       }
       setImagesByDomain(imagesMap);
     })();
@@ -321,7 +327,7 @@ const Settings: React.FC = () => {
       if (!res.ok) throw new Error(json?.error || 'Failed to update brand colors');
       setUsedBrands(prev => prev.map(b => (b.domain === domain ? { ...b, primary_color: color1, link_color: color2 } : b)));
       closeBrandModal();
-    } catch (e: any) {
+    } catch (e: unknown) {
       console.error(e);
     }
   };
@@ -330,7 +336,7 @@ const Settings: React.FC = () => {
     const pid = sub?.price_id || '';
     if (pid.startsWith('manual:')) {
       const k = pid.split(':')[1]?.toUpperCase();
-      if (k === 'STARTER' || k === 'GROWTH' || k === 'SCALE') return k as any;
+      if (k === 'STARTER' || k === 'GROWTH' || k === 'SCALE') return k;
     }
     const mapped = priceToPlanKey[pid];
     if (mapped) return mapped;
@@ -343,7 +349,7 @@ const Settings: React.FC = () => {
   const totals = quotasFor(planKey);
 
   const copy = async (text: string) => {
-    try { await navigator.clipboard.writeText(text); } catch {}
+    try { await navigator.clipboard.writeText(text); } catch { /* ignore */ }
   };
 
   return (
@@ -591,7 +597,7 @@ const Settings: React.FC = () => {
                         <GradientButton
                           variant="solid"
                           disabled={disabled}
-                          onClick={() => startCheckout(p.priceId!)}
+                          onClick={() => startCheckout(p.priceId || '')}
                           className="mt-auto !bg-primary !text-primary-foreground disabled:opacity-60"
                         >
                           {disabled ? 'Set Price ID in .env' : 'Select'}
@@ -607,41 +613,46 @@ const Settings: React.FC = () => {
       )}
 
       {/* Image Preview Modal */}
-      {previewUrl && (
-        <div
-          className="fixed inset-0 z-[60] flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm"
-          role="dialog"
-          aria-modal="true"
-          onClick={() => setPreviewUrl(null)}
-        >
-          <div
-            className="relative w-full max-w-5xl max-h-[90vh]"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <img
-              src={previewUrl}
-              alt="Preview"
-              className="w-full max-h-[90vh] object-contain rounded-xl border border-border"
-            />
+      <dialog 
+        ref={dialogRef}
+        className="fixed inset-0 z-[60] bg-black/70 backdrop-blur-sm border-0 max-w-none max-h-none w-full h-full p-0"
+      >
+        {previewUrl && (
+          <>
             <button
               type="button"
+              className="absolute inset-0 w-full h-full"
               onClick={() => setPreviewUrl(null)}
-              aria-label="Close"
-              className="absolute right-2 top-2 inline-flex h-9 w-9 items-center justify-center rounded-md border border-border bg-background/90 text-foreground hover:bg-muted"
-            >
-              <X className="h-5 w-5" />
-            </button>
-            <button
-              type="button"
-              onClick={() => copy(previewUrl)}
-              aria-label="Copy image URL"
-              className="absolute right-2 bottom-2 inline-flex h-9 w-9 items-center justify-center rounded-md border border-border bg-background/90 text-foreground hover:bg-muted"
-            >
-              <Copy className="h-5 w-5" />
-            </button>
-          </div>
-        </div>
-      )}
+              aria-label="Close image preview"
+            />
+            <div className="relative z-10 flex items-center justify-center w-full h-full p-4">
+              <div className="relative w-full max-w-5xl max-h-[90vh]">
+                <img
+                  src={previewUrl}
+                  alt="Preview"
+                  className="w-full max-h-[90vh] object-contain rounded-xl border border-border"
+                />
+                <button
+                  type="button"
+                  onClick={() => setPreviewUrl(null)}
+                  aria-label="Close"
+                  className="absolute right-2 top-2 inline-flex h-9 w-9 items-center justify-center rounded-md border border-border bg-background/90 text-foreground hover:bg-muted"
+                >
+                  <X className="h-5 w-5" />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => copy(previewUrl)}
+                  aria-label="Copy image URL"
+                  className="absolute right-2 bottom-2 inline-flex h-9 w-9 items-center justify-center rounded-md border border-border bg-background/90 text-foreground hover:bg-muted"
+                >
+                  <Copy className="h-5 w-5" />
+                </button>
+              </div>
+            </div>
+          </>
+        )}
+      </dialog>
     </>
   );
 };
