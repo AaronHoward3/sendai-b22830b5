@@ -26,7 +26,7 @@ export const Step4Generation: React.FC<Step4GenerationProps> = ({
     abortRef.current = controller;
 
     // If we have a saved image URL, treat as "no custom hero generation" for progress timing.
-    const useCustomHeroEffective = !!(formData as any).useCustomHero && !(formData as any).savedHeroImageUrl;
+    const useCustomHeroEffective = !!formData.useCustomHero && !formData.savedHeroImageUrl;
 
     const stopFake = startFakeProgress({
       useCustomHero: useCustomHeroEffective,
@@ -51,15 +51,15 @@ export const Step4Generation: React.FC<Step4GenerationProps> = ({
             domain: formData.domain,
             emailType: formData.emailType,
             designAesthetic: formData.designAesthetic,
-            tone: (formData as any).tone,
+            tone: formData.tone,
             userContext: formData.userContext,
-            imageContext: (formData as any).imageContext,
+            imageContext: formData.imageContext,
             products: formData.products || [],
-            brandData: (formData as any).brandData || {},
-            customHeroImage: (formData as any).useCustomHero ?? true,
-            savedHeroImageUrl: (formData as any).savedHeroImageUrl || null, // NEW: backend uses this to inject
+            brandData: formData.brandData || {},
+            customHeroImage: formData.useCustomHero ?? true,
+            savedHeroImageUrl: formData.savedHeroImageUrl || null, // NEW: backend uses this to inject
             // kept for future compatibility if you ever resolve by id:
-            savedHeroImageId: (formData as any).savedHeroImageId || null,
+            savedHeroImageId: formData.savedHeroImageId || null,
           }),
           signal: controller.signal,
         });
@@ -78,7 +78,7 @@ export const Step4Generation: React.FC<Step4GenerationProps> = ({
         }
 
         const text = await res.text();
-        let data: any;
+        let data: { emails?: Array<{ content?: string; html?: string; subject?: string }>; subjectLine?: string };
         try {
           data = JSON.parse(text);
         } catch {
@@ -119,14 +119,14 @@ export const Step4Generation: React.FC<Step4GenerationProps> = ({
 
         setStatus("Done!");
         onNext();
-      } catch (err: any) {
-        if (err?.name === "AbortError") {
+      } catch (err: unknown) {
+        if (err instanceof Error && err.name === "AbortError") {
           didAbort = true;
           return;
         }
         stopFake();
         console.error("Generate failed:", err);
-        setStatus("Error: " + (err?.message || "unknown"));
+        setStatus("Error: " + (err instanceof Error ? err.message : "unknown"));
       }
     };
 
@@ -150,9 +150,17 @@ export const Step4Generation: React.FC<Step4GenerationProps> = ({
   );
 };
 
-function startFakeProgress({ useCustomHero, setStatus, timersRef }) {
-  const randInt = (min, max) => Math.floor(Math.random() * (max - min + 1)) + min;
-  const addTimer = (ms, fn) => {
+function startFakeProgress({ 
+  useCustomHero, 
+  setStatus, 
+  timersRef 
+}: { 
+  useCustomHero: boolean; 
+  setStatus: (status: string) => void; 
+  timersRef: { current: number[] } 
+}) {
+  const randInt = (min: number, max: number) => Math.floor(Math.random() * (max - min + 1)) + min;
+  const addTimer = (ms: number, fn: () => void) => {
     const id = window.setTimeout(fn, ms);
     timersRef.current.push(id);
     return id;

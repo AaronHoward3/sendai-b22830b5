@@ -75,7 +75,7 @@ async function getAllowances(priceId) {
 // Grant or reset credits (service role bypasses RLS)
 async function setPlanCredits(userId, allowances, reason) {
   const { data: existing } = await supabase.from('credit_balances').select('*').eq('user_id', userId).maybeSingle();
-  const row = existing ? existing : { user_id: userId };
+  const row = existing || { user_id: userId };
   row.emails_remaining = allowances.emails;
   row.images_remaining = allowances.images;
   row.revisions_remaining = allowances.revisions;
@@ -97,7 +97,7 @@ async function setPlanCredits(userId, allowances, reason) {
 async function addCredits(userId, allowances, reason) {
   await supabase.rpc('consume_my_credits', { p_emails: 0, p_images: 0, p_revisions: 0, p_reason: 'noop' }); // ensure function exists (no-op)
   const { data: existing } = await supabase.from('credit_balances').select('*').eq('user_id', userId).maybeSingle();
-  const row = existing ? existing : { user_id: userId };
+  const row = existing || { user_id: userId };
   row.emails_remaining = (row.emails_remaining || 0) + allowances.emails;
   row.images_remaining = (row.images_remaining || 0) + allowances.images;
   row.revisions_remaining = (row.revisions_remaining || 0) + allowances.revisions;
@@ -114,9 +114,90 @@ async function addCredits(userId, allowances, reason) {
   });
 }
 
+// Helper functions to handle webhook events
+async function handleCheckoutCompleted(session) {
+  const userId = session.client_reference_id;
+  const customerId = session.customer;
+  
+  // Save customer id on profile
+  await supabase.from('profiles').upsert({ 
+    user_id: userId, 
+    stripe_customer_id: customerId, 
+    updated_at: new Date().toISOString() 
+  }, { onConflict: 'user_id' });
+
+  // Get purchased price
+  const line = session.mode === 'subscription'
+    ? (session.subscription && await stripe.subscriptions.retrieve(session.subscription))
+    : (await stripe.checkout.sessions.listLineItems(session.id, { limit: 1 })).data?.[0];
+
+  let priceId;
+  if (session.mode === 'subscription') {
+    priceId = line.items?.data?.[0]?.price?.id || line.plan?.id || line.items?.data?.[0]?.plan?.id;
+  } else {
+    priceId = line?.price?.id;
+  }
+
+  if (!priceId) return;
+
+  const allowances = await getAllowances(priceId);
+
+  if (allowances.kind === 'onetime') {
+    await addCredits(userId, allowances, 'checkout.session.completed');
+  } else {
+    // store subscription row and set/reset credits immediately
+    await supabase.from('subscriptions').upsert({
+      user_id: userId,
+      stripe_customer_id: customerId,
+      stripe_subscription_id: session.subscription || null,
+      price_id: priceId,
+      status: 'active',
+      current_period_end: session.expires_at ? new Date(session.expires_at * 1000).toISOString() : null
+    });
+    await setPlanCredits(userId, allowances, 'checkout.session.completed');
+  }
+}
+
+async function handleInvoicePaid(invoice) {
+  if (!invoice.customer || !invoice.subscription) return;
+
+  const sub = await stripe.subscriptions.retrieve(invoice.subscription);
+  const item = sub.items.data[0];
+  const priceId = item?.price?.id;
+  const userId = (await stripe.customers.retrieve(invoice.customer)).metadata?.user_id;
+
+  if (!priceId || !userId) return;
+
+  const allowances = await getAllowances(priceId);
+  await supabase.from('subscriptions').upsert({
+    user_id: userId,
+    stripe_customer_id: invoice.customer,
+    stripe_subscription_id: invoice.subscription,
+    price_id: priceId,
+    status: sub.status,
+    current_period_end: new Date(sub.current_period_end * 1000).toISOString()
+  });
+  await setPlanCredits(userId, allowances, 'invoice.paid');
+}
+
+async function handleSubscriptionChange(sub) {
+  const userId = (await stripe.customers.retrieve(sub.customer)).metadata?.user_id;
+  if (!userId) return;
+  
+  await supabase.from('subscriptions').upsert({
+    user_id: userId,
+    stripe_customer_id: sub.customer,
+    stripe_subscription_id: sub.id,
+    price_id: sub.items?.data?.[0]?.price?.id || null,
+    status: sub.status,
+    current_period_end: sub.current_period_end ? new Date(sub.current_period_end * 1000).toISOString() : null
+  });
+}
+
 export async function stripeWebhook(req, res) {
   const sig = req.headers['stripe-signature'];
   let event;
+  
   try {
     event = stripe.webhooks.constructEvent(req.rawBody, sig, process.env.STRIPE_WEBHOOK_SECRET);
   } catch (err) {
@@ -127,84 +208,16 @@ export async function stripeWebhook(req, res) {
 
   try {
     switch (event.type) {
-      case 'checkout.session.completed': {
-        const session = event.data.object;
-        const userId = session.client_reference_id;
-        const customerId = session.customer;
-        // Save customer id on profile
-        await supabase.from('profiles').upsert({ user_id: userId, stripe_customer_id: customerId, updated_at: new Date().toISOString() }, { onConflict: 'user_id' });
-
-        // Get purchased price
-        const line = session.mode === 'subscription'
-          ? (session.subscription && await stripe.subscriptions.retrieve(session.subscription))
-          : (await stripe.checkout.sessions.listLineItems(session.id, { limit: 1 })).data?.[0];
-
-        let priceId;
-        if (session.mode === 'subscription') priceId = line.items?.data?.[0]?.price?.id || line.plan?.id || line.items?.data?.[0]?.plan?.id;
-        else priceId = line?.price?.id;
-
-        if (!priceId) break;
-
-        const allowances = await getAllowances(priceId);
-
-        if (allowances.kind === 'onetime') {
-          await addCredits(userId, allowances, 'checkout.session.completed');
-        } else {
-          // store subscription row and set/reset credits immediately
-          await supabase.from('subscriptions').upsert({
-            user_id: userId,
-            stripe_customer_id: customerId,
-            stripe_subscription_id: session.subscription || null,
-            price_id: priceId,
-            status: 'active',
-            current_period_end: session.expires_at ? new Date(session.expires_at * 1000).toISOString() : null
-          });
-          await setPlanCredits(userId, allowances, 'checkout.session.completed');
-        }
+      case 'checkout.session.completed':
+        await handleCheckoutCompleted(event.data.object);
         break;
-      }
-
-      case 'invoice.paid': {
-        // Recurring charge → reset monthly allowance to the plan’s amounts
-        const invoice = event.data.object;
-        if (!invoice.customer || !invoice.subscription) break;
-
-        const sub = await stripe.subscriptions.retrieve(invoice.subscription);
-        const item = sub.items.data[0];
-        const priceId = item?.price?.id;
-        const userId = (await stripe.customers.retrieve(invoice.customer)).metadata?.user_id;
-
-        if (!priceId || !userId) break;
-
-        const allowances = await getAllowances(priceId);
-        await supabase.from('subscriptions').upsert({
-          user_id: userId,
-          stripe_customer_id: invoice.customer,
-          stripe_subscription_id: invoice.subscription,
-          price_id: priceId,
-          status: sub.status,
-          current_period_end: new Date(sub.current_period_end * 1000).toISOString()
-        });
-        await setPlanCredits(userId, allowances, 'invoice.paid');
+      case 'invoice.paid':
+        await handleInvoicePaid(event.data.object);
         break;
-      }
-
       case 'customer.subscription.deleted':
-      case 'customer.subscription.updated': {
-        const sub = event.data.object;
-        const userId = (await stripe.customers.retrieve(sub.customer)).metadata?.user_id;
-        if (!userId) break;
-        await supabase.from('subscriptions').upsert({
-          user_id: userId,
-          stripe_customer_id: sub.customer,
-          stripe_subscription_id: sub.id,
-          price_id: sub.items?.data?.[0]?.price?.id || null,
-          status: sub.status,
-          current_period_end: sub.current_period_end ? new Date(sub.current_period_end * 1000).toISOString() : null
-        });
+      case 'customer.subscription.updated':
+        await handleSubscriptionChange(event.data.object);
         break;
-      }
-
       default:
         // ignore others
         break;

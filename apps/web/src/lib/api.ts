@@ -2,7 +2,7 @@
 // If you set VITE_API_BASE_URL=https://your-api-host/api (on Vercel), we'll use it.
 // Otherwise we default to '/api' so Vercel rewrites can proxy server-side.
 const BASE =
-  (import.meta as any)?.env?.VITE_API_BASE_URL?.replace(/\/$/, "") || "/api";
+  (import.meta.env?.VITE_API_BASE_URL as string)?.replace(/\/$/, "") || "/api";
 
 export function apiPath(path: string) {
   const p = path.startsWith("/") ? path : `/${path}`;

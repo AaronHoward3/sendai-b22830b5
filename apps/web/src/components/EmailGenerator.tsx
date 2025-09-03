@@ -27,6 +27,47 @@ export interface ProductLink {
   description?: string;
 }
 
+export interface BrandData {
+  name?: string;
+  primary_color?: string;
+  link_color?: string;
+  logo?: string;
+  domain?: string;
+  description?: string;
+  products?: ProductLink[];
+  scraped_products?: ProductLink[];
+  sample_products?: ProductLink[];
+  top_products?: ProductLink[];
+  catalog?: {
+    items?: ProductLink[];
+    products?: ProductLink[];
+    [key: string]: unknown;
+  };
+  brandData?: {
+    products?: ProductLink[];
+    top_products?: ProductLink[];
+    sample_products?: ProductLink[];
+    scraped_products?: ProductLink[];
+    description?: string;
+    catalog?: {
+      items?: ProductLink[];
+      products?: ProductLink[];
+      [key: string]: unknown;
+    };
+    [key: string]: unknown;
+  };
+  [key: string]: unknown; // Allow additional properties
+}
+
+export interface GeneratedEmail {
+  id?: string;
+  index?: number;
+  html?: string;
+  content?: string;
+  subject?: string;
+  timestamp?: string;
+}
+
 export interface FormData {
   domain: string;
   emailType: EmailType | null;
@@ -36,14 +77,17 @@ export interface FormData {
   tone: Tone;
   designAesthetic: DesignAesthetic; // <- keep only this
   products: ProductLink[];
-  brandData?: any;
-  generatedEmails?: any[];
+  brandData?: BrandData;
+  generatedEmails?: GeneratedEmail[];
   subjectLine?: string;
+  savedHeroImageUrl?: string | null;
+  savedHeroImageId?: string | null;
 }
 
 const EmailGenerator: React.FC = () => {
   const [searchParams] = useSearchParams();
-  const initialStep = searchParams.get('step') ? parseInt(searchParams.get('step') as string, 10) : 1;
+  const stepParam = searchParams.get('step');
+  const initialStep = stepParam ? parseInt(stepParam, 10) : 1;
 
   const [currentStep, setCurrentStep] = useState<number>(initialStep);
   const [formData, setFormData] = useState<FormData>({

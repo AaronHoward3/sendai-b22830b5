@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { motion, easeOut } from 'framer-motion';
 import type { FormData } from '../EmailGenerator';
 import { ArrowRight } from 'lucide-react';
-import { useTheme } from '@/contexts/ThemeContext';
+import { useTheme } from '@/hooks/useTheme';
 import { supabase } from '@/lib/supabaseClient';
 import Background from '../Background';
 import { apiPath } from '@/lib/api';
@@ -68,7 +68,7 @@ export const Step1Domain: React.FC<{
         if (error) throw error;
 
         const unique = Array.from(
-          new Set((data || []).map((r: any) => String(r.domain || '').trim()))
+          new Set((data || []).map((r: { domain?: string }) => String(r.domain || '').trim()))
         ).filter(Boolean);
 
         if (!cancelled) setSavedDomains(unique);
@@ -122,12 +122,74 @@ export const Step1Domain: React.FC<{
       .eq('user_id', (await supabase.auth.getUser()).data.user?.id || '')
       .limit(200);
 
-    if (Array.isArray(ub) && ub.some((r: any) => normalizeDomain(r.domain) === target)) {
+    if (Array.isArray(ub) && ub.some((r: { domain?: string }) => normalizeDomain(r.domain || '') === target)) {
       return true;
     }
 
     return false;
   }
+
+  // Helper function to check brand slot availability
+  const checkBrandSlotAvailability = async (alreadyOwned: boolean): Promise<boolean> => {
+    if (alreadyOwned) return true;
+    
+    const available = await getAvailableBrandSlots();
+    if (available <= 0) {
+      setNoBrandsOpen(true);
+      return false;
+    }
+    return true;
+  };
+
+  // Helper function to fetch brand data
+  const fetchBrandData = async (domain: string) => {
+    const brandRes = await fetch(apiPath('brand/check'), {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ domain }),
+    });
+    if (!brandRes.ok) throw new Error('Failed to fetch brand');
+    return brandRes.json();
+  };
+
+  // Helper function to fetch product data
+  const fetchProductData = async (domain: string) => {
+    const productRes = await fetch(apiPath('products/scrape'), {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ domain }),
+    });
+    if (!productRes.ok) throw new Error('Failed to fetch products');
+    return productRes.json();
+  };
+
+  // Helper function to claim brand
+  const claimBrandIfNeeded = async (domain: string, alreadyOwned: boolean): Promise<boolean> => {
+    if (alreadyOwned) return true;
+
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const token = session?.access_token;
+      if (!token) return true;
+
+      const claimRes = await fetch(apiPath('credits/claim-brand'), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ domain }),
+      });
+
+      if (claimRes.status === 402) {
+        window.location.href = '/settings?plan=1';
+        return false;
+      } else if (claimRes.status === 409) {
+        setNoBrandsOpen(true);
+        return false;
+      }
+    } catch {
+      // Non-fatal
+    }
+    return true;
+  };
 
   const handleContinue = async () => {
     const trimmed = normalizeDomain(domain);
@@ -135,62 +197,19 @@ export const Step1Domain: React.FC<{
     setIsLoading(true);
 
     try {
-      // ✅ If user already owns this domain, bypass slot check and skip claim
       const alreadyOwned = await domainOwnedByUser(trimmed);
+      
+      const canProceed = await checkBrandSlotAvailability(alreadyOwned);
+      if (!canProceed) return;
 
-      if (!alreadyOwned) {
-        // ✅ pre-check brand availability to avoid 402/409 flows late
-        const available = await getAvailableBrandSlots();
-        if (available <= 0) {
-          setNoBrandsOpen(true);
-          return;
-        }
-      }
+      const [brandData, productSuggestions] = await Promise.all([
+        fetchBrandData(trimmed),
+        fetchProductData(trimmed)
+      ]);
 
-      // brand info (singular route)
-      const brandRes = await fetch(apiPath('brand/check'), {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ domain: trimmed }),
-      });
-      if (!brandRes.ok) throw new Error('Failed to fetch brand');
-      const brandData = await brandRes.json();
+      const claimSuccessful = await claimBrandIfNeeded(trimmed, alreadyOwned);
+      if (!claimSuccessful) return;
 
-      // product scrape
-      const productRes = await fetch(apiPath('products/scrape'), {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ domain: trimmed }),
-      });
-      if (!productRes.ok) throw new Error('Failed to fetch products');
-      const productSuggestions = await productRes.json();
-
-      // claim brand (charge against limit) only if not already owned
-      if (!alreadyOwned) {
-        try {
-          const { data: { session } } = await supabase.auth.getSession();
-          const token = session?.access_token;
-          if (token) {
-            const claimRes = await fetch(apiPath('credits/claim-brand'), {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-              body: JSON.stringify({ domain: trimmed }),
-            });
-
-            if (claimRes.status === 402) {
-              window.location.href = '/settings?plan=1';
-              return;
-            } else if (claimRes.status === 409) {
-              setNoBrandsOpen(true);
-              return;
-            }
-          }
-        } catch {
-          // Non-fatal
-        }
-      }
-
-      // proceed
       updateFormData({
         domain: trimmed,
         brandData,
@@ -199,7 +218,6 @@ export const Step1Domain: React.FC<{
       onNext();
     } catch (error) {
       console.error('Failed to fetch brand info:', error);
-      // Still move on with domain captured so the user can continue
       updateFormData({ domain: trimmed });
       onNext();
     } finally {
@@ -271,26 +289,28 @@ export const Step1Domain: React.FC<{
             </div>
 
             {showSuggestions && filteredSuggestions.length > 0 && (
-              <ul
+              <div
                 className={`absolute z-20 mt-2 w-full max-h-56 overflow-auto rounded-xl border shadow-xl ${
                   isDark ? 'bg-[#111111]/95 border-white/10' : 'bg-white/95 border-black/10'
                 }`}
               >
-                {filteredSuggestions.map((s) => (
-                  <li
+                {filteredSuggestions.map((s, index) => (
+                  <button
                     key={s}
-                    className={`px-4 py-2 text-left cursor-pointer hover:bg-white/10 ${isDark ? 'text-white' : 'text-black'}`}
+                    type="button"
+                    className={`w-full px-4 py-2 text-left cursor-pointer hover:bg-white/10 ${isDark ? 'text-white' : 'text-black'}`}
                     onMouseDown={(e) => {
                       e.preventDefault();
                       setDomain(s);
                       setShowSuggestions(false);
                       handleContinue();
                     }}
+                    aria-label={`Select domain ${s}`}
                   >
                     {s}
-                  </li>
+                  </button>
                 ))}
-              </ul>
+              </div>
             )}
 
             {isLoading && <p className="mt-3 text-xs text-muted-foreground text-center">Fetching brand…</p>}

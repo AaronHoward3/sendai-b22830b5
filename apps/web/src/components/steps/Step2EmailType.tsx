@@ -264,7 +264,25 @@ function buildUserContext(opts: {
 }
 
 // --- Product normalization helpers ---
-type AnyProduct = any;
+interface AnyProduct {
+  name?: string;
+  title?: string;
+  product_name?: string;
+  heading?: string;
+  label?: string;
+  text?: string;
+  url?: string;
+  link?: string;
+  href?: string;
+  product_url?: string;
+  image?: string;
+  image_url?: string;
+  img?: string;
+  thumbnail?: string;
+  thumb?: string;
+  imageSrc?: string;
+  src?: string;
+}
 
 function normalizeProductLink(p: AnyProduct): ProductLink | null {
   if (!p || typeof p !== 'object') return null;
@@ -299,11 +317,11 @@ function uniqProducts(list: ProductLink[]): ProductLink[] {
 
 /** Scan common places for scraped products and normalize them */
 function getScrapedProductsFromFormData(fd: FormData): ProductLink[] {
-  const candidates: any[] = [];
+  const candidates: unknown[] = [];
 
-  if (Array.isArray((fd as any).products)) candidates.push(...(fd as any).products);
+  if (Array.isArray(fd.products)) candidates.push(...fd.products);
 
-  const bd = (fd as any).brandData || {};
+  const bd = fd.brandData || {};
   const bdd = bd.brandData || bd;
 
   const maybeArrays = [
@@ -322,13 +340,13 @@ function getScrapedProductsFromFormData(fd: FormData): ProductLink[] {
       candidates.push(...m);
     } else if (m && typeof m === 'object') {
       const vals = Object.values(m);
-      if (Array.isArray(vals)) candidates.push(...(vals as any[]));
+      if (Array.isArray(vals)) candidates.push(...vals);
     }
   }
 
   const normalized = candidates
-    .map(normalizeProductLink)
-    .filter(Boolean) as ProductLink[];
+    .map((p) => normalizeProductLink(p as AnyProduct))
+    .filter((p): p is ProductLink => p !== null);
 
   return uniqProducts(normalized);
 }
@@ -353,7 +371,7 @@ function buildImageContext(opts: {
   const trait = pick(traits);
 
   // Optional focal cue using first product name (still: no text/logos in the image)
-  const firstProductName = (products && products[0]?.name) ? String(products[0].name).trim() : '';
+  const firstProductName = products?.[0]?.name ? String(products[0].name).trim() : '';
   const focal = firstProductName ? ` focal object: ${firstProductName} (generic pack shot),` : '';
 
   return `${occasion.short || occasion.label} hero for ${brandName} — ${motif}, ${trait}, ${paletteLine};${focal} cinematic product focus if applicable; no text, no logos, no watermark, uncluttered background.`;
@@ -375,20 +393,25 @@ export const Step2EmailType: React.FC<Step2EmailTypeProps> = ({
   const [designAesthetic, setDesignAesthetic] =
     useState<DesignAesthetic>(formData.designAesthetic ?? 'bold_contrasting');
 
+  // Helper function to safely get string values from brand data
+  const getBrandString = (value: unknown): string => {
+    return typeof value === 'string' ? value : '';
+  };
+
   // From Step 1 brand payload
-  const scrapedPrimary = formData?.brandData?.brandData?.primary_color || '';
-  const scrapedSecondary = formData?.brandData?.brandData?.link_color || '';
-  const brandName =
-    formData?.brandData?.brandData?.name ||
-    formData?.brandData?.name ||
+  const scrapedPrimary = getBrandString(formData?.brandData?.brandData?.primary_color) || '';
+  const scrapedSecondary = getBrandString(formData?.brandData?.brandData?.link_color) || '';
+  const brandName = 
+    getBrandString(formData?.brandData?.brandData?.name) ||
+    getBrandString(formData?.brandData?.name) ||
     normalizeDomain(formData.domain || 'your brand');
   const brandDesc =
-    formData?.brandData?.brandData?.description ||
-    formData?.brandData?.description ||
-    formData?.brandData?.brandData?.tagline ||
+    getBrandString(formData?.brandData?.brandData?.description) ||
+    getBrandString(formData?.brandData?.description) ||
+    getBrandString((formData?.brandData?.brandData as { tagline?: unknown })?.tagline) ||
     '';
-  const brandPrimary = scrapedPrimary || formData?.brandData?.primary_color;
-  const brandLink = scrapedSecondary || formData?.brandData?.link_color;
+  const brandPrimary = scrapedPrimary || getBrandString(formData?.brandData?.primary_color);
+  const brandLink = scrapedSecondary || getBrandString(formData?.brandData?.link_color);
 
   const handleColorsChange = (colors: { primary_color: string; link_color: string }) => {
     const existing = formData.brandData || {};
@@ -412,7 +435,7 @@ export const Step2EmailType: React.FC<Step2EmailTypeProps> = ({
 
   // Saved images for this brand
   const [savedImages, setSavedImages] = useState<SavedImage[]>([]);
-  const [selectedSavedUrl, setSelectedSavedUrl] = useState<string | null>((formData as any).savedHeroImageUrl || null);
+  const [selectedSavedUrl, setSelectedSavedUrl] = useState<string | null>(formData.savedHeroImageUrl || null);
 
   useEffect(() => {
     const domain = normalizeDomain(formData.domain || '');
@@ -438,15 +461,15 @@ export const Step2EmailType: React.FC<Step2EmailTypeProps> = ({
   const scrapedProducts = useMemo(() => getScrapedProductsFromFormData(formData), [formData]);
 
   const [products, setProducts] = useState<ProductLink[]>(
-    Array.isArray(formData.products) && (formData.products as any[]).length
-      ? (formData.products as ProductLink[])
+    Array.isArray(formData.products) && formData.products.length > 0
+      ? formData.products
       : scrapedProducts
   );
 
   /* ---------- Auto-suggest contexts on entry (human-friendly) ---------- */
   const generateContexts = React.useCallback(() => {
     const occ = nearestOccasion(new Date());
-    const productsForContext = (products && products.length) ? products : scrapedProducts;
+    const productsForContext = products.length > 0 ? products : scrapedProducts;
 
     const uc = buildUserContext({
       occasion: occ,
@@ -544,7 +567,7 @@ export const Step2EmailType: React.FC<Step2EmailTypeProps> = ({
     if (!selectedEmailType) return;
 
     // Safety: ensure we always carry products even if local state is momentarily empty.
-    const safeProducts = (products && products.length) ? products : scrapedProducts;
+    const safeProducts = products.length > 0 ? products : scrapedProducts;
 
     updateFormData({
       emailType: selectedEmailType,
@@ -554,8 +577,8 @@ export const Step2EmailType: React.FC<Step2EmailTypeProps> = ({
       tone,
       designAesthetic,
       products: safeProducts,
-      ...(useCustomHero ? { savedHeroImageUrl: null as any } : {}),
-      ...(!useCustomHero && selectedSavedUrl ? ({ savedHeroImageUrl: selectedSavedUrl } as any) : {}),
+      ...(useCustomHero ? { savedHeroImageUrl: null } : {}),
+      ...(!useCustomHero && selectedSavedUrl ? { savedHeroImageUrl: selectedSavedUrl } : {}),
     });
     onNext();
   };
@@ -585,8 +608,9 @@ export const Step2EmailType: React.FC<Step2EmailTypeProps> = ({
       </motion.div>
 
       {/* Email Type */}
-      <motion.div className="space-y-3" variants={fadeInUp}>
-        <label className="text-lg font-medium text-foreground">Email Type</label>
+      <motion.div variants={fadeInUp}>
+        <fieldset className="space-y-3">
+          <legend className="text-lg font-medium text-foreground">Email Type</legend>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 w-full">
           {EMAIL_TYPES.map(t => {
             const active = selectedEmailType === t.value;
@@ -605,11 +629,13 @@ export const Step2EmailType: React.FC<Step2EmailTypeProps> = ({
             );
           })}
         </div>
+        </fieldset>
       </motion.div>
 
       {/* Tone */}
-      <motion.div className="space-y-3" variants={fadeInUp}>
-        <label className="text-lg font-medium text-foreground">Tone</label>
+      <motion.div variants={fadeInUp}>
+        <fieldset className="space-y-3">
+          <legend className="text-lg font-medium text-foreground">Tone</legend>
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 w-full">
           {TONES.map(tn => {
             const active = tone === tn.value;
@@ -627,14 +653,15 @@ export const Step2EmailType: React.FC<Step2EmailTypeProps> = ({
             );
           })}
         </div>
+        </fieldset>
       </motion.div>
 
       {/* Design Style */}
       <motion.div className="space-y-2" variants={fadeInUp}>
-        <label className="text-lg font-medium text-foreground">Design Style</label>
+        <label htmlFor="design-style-trigger" className="text-lg font-medium text-foreground">Design Style</label>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <GradientButton variant="white-outline" className="w-full justify-between !bg-background !text-foreground !border !border-border hover:!bg-muted">
+            <GradientButton id="design-style-trigger" variant="white-outline" className="w-full justify-between !bg-background !text-foreground !border !border-border hover:!bg-muted">
               <span>{selectedStyleLabel}</span>
               <ChevronDown className="w-4 h-4 opacity-70" />
             </GradientButton>
@@ -655,7 +682,7 @@ export const Step2EmailType: React.FC<Step2EmailTypeProps> = ({
       {/* Brand Colors */}
       {formData.brandData && (
         <motion.div className="space-y-2" variants={fadeInUp}>
-          <label className="text-lg font-medium text-foreground">Brand Colors</label>
+          <h3 className="text-lg font-medium text-foreground">Brand Colors</h3>
           <BrandColorControls
             scrapedPrimary={scrapedPrimary}
             scrapedSecondary={scrapedSecondary}
@@ -666,8 +693,9 @@ export const Step2EmailType: React.FC<Step2EmailTypeProps> = ({
       )}
 
       {/* Use Custom Hero */}
-      <motion.div className="space-y-2" variants={fadeInUp}>
-        <label className="text-lg font-medium text-foreground">Use Custom Hero Image?</label>
+      <motion.div variants={fadeInUp}>
+        <fieldset className="space-y-2">
+          <legend className="text-lg font-medium text-foreground">Use Custom Hero Image?</legend>
         <div className="flex gap-3">
           <GradientButton
             variant={useCustomHero ? 'solid' : 'white-outline'}
@@ -684,12 +712,14 @@ export const Step2EmailType: React.FC<Step2EmailTypeProps> = ({
             No
           </GradientButton>
         </div>
+        </fieldset>
       </motion.div>
 
       {/* Saved images (only when NOT using custom hero) */}
       {!useCustomHero && (
-        <motion.div className="space-y-3" variants={fadeInUp}>
-          <label className="text-lg font-medium text-foreground">Use a saved hero image (optional)</label>
+        <motion.div variants={fadeInUp}>
+          <fieldset className="space-y-3">
+            <legend className="text-lg font-medium text-foreground">Use a saved hero image (optional)</legend>
           {savedImages.length === 0 ? (
             <p className="text-sm text-muted-foreground italic">
               No saved images yet for <span className="underline">{normalizeDomain(formData.domain || '')}</span>.
@@ -736,6 +766,7 @@ export const Step2EmailType: React.FC<Step2EmailTypeProps> = ({
               )}
             </>
           )}
+          </fieldset>
         </motion.div>
       )}
 
@@ -743,7 +774,7 @@ export const Step2EmailType: React.FC<Step2EmailTypeProps> = ({
       {useCustomHero && (
         <motion.div className="space-y-2" variants={fadeInUp}>
           <div className="flex items-center justify-between">
-            <label className="text-lg font-medium text-foreground">Image Context</label>
+            <label htmlFor="image-context-textarea" className="text-lg font-medium text-foreground">Image Context</label>
             <div className="flex gap-2">
               <GradientButton
                 variant="white-outline"
@@ -759,7 +790,8 @@ export const Step2EmailType: React.FC<Step2EmailTypeProps> = ({
             </div>
           </div>
           <textarea
-            placeholder="Describe the hero vibe (e.g., “Dynamic splash shot with icy droplets; bold contrast; clean background; no text.”)"
+            id="image-context-textarea"
+            placeholder="Describe the hero vibe (e.g., 'Dynamic splash shot with icy droplets; bold contrast; clean background; no text.')"
             value={imageContext}
             onChange={(e) => setImageContext(e.target.value)}
             rows={4}
@@ -771,7 +803,7 @@ export const Step2EmailType: React.FC<Step2EmailTypeProps> = ({
       {/* User Context */}
       <motion.div className="space-y-2" variants={fadeInUp}>
         <div className="flex items-center justify-between">
-          <label className="text-lg font-medium text-foreground">User Context</label>
+          <label htmlFor="user-context-textarea" className="text-lg font-medium text-foreground">User Context</label>
           <div className="flex gap-2">
             <GradientButton
               variant="white-outline"
@@ -787,7 +819,8 @@ export const Step2EmailType: React.FC<Step2EmailTypeProps> = ({
           </div>
         </div>
         <textarea
-          placeholder="In 2–3 short sentences, say what this email should do (offer, audience, vibe). Avoid labels like “Tone: …”. End with a natural CTA (e.g., “Shop Deals”)."
+          id="user-context-textarea"
+          placeholder="In 2–3 short sentences, say what this email should do (offer, audience, vibe). Avoid labels like 'Tone: …'. End with a natural CTA (e.g., 'Shop Deals')."
           value={userContext}
           onChange={(e) => setUserContext(e.target.value)}
           rows={4}
@@ -797,7 +830,7 @@ export const Step2EmailType: React.FC<Step2EmailTypeProps> = ({
 
       {/* Products */}
       <motion.div className="space-y-4" variants={fadeInUp}>
-        <label className="text-lg font-medium text-foreground">Products</label>
+        <h3 className="text-lg font-medium text-foreground">Products</h3>
         {products.length === 0 && (
           <p className="text-sm text-muted-foreground italic">No products added yet.</p>
         )}
@@ -805,7 +838,7 @@ export const Step2EmailType: React.FC<Step2EmailTypeProps> = ({
           const isEditing = editingIndex === index;
 
           return (
-            <div key={index} className="space-y-2 rounded-lg border border-border p-4">
+            <div key={`${product.url || product.name || 'product'}-${index}`} className="space-y-2 rounded-lg border border-border p-4">
               {!isEditing ? (
                 <div className="flex items-center justify-between gap-4">
                   <div className="flex items-center gap-3 min-w-0">

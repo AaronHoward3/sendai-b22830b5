@@ -1,12 +1,12 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 
-type Props = {
-  scrapedPrimary?: string;     // brandData.primary_color
-  scrapedSecondary?: string;   // brandData.link_color
-  brandId?: string | number;
-  brandDomain?: string;        // used when saving
-  onChange: (colors: { primary_color: string; link_color: string }) => void;
-};
+interface Props {
+  readonly scrapedPrimary?: string;     // brandData.primary_color
+  readonly scrapedSecondary?: string;   // brandData.link_color
+  readonly brandId?: string | number;
+  readonly brandDomain?: string;        // used when saving
+  readonly onChange: (colors: { primary_color: string; link_color: string }) => void;
+}
 
 function normalizeHex(c?: string): string | undefined {
   if (!c || typeof c !== "string") return undefined;
@@ -94,9 +94,9 @@ const BrandColorControls: React.FC<Props> = ({
     setSaving(true);
     try {
       // Save by domain (preferred)
-      const body: any = { primary_color: p, link_color: l };
+      const body: { primary_color: string; link_color: string; domain?: string } = { primary_color: p, link_color: l };
       let url = "";
-      if (brandDomain && brandDomain.trim()) {
+      if (brandDomain?.trim()) {
         url = "/api/brand/colors";
         body.domain = brandDomain;
       } else if (brandId !== undefined && brandId !== null) {
@@ -136,7 +136,7 @@ const BrandColorControls: React.FC<Props> = ({
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {/* Primary */}
         <div className="space-y-2">
-          <label className="text-sm font-medium">Primary Color</label>
+          <label htmlFor="primary-color-input" className="text-sm font-medium">Primary Color</label>
           <div className="flex items-center gap-3">
             <button
               type="button"
@@ -146,6 +146,7 @@ const BrandColorControls: React.FC<Props> = ({
               title="Pick color"
             />
             <input
+              id="primary-color-input"
               value={primary}
               onChange={onHexChange("primary")}
               onBlur={onHexBlur("primary")}
@@ -165,7 +166,7 @@ const BrandColorControls: React.FC<Props> = ({
 
         {/* Link / Secondary */}
         <div className="space-y-2">
-          <label className="text-sm font-medium">Link / Secondary Color</label>
+          <label htmlFor="secondary-color-input" className="text-sm font-medium">Link / Secondary Color</label>
           <div className="flex items-center gap-3">
             <button
               type="button"
@@ -175,6 +176,7 @@ const BrandColorControls: React.FC<Props> = ({
               title="Pick color"
             />
             <input
+              id="secondary-color-input"
               value={secondary}
               onChange={onHexChange("secondary")}
               onBlur={onHexBlur("secondary")}
