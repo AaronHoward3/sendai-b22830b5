@@ -82,11 +82,30 @@ const PLATFORM_PATTERNS = {
       'a[href*="/t/"]',
       '.product-card a',
       '.grid-item a',
-      '[data-testid*="product"] a'
+      '[data-testid*="product"] a',
+      '.product-grid a',
+      '.product-list a',
+      '[class*="product"] a'
     ],
     productUrl: /\/t\//,
-    imageSelectors: ['.product-card img', '.grid-item img', '[data-testid*="product"] img'],
-    nameSelectors: ['.product-card__title', '.grid-item__title', 'h3', 'h2'],
+    imageSelectors: [
+      '.product-card img', 
+      '.grid-item img', 
+      '[data-testid*="product"] img',
+      '.product-grid img',
+      '.product-list img',
+      '[class*="product"] img',
+      'img[alt*="Nike"]'
+    ],
+    nameSelectors: [
+      '.product-card__title', 
+      '.grid-item__title', 
+      'h3', 
+      'h2',
+      '.product-title',
+      '.product-name',
+      '[class*="title"]'
+    ],
     priceSelectors: ['.product-price', '.price'],
     descriptionSelectors: ['.product-card__subtitle', '.grid-item__subtitle']
   }
@@ -153,7 +172,7 @@ export async function scrapeProductsFromDomain(domain) {
         params: {
           api_key: scrapingbeeApiKey,
           url: url,
-          render_js: false,
+          render_js: true,  // Enable JavaScript rendering
           premium_proxy: true,
           country_code: 'us'
         },
@@ -320,6 +339,7 @@ function getImageFromStructured(imageData) {
 function extractProductsPlatformSpecific($, domain, platform) {
   const config = PLATFORM_PATTERNS[platform];
   const products = [];
+  const seenUrls = new Set();
   
   for (const selector of config.selectors) {
     $(selector).each((i, el) => {
@@ -330,18 +350,19 @@ function extractProductsPlatformSpecific($, domain, platform) {
                      $el.closest('article, .product, .item, .card, li') : $el;
       
       const url = absolute($el.attr('href'), domain);
-      if (!url || !isProductUrl(url, config.productUrl)) return;
+      if (!url || !isProductUrl(url, config.productUrl) || seenUrls.has(url)) return;
       
       const name = extractName($parent, config.nameSelectors);
       const image = extractBestImage($parent, config.imageSelectors, domain);
       const description = extractDescription($parent, config.descriptionSelectors);
       const price = extractPrice($parent, config.priceSelectors);
       
-      if (name && image && isValidProductName(name) && !isIgnoredUrl(url)) {
+      if (name && isValidProductName(name) && !isIgnoredUrl(url)) {
+        seenUrls.add(url);
         products.push({
           name,
           url,
-          image_url: image,
+          image_url: image || 'https://via.placeholder.com/300x300?text=Product+Image',
           description,
           price,
           source: `platform-${platform}`
@@ -372,11 +393,11 @@ function extractProductsGeneric($, domain) {
       const description = extractDescription($parent, ['.description', '.excerpt', 'p']);
       const price = extractPrice($parent, GENERIC_PATTERNS.priceSelectors);
       
-      if (name && image && isValidProductName(name) && !isIgnoredUrl(url)) {
+      if (name && isValidProductName(name) && !isIgnoredUrl(url)) {
         products.push({
           name,
           url,
-          image_url: image,
+          image_url: image || 'https://via.placeholder.com/300x300?text=Product+Image',
           description,
           price,
           source: 'generic'
@@ -403,11 +424,11 @@ function extractLinksWithImages($, domain) {
     const image = extractBestImage($el, ['img'], domain);
     const description = $('meta[property="og:description"]').attr("content") || "";
     
-    if (url && image && name && isValidProductName(name) && !isIgnoredUrl(url)) {
+    if (url && name && isValidProductName(name) && !isIgnoredUrl(url)) {
       products.push({
         name,
         url,
-        image_url: image,
+        image_url: image || 'https://via.placeholder.com/300x300?text=Product+Image',
         description,
         source: 'fallback'
       });
@@ -420,10 +441,26 @@ function extractLinksWithImages($, domain) {
 function extractName($parent, selectors) {
   for (const selector of selectors) {
     const text = $parent.find(selector).first().text().trim();
-    if (text && text.length > 2) return text;
+    if (text && text.length > 2) return cleanText(text);
   }
-  return $parent.find('h1, h2, h3, h4').first().text().trim() || 
-         $parent.text().trim().split('\n')[0].trim();
+  const fallback = $parent.find('h1, h2, h3, h4').first().text().trim() || 
+                   $parent.text().trim().split('\n')[0].trim();
+  return cleanText(fallback);
+}
+
+function cleanText(text) {
+  if (!text) return '';
+  // Remove HTML tags
+  text = text.replace(/<[^>]*>/g, '');
+  // Decode HTML entities
+  text = text.replace(/&quot;/g, '"')
+              .replace(/&#x27;/g, "'")
+              .replace(/&amp;/g, '&')
+              .replace(/&lt;/g, '<')
+              .replace(/&gt;/g, '>');
+  // Clean up extra whitespace
+  text = text.replace(/\s+/g, ' ').trim();
+  return text;
 }
 
 function extractBestImage($parent, selectors, domain) {
@@ -432,14 +469,21 @@ function extractBestImage($parent, selectors, domain) {
   for (const selector of selectors) {
     const $img = $parent.find(selector).first();
     if ($img.length) {
-      let src = $img.attr('src');
-      const srcset = $img.attr('srcset');
-      const dataSrc = $img.attr('data-src');
+      // Try multiple image sources in order of preference
+      let src = $img.attr('src') || 
+                $img.attr('data-src') || 
+                $img.attr('data-lazy-src') || 
+                $img.attr('data-original') || 
+                $img.attr('data-image') || 
+                $img.attr('data-img');
       
-      // Handle lazy loading
-      if (!src && dataSrc) src = dataSrc;
+      // Skip placeholder images
+      if (src && (src.startsWith('data:image/gif;base64') || src.includes('placeholder'))) {
+        continue;
+      }
       
       // Handle srcset for best quality
+      const srcset = $img.attr('srcset') || $img.attr('data-srcset');
       if (srcset) {
         const candidates = srcset.split(',').map(x => {
           const parts = x.trim().split(' ');
@@ -455,6 +499,21 @@ function extractBestImage($parent, selectors, domain) {
         // Clean up Shopify/common size suffixes
         bestImage = bestImage.replace(/_\d+x\d+(@\d+x)?\.(jpg|jpeg|png|webp)/i, '.$2');
         break;
+      }
+    }
+  }
+  
+  // If no real image found, try to get a placeholder but mark it
+  if (!bestImage) {
+    for (const selector of selectors) {
+      const $img = $parent.find(selector).first();
+      if ($img.length) {
+        const src = $img.attr('src') || $img.attr('data-src');
+        if (src && src.startsWith('data:image/gif;base64')) {
+          // Return a placeholder URL instead of null
+          bestImage = 'https://via.placeholder.com/300x300?text=Product+Image';
+          break;
+        }
       }
     }
   }

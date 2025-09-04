@@ -1,6 +1,8 @@
 import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
+import path from "path";
+import { fileURLToPath } from "url";
 
 // your existing imports (keep these as you have them)
 import creditsRoutes from "./routes/creditsRoutes.js";
@@ -14,7 +16,10 @@ import { requireAdminUser } from "./middleware/requireAdminUser.js";
 import { stripeWebhook } from "./controllers/billingController.js";
 import { requireAuth } from "./middleware/requireAuth.js";
 
-dotenv.config();
+// Load .env from parent directory (root of project)
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+dotenv.config({ path: path.join(__dirname, '../../.env') });
 
 const normalizeOrigin = (s = "") => s.trim().replace(/\/$/, "");
 const DEFAULT_CLIENT_URL = "http://localhost:5173";
@@ -78,6 +83,7 @@ console.log(`- BRANDDEV_API_KEY: ${process.env.BRANDDEV_API_KEY ? "✅ yes" : "�
 console.log(`- OPENAI_API_KEY: ${process.env.OPENAI_API_KEY ? "✅ yes" : "❌ no"}`);
 console.log(`- STRIPE_SECRET_KEY: ${process.env.STRIPE_SECRET_KEY ? "✅ yes" : "❌ no"}`);
 console.log(`- STRIPE_WEBHOOK_SECRET: ${process.env.STRIPE_WEBHOOK_SECRET ? "✅ yes" : "❌ no"}`);
+console.log(`- SCRAPINGBEE_API_KEY: ${process.env.SCRAPINGBEE_API_KEY ? "✅ yes" : "❌ no"}`);
 console.log(`- CLIENT_URL: ${process.env.CLIENT_URL}`);
 
 console.log("\n📡 Available Routes (high level):");
