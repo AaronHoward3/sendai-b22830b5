@@ -465,7 +465,7 @@ export const Step2EmailType: React.FC<Step2EmailTypeProps> = ({
     if (scrapedProducts.length > 0 && products.length === 0) {
       setProducts(scrapedProducts);
     }
-  }, [scrapedProducts.length, products.length]);
+  }, [scrapedProducts, products.length]);
 
   /* ---------- Auto-suggest contexts on entry (human-friendly) ---------- */
   const generateContexts = React.useCallback(() => {
