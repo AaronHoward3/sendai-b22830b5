@@ -854,12 +854,24 @@ export const Step2EmailType: React.FC<Step2EmailTypeProps> = ({
                 <div className="flex items-center justify-between gap-4">
                   <div className="flex items-center gap-3 min-w-0">
                     {product.image ? (
-                      <img
-                        src={product.image}
-                        alt={product.name || 'Product image'}
-                        className="w-12 h-12 rounded-md object-cover border border-border"
-                        onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }}
-                      />
+                      <div className="relative">
+                        <img
+                          src={product.image}
+                          alt={product.name || 'Product image'}
+                          className="w-12 h-12 rounded-md object-cover border border-border"
+                          onError={(e) => { 
+                            console.log('🔍 Image failed to load:', product.image);
+                            console.log('🔍 Error details:', e);
+                            // Replace with a placeholder instead of hiding
+                            (e.currentTarget as HTMLImageElement).src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDgiIGhlaWdodD0iNDgiIHZpZXdCb3g9IjAgMCA0OCA0OCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjQ4IiBoZWlnaHQ9IjQ4IiBmaWxsPSIjRjNGNEY2Ii8+CjxwYXRoIGQ9Ik0yNCAyOEMyNi4yMDkxIDI4IDI4IDI2LjIwOTEgMjggMjRDMjggMjEuNzkwOSAyNi4yMDkxIDIwIDI0IDIwQzIxLjc9MDkgMjAgMjAgMjEuNzkwOSAyMCAyNEMyMCAyNi4yMDkxIDIxLjc5MDkgMjggMjQgMjhaIiBmaWxsPSIjOUI5QkEwIi8+CjxwYXRoIGQ9Ik0xMiAzNkMxMiAzNiAxOCAyOCAyNCAyOEMzMCAyOCAzNiAzNiAzNiAzNkgxMloiIGZpbGw9IiM5QjlCQTAiLz4KPC9zdmc+';
+                          }}
+                          onLoad={(e) => {
+                            console.log('🔍 Image loaded successfully:', product.image);
+                          }}
+                        />
+                        {/* Debug overlay to show image URL */}
+                        <div className="absolute -bottom-1 -right-1 w-2 h-2 bg-green-500 rounded-full" title={`Image: ${product.image}`}></div>
+                      </div>
                     ) : (
                       <div className="w-12 h-12 rounded-md border border-dashed border-border grid place-items-center text-xs text-muted-foreground">
                         N/A
