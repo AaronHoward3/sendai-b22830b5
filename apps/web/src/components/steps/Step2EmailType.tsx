@@ -458,6 +458,19 @@ export const Step2EmailType: React.FC<Step2EmailTypeProps> = ({
   // ------------ Scraped products + seed ------------
   const scrapedProducts = useMemo(() => getScrapedProductsFromFormData(formData), [formData]);
 
+  // Debug: Log scraped products to see what we're getting
+  useEffect(() => {
+    if (scrapedProducts.length > 0) {
+      console.log('🔍 Scraped products:', scrapedProducts);
+      console.log('🔍 First product details:', {
+        name: scrapedProducts[0]?.name,
+        url: scrapedProducts[0]?.url,
+        image: scrapedProducts[0]?.image,
+        hasImage: !!scrapedProducts[0]?.image
+      });
+    }
+  }, [scrapedProducts]);
+
   const [products, setProducts] = useState<ProductLink[]>(
     Array.isArray(formData.products) && formData.products.length > 0
       ? formData.products
