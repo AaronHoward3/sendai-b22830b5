@@ -469,7 +469,7 @@ export const Step2EmailType: React.FC<Step2EmailTypeProps> = ({
         hasImage: !!scrapedProducts[0]?.image
       });
     }
-  }, [scrapedProducts]);
+  }, [scrapedProducts]); // Remove formData from dependencies
 
   const [products, setProducts] = useState<ProductLink[]>(
     Array.isArray(formData.products) && formData.products.length > 0
@@ -477,20 +477,27 @@ export const Step2EmailType: React.FC<Step2EmailTypeProps> = ({
       : scrapedProducts
   );
 
+  // Update products when scrapedProducts changes
+  useEffect(() => {
+    if (scrapedProducts.length > 0) {
+      console.log('🔍 Setting products from scraped products');
+      setProducts(scrapedProducts);
+    }
+  }, [scrapedProducts]);
+
   // TEMPORARY: Force add a test product to verify image display
   useEffect(() => {
     console.log('🔍 Current products:', products);
     console.log('🔍 Scraped products:', scrapedProducts);
     
-    // Always add a test product for now
-    const testProduct: ProductLink = {
-      name: 'Test Product with Image',
-      url: 'https://example.com/product',
-      image: 'https://via.placeholder.com/300x300/FF0000/FFFFFF?text=Test+Product'
-    };
-    
-    if (products.length === 0) {
+    // Only add test product if no products exist
+    if (products.length === 0 && scrapedProducts.length === 0) {
       console.log('🔍 Adding test product');
+      const testProduct: ProductLink = {
+        name: 'Test Product with Image',
+        url: 'https://example.com/product',
+        image: 'https://via.placeholder.com/300x300/FF0000/FFFFFF?text=Test+Product'
+      };
       setProducts([testProduct]);
     }
   }, [products.length, scrapedProducts.length]);
