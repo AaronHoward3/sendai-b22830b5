@@ -477,6 +477,24 @@ export const Step2EmailType: React.FC<Step2EmailTypeProps> = ({
       : scrapedProducts
   );
 
+  // TEMPORARY: Force add a test product to verify image display
+  useEffect(() => {
+    console.log('🔍 Current products:', products);
+    console.log('🔍 Scraped products:', scrapedProducts);
+    
+    // Always add a test product for now
+    const testProduct: ProductLink = {
+      name: 'Test Product with Image',
+      url: 'https://example.com/product',
+      image: 'https://via.placeholder.com/300x300/FF0000/FFFFFF?text=Test+Product'
+    };
+    
+    if (products.length === 0) {
+      console.log('🔍 Adding test product');
+      setProducts([testProduct]);
+    }
+  }, [products.length, scrapedProducts.length]);
+
   /* ---------- Auto-suggest contexts on entry (human-friendly) ---------- */
   const generateContexts = React.useCallback(() => {
     const occ = nearestOccasion(new Date());
@@ -863,7 +881,7 @@ export const Step2EmailType: React.FC<Step2EmailTypeProps> = ({
                             console.log('🔍 Image failed to load:', product.image);
                             console.log('🔍 Error details:', e);
                             // Replace with a placeholder instead of hiding
-                            (e.currentTarget as HTMLImageElement).src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDgiIGhlaWdodD0iNDgiIHZpZXdCb3g9IjAgMCA0OCA0OCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjQ4IiBoZWlnaHQ9IjQ4IiBmaWxsPSIjRjNGNEY2Ii8+CjxwYXRoIGQ9Ik0yNCAyOEMyNi4yMDkxIDI4IDI4IDI2LjIwOTEgMjggMjRDMjggMjEuNzkwOSAyNi4yMDkxIDIwIDI0IDIwQzIxLjc9MDkgMjAgMjAgMjEuNzkwOSAyMCAyNEMyMCAyNi4yMDkxIDIxLjc5MDkgMjggMjQgMjhaIiBmaWxsPSIjOUI5QkEwIi8+CjxwYXRoIGQ9Ik0xMiAzNkMxMiAzNiAxOCAyOCAyNCAyOEMzMCAyOCAzNiAzNiAzNiAzNkgxMloiIGZpbGw9IiM5QjlCQTAiLz4KPC9zdmc+';
+                            (e.currentTarget as HTMLImageElement).src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDgiIGhlaWdodD0iNDgiIHZpZXdCb3g9IjAgMCA0OCA0OCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjQ4IiBoZWlnaHQ9IjQ4IiBmaWxsPSIjRjNGNEY2Ii8+CjxwYXRoIGQ9Ik0yNCAyOEMyNi4yMDkxIDI4IDI4IDI2LjIwOTEgMjggMjRDMjggMjEuNzkwOSAyNi4yMDkxIDIwIDI0IDIwQzIxLjc5MDkgMjAgMjAgMjEuNzkwOSAyMCAyNEMyMCAyNi4yMDkxIDIxLjc5MDkgMjggMjQgMjhaIiBmaWxsPSIjOUI5QkEwIi8+CjxwYXRoIGQ9Ik0xMiAzNkMxMiAzNiAxOCAyOCAyNCAyOEMzMCAyOCAzNiAzNiAzNiAzNkgxMloiIGZpbGw9IiM5QjlCQTAiLz4KPC9zdmc+';
                           }}
                           onLoad={(e) => {
                             console.log('🔍 Image loaded successfully:', product.image);
