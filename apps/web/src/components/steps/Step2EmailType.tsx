@@ -22,6 +22,7 @@ import {
 } from '../EmailGenerator';
 
 import { supabase } from '@/lib/supabaseClient';
+import { sanitizeInput, validateUrl } from '@/lib/security';
 
 const API_ROOT = '/api';
 
@@ -516,10 +517,22 @@ export const Step2EmailType: React.FC<Step2EmailTypeProps> = ({
 
      const handleAddProduct = () => {
      if (!newProductName.trim() || !newProductUrl.trim() || products.length >= 4) return;
+     
+     // Validate and sanitize input
+     const sanitizedName = sanitizeInput(newProductName.trim(), 200);
+     const sanitizedUrl = sanitizeInput(newProductUrl.trim(), 500);
+     const sanitizedImage = newProductImage.trim() ? sanitizeInput(newProductImage.trim(), 500) : '';
+     
+     // Validate URL
+     if (!validateUrl(sanitizedUrl)) {
+       alert('Please enter a valid URL for the product');
+       return;
+     }
+     
      const newProduct: ProductLink = {
-       name: newProductName.trim(),
-       url: newProductUrl.trim(),
-       image: newProductImage.trim() || undefined,
+       name: sanitizedName,
+       url: sanitizedUrl,
+       image: sanitizedImage || undefined,
      };
      const exists = products.some(p => p.name === newProduct.name || p.url === newProduct.url);
      if (!exists) {
@@ -551,18 +564,30 @@ export const Step2EmailType: React.FC<Step2EmailTypeProps> = ({
     setEditImage('');
   };
 
-  const saveEdit = () => {
-    if (editingIndex === null) return;
-    const updated = [...products];
-    updated[editingIndex] = {
-      ...updated[editingIndex],
-      name: editName.trim(),
-      url: editUrl.trim(),
-      image: editImage.trim() || undefined,
-    };
-    setProducts(updated);
-    cancelEdit();
-  };
+     const saveEdit = () => {
+     if (editingIndex === null) return;
+     
+     // Validate and sanitize input
+     const sanitizedName = sanitizeInput(editName.trim(), 200);
+     const sanitizedUrl = sanitizeInput(editUrl.trim(), 500);
+     const sanitizedImage = editImage.trim() ? sanitizeInput(editImage.trim(), 500) : '';
+     
+     // Validate URL
+     if (!validateUrl(sanitizedUrl)) {
+       alert('Please enter a valid URL for the product');
+       return;
+     }
+     
+     const updated = [...products];
+     updated[editingIndex] = {
+       ...updated[editingIndex],
+       name: sanitizedName,
+       url: sanitizedUrl,
+       image: sanitizedImage || undefined,
+     };
+     setProducts(updated);
+     cancelEdit();
+   };
 
   const handleContinue = () => {
     if (!selectedEmailType) return;
@@ -790,14 +815,14 @@ export const Step2EmailType: React.FC<Step2EmailTypeProps> = ({
               </GradientButton>
             </div>
           </div>
-          <textarea
-            id="image-context-textarea"
-            placeholder="Describe the hero vibe (e.g., 'Dynamic splash shot with icy droplets; bold contrast; clean background; no text.')"
-            value={imageContext}
-            onChange={(e) => setImageContext(e.target.value)}
-            rows={4}
-            className={plainTextarea}
-          />
+                     <textarea
+             id="image-context-textarea"
+             placeholder="Describe the hero vibe (e.g., 'Dynamic splash shot with icy droplets; bold contrast; clean background; no text.')"
+             value={imageContext}
+             onChange={(e) => setImageContext(sanitizeInput(e.target.value, 1000))}
+             rows={4}
+             className={plainTextarea}
+           />
         </motion.div>
       )}
 
@@ -819,14 +844,14 @@ export const Step2EmailType: React.FC<Step2EmailTypeProps> = ({
             </GradientButton>
           </div>
         </div>
-        <textarea
-          id="user-context-textarea"
-          placeholder="In 2–3 short sentences, say what this email should do (offer, audience, vibe). Avoid labels like 'Tone: …'. End with a natural CTA (e.g., 'Shop Deals')."
-          value={userContext}
-          onChange={(e) => setUserContext(e.target.value)}
-          rows={4}
-          className={plainTextarea}
-        />
+                 <textarea
+           id="user-context-textarea"
+           placeholder="In 2–3 short sentences, say what this email should do (offer, audience, vibe). Avoid labels like 'Tone: …'. End with a natural CTA (e.g., 'Shop Deals')."
+           value={userContext}
+           onChange={(e) => setUserContext(sanitizeInput(e.target.value, 1000))}
+           rows={4}
+           className={plainTextarea}
+         />
       </motion.div>
 
              {/* Products */}

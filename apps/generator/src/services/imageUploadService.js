@@ -39,6 +39,40 @@ function sanitizeSegment(s = "brand") {
   return String(s).trim().toLowerCase().replace(/[^a-z0-9-_]/gi, "-").slice(0, 64) || "brand";
 }
 
+// Enhanced file validation
+function validateFileType(buffer, filename) {
+  // Check file extension
+  const ext = filename.toLowerCase().split('.').pop();
+  const allowedExtensions = ['png', 'jpg', 'jpeg', 'webp'];
+  
+  if (!allowedExtensions.includes(ext)) {
+    throw new Error(`File type not allowed: ${ext}. Only PNG, JPG, JPEG, and WebP are supported.`);
+  }
+  
+  // Check file signature (magic bytes)
+  const signatures = {
+    png: [0x89, 0x50, 0x4E, 0x47],
+    jpg: [0xFF, 0xD8, 0xFF],
+    webp: [0x52, 0x49, 0x46, 0x46]
+  };
+  
+  const signature = signatures[ext];
+  if (signature) {
+    const matches = signature.every((byte, index) => buffer[index] === byte);
+    if (!matches) {
+      throw new Error(`File signature doesn't match expected format for ${ext}`);
+    }
+  }
+  
+  // Check file size (max 10MB)
+  const maxSize = 10 * 1024 * 1024; // 10MB
+  if (buffer.length > maxSize) {
+    throw new Error(`File too large: ${(buffer.length / 1024 / 1024).toFixed(2)}MB. Maximum size is 10MB.`);
+  }
+  
+  return true;
+}
+
 function inferContentType(filename = "image.png") {
   const f = filename.toLowerCase();
   if (f.endsWith(".png")) return "image/png";
@@ -63,6 +97,9 @@ function inferContentType(filename = "image.png") {
  */
 export async function uploadImage(imageBuffer, filename = `hero-${Date.now()}.png`, storeSlug, opts = {}) {
   const supabase = getSupabase();
+
+  // Validate file before upload
+  validateFileType(imageBuffer, filename);
 
   const brand = sanitizeSegment(storeSlug);
   const today = new Date().toISOString().slice(0, 10); // YYYY-MM-DD

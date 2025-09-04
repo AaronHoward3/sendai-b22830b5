@@ -16,6 +16,11 @@ import { requireAdminUser } from "./middleware/requireAdminUser.js";
 import { stripeWebhook } from "./controllers/billingController.js";
 import { requireAuth } from "./middleware/requireAuth.js";
 
+// Security middleware imports
+import { securityHeaders } from "./middleware/securityHeaders.js";
+import { sanitizeRequestBody } from "./middleware/validation.js";
+import { errorHandler, notFoundHandler } from "./middleware/errorHandler.js";
+
 // Load .env from parent directory (root of project)
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -39,6 +44,7 @@ app.post("/webhooks/stripe", express.raw({ type: "application/json" }), (req, re
 });
 
 // --------- Normal middleware ----------
+app.use(securityHeaders); // Apply security headers first
 app.use(
   cors({
     origin: (origin, cb) => {
@@ -49,10 +55,11 @@ app.use(
     },
     credentials: true,
     methods: ["GET", "POST", "PATCH", "DELETE", "OPTIONS"],
-    allowedHeaders: ["Content-Type", "Authorization"],
+    allowedHeaders: ["Content-Type", "Authorization", "X-CSRF-Token"],
   })
 );
 app.use(express.json());
+app.use(sanitizeRequestBody); // Sanitize input after parsing JSON
 
 // --------- Routes ----------
 app.use("/api/brand", brandRoutes);   // existing mount (singular)
@@ -68,6 +75,10 @@ app.use("/api/billing", billingRoutes);
 app.use("/api", creditsRoutes);
 app.use("/api", imagesRoutes);
 app.use("/api/admin", requireAuth, requireAdminUser, adminRoutes);
+
+// Error handling middleware (must be last)
+app.use(notFoundHandler);
+app.use(errorHandler);
 
 // --------- Health checks ----------
 app.get(["/health", "/healthz", "/api/health", "/api/healthz"], (_req, res) =>

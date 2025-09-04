@@ -4,6 +4,9 @@
 const BASE =
   (import.meta.env?.VITE_API_BASE_URL as string)?.replace(/\/$/, "") || "/api";
 
+// CSRF token management
+let csrfToken: string | null = null;
+
 export function apiPath(path: string) {
   const p = path.startsWith("/") ? path : `/${path}`;
   return `${BASE}${p}`;
@@ -11,6 +14,13 @@ export function apiPath(path: string) {
 
 async function parseJsonOrThrow(res: Response) {
   const text = await res.text(); // read once so we can show the real error body
+  
+  // Extract CSRF token from response headers
+  const newCsrfToken = res.headers.get('X-CSRF-Token');
+  if (newCsrfToken) {
+    csrfToken = newCsrfToken;
+  }
+  
   if (!res.ok) {
     throw new Error(`HTTP ${res.status} ${res.statusText}\n${text.slice(0, 800)}`);
   }
@@ -22,9 +32,16 @@ async function parseJsonOrThrow(res: Response) {
 }
 
 export async function postJSON<T>(path: string, body?: unknown): Promise<T> {
+  const headers: Record<string, string> = { "Content-Type": "application/json" };
+  
+  // Add CSRF token if available
+  if (csrfToken) {
+    headers['X-CSRF-Token'] = csrfToken;
+  }
+  
   const res = await fetch(apiPath(path), {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers,
     credentials: "include", // keep auth cookies for requireAuth
     body: body ? JSON.stringify(body) : undefined,
   });

@@ -20,7 +20,8 @@
     "check:unused": "knip && unimported && depcheck",
     "check:exports": "ts-prune",
     "check:cycles": "madge --extensions ts,tsx,js,jsx --circular .",
-    "check:all": "npm run check:unused && npm run check:exports && npm run check:cycles"
+    "check:all": "npm run check:unused && npm run check:exports && npm run check:cycles",
+    "security:audit": "node scripts/security-audit.js"
   },
   "devDependencies": {
     "concurrently": "^9.2.0",

@@ -5,6 +5,8 @@ import { requireAuth } from "../middleware/requireAuth.js";
 import { requireEmailCredit } from "../middleware/credits.js";
 import { generateEmails } from "../controllers/generateController.js";
 import { maybeConsumeImageCredit } from "../middleware/credits.js";
+import { validateRequest, generateEmailSchema } from "../middleware/validation.js";
+import { requireCSRF, attachCSRFToken } from "../middleware/csrf.js";
 
 const router = Router();
 
@@ -18,6 +20,6 @@ const generateLimiter = rateLimit({
 });
 
 // POST /api/generate
-router.post("/", requireAuth, generateLimiter, maybeConsumeImageCredit, requireEmailCredit, generateEmails);
+router.post("/", requireAuth, generateLimiter, attachCSRFToken, requireCSRF, validateRequest(generateEmailSchema), maybeConsumeImageCredit, requireEmailCredit, generateEmails);
 
 export default router;
