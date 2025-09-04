@@ -514,22 +514,22 @@ export const Step2EmailType: React.FC<Step2EmailTypeProps> = ({
   const [editUrl, setEditUrl] = useState<string>('');
   const [editImage, setEditImage] = useState<string>('');
 
-  const handleAddProduct = () => {
-    if (!newProductName.trim() || !newProductUrl.trim()) return;
-    const newProduct: ProductLink = {
-      name: newProductName.trim(),
-      url: newProductUrl.trim(),
-      image: newProductImage.trim() || undefined,
-    };
-    const exists = products.some(p => p.name === newProduct.name || p.url === newProduct.url);
-    if (!exists) {
-      setProducts(prev => [...prev, newProduct]);
-      setNewProductName('');
-      setNewProductUrl('');
-      setNewProductImage('');
-      setShowProductForm(false);
-    }
-  };
+     const handleAddProduct = () => {
+     if (!newProductName.trim() || !newProductUrl.trim() || products.length >= 4) return;
+     const newProduct: ProductLink = {
+       name: newProductName.trim(),
+       url: newProductUrl.trim(),
+       image: newProductImage.trim() || undefined,
+     };
+     const exists = products.some(p => p.name === newProduct.name || p.url === newProduct.url);
+     if (!exists) {
+       setProducts(prev => [...prev, newProduct]);
+       setNewProductName('');
+       setNewProductUrl('');
+       setNewProductImage('');
+       setShowProductForm(false);
+     }
+   };
 
   const handleRemoveProduct = (index: number) => {
     setProducts(products.filter((_, i) => i !== index));
@@ -829,12 +829,13 @@ export const Step2EmailType: React.FC<Step2EmailTypeProps> = ({
         />
       </motion.div>
 
-      {/* Products */}
-      <motion.div className="space-y-4" variants={fadeInUp}>
-        <h3 className="text-lg font-medium text-foreground">Products</h3>
-        {products.length === 0 && (
-          <p className="text-sm text-muted-foreground italic">No products added yet.</p>
-        )}
+             {/* Products */}
+       <motion.div className="space-y-4" variants={fadeInUp}>
+         <h3 className="text-lg font-medium text-foreground">Products</h3>
+         <p className="text-sm text-muted-foreground">Maximum 4 products allowed ({products.length}/4)</p>
+         {products.length === 0 && (
+           <p className="text-sm text-muted-foreground italic">No products added yet.</p>
+         )}
         {products.map((product, index) => {
           const isEditing = editingIndex === index;
 
@@ -919,11 +920,16 @@ export const Step2EmailType: React.FC<Step2EmailTypeProps> = ({
           );
         })}
 
-        {!showProductForm && (
-          <GradientButton onClick={() => setShowProductForm(true)} variant="white-outline" className="!bg-background !text-foreground !border !border-border hover:!bg-muted">
-            Add Product
-          </GradientButton>
-        )}
+                 {!showProductForm && (
+           <GradientButton 
+             onClick={() => setShowProductForm(true)} 
+             variant="white-outline" 
+             className="!bg-background !text-foreground !border !border-border hover:!bg-muted"
+             disabled={products.length >= 4}
+           >
+             Add Product {products.length >= 4 ? '(Max Reached)' : ''}
+           </GradientButton>
+         )}
 
         {showProductForm && (
           <div className="space-y-2 p-4 border border-border rounded-lg">
@@ -932,10 +938,12 @@ export const Step2EmailType: React.FC<Step2EmailTypeProps> = ({
               <GradientInput placeholder="Product URL (https://...)" value={newProductUrl} onChange={(e) => setNewProductUrl(e.target.value)} className="!bg-background !text-foreground !border !border-input placeholder:!text-muted-foreground" />
               <GradientInput placeholder="Image URL (optional)" value={newProductImage} onChange={(e) => setNewProductImage(e.target.value)} className="!bg-background !text-foreground !border !border-input placeholder:!text-muted-foreground" />
             </div>
-            <div className="flex gap-2">
-              <GradientButton variant="solid" onClick={handleAddProduct} disabled={!newProductName || !newProductUrl} className="disabled:opacity-60">Add Product</GradientButton>
-              <GradientButton variant="white-outline" onClick={() => { setShowProductForm(false); setNewProductName(''); setNewProductUrl(''); setNewProductImage(''); }} className="!bg-background !text-foreground !border !border-border hover:!bg-muted">Cancel</GradientButton>
-            </div>
+                         <div className="flex gap-2">
+               <GradientButton variant="solid" onClick={handleAddProduct} disabled={!newProductName || !newProductUrl || products.length >= 4} className="disabled:opacity-60">
+                 Add Product {products.length >= 4 ? '(Max Reached)' : ''}
+               </GradientButton>
+               <GradientButton variant="white-outline" onClick={() => { setShowProductForm(false); setNewProductName(''); setNewProductUrl(''); setNewProductImage(''); }} className="!bg-background !text-foreground !border !border-border hover:!bg-muted">Cancel</GradientButton>
+             </div>
           </div>
         )}
       </motion.div>

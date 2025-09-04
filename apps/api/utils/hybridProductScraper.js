@@ -406,7 +406,8 @@ export async function scrapeProductsFromDomain(domain, options = {}) {
     console.log(`✅ Found ${finalProducts.length} high-quality products`);
     console.log(`📊 Strategy breakdown:`, getStrategyBreakdown(finalProducts));
     
-    return finalProducts.map(p => ({
+    // Return final products (limit to 4)
+    return finalProducts.slice(0, 4).map(p => ({
       name: p.name,
       url: p.url,
       image_url: p.image_url,
