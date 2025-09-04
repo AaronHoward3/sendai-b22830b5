@@ -8,11 +8,11 @@ import {
 const pick = (arr) => arr[Math.floor(Math.random() * arr.length)];
 
 /**
- * chooseLayout now **does not require block2** for Promotion/Productgrid.
+ * chooseLayout now **does not require block2** for Promotion.
  * Instead, it flags that we'll inject the [[PRODUCT_SECTION]] token in composeBaseMjml.
  */
 export async function chooseLayout(emailType, aesthetic = "minimal_clean") {
-  const isProductType = emailType === "Promotion" || emailType === "Productgrid";
+  const isProductType = emailType === "Promotion";
 
   // Always need block1 & block3
   const [b1, b3] = await Promise.all([
@@ -73,7 +73,7 @@ export async function composeBaseMjml(emailType, aesthetic, layout) {
   let b2Content = "";
   let b2Label = "";
   if (layout.useProductSectionToken) {
-    // Always inject token for Promotion/Productgrid
+    // Always inject token for Promotion
     b2Content = "[[PRODUCT_SECTION]]";
     b2Label = "block2/product-section.txt";
   } else {

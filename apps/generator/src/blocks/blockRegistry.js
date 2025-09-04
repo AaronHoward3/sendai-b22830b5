@@ -22,7 +22,7 @@ function libRoot() {
 function ensureSupportedType(emailType) {
   if (!TYPE_DIR[emailType]) {
     throw new Error(
-      `Unsupported emailType "${emailType}". Use Newsletter | Productgrid | Promotion.`
+      `Unsupported emailType "${emailType}". Use Newsletter | Promotion.`
     );
   }
 }

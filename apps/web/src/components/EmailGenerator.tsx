@@ -6,7 +6,7 @@ import { Step2EmailType } from './steps/Step2EmailType';
 import { Step4Generation } from './steps/Step4Generation';
 import { Step5Results } from './steps/Step5Results';
 
-export type EmailType = 'Promotion' | 'Newsletter' | 'Productgrid';
+export type EmailType = 'Promotion' | 'Newsletter';
 export type Tone = 'bold' | 'friendly' | 'formal' | 'fun';
 
 /** Skin IDs must match your backend STYLE_PACKS keys */

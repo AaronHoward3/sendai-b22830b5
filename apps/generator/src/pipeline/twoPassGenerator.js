@@ -106,7 +106,7 @@ export async function runTwoPassGeneration({
   m.log("Layout chosen:", layout.layoutId);
 
   // 1.1) Product section
-  if ((emailType === "Promotion" || emailType === "Productgrid") && Array.isArray(brandData?.products)) {
+  if ((emailType === "Promotion") && Array.isArray(brandData?.products)) {
     m.start("productSection");
     const productHtml = await buildProductSectionWithFallbacks({
       emailType, products: brandData.products, designAesthetic, seed: layout.layoutId

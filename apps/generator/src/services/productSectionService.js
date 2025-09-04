@@ -14,7 +14,6 @@ import path from "path";
 // Map Email Type -> base folder name in your /lib structure
 const TYPE_DIRS = {
   Promotion: "promotion-blocks",
-  Productgrid: "product-blocks",
   Newsletter: "newsletter-blocks", // in case you want product sections in newsletters
 };
 
@@ -106,7 +105,7 @@ function fillTemplate(tpl, prods) {
 
 /**
  * Render a product section MJML fragment.
- * @param {("Promotion"|"Productgrid"|"Newsletter")} emailType
+ * @param {("Promotion"|"Newsletter")} emailType
  * @param {string} aesthetic  // kept for backward-compatibility; used only for fallback
  * @param {Array} products    // [{title, subtitle, price, imageUrl, buttonText, buttonUrl}]
  * @param {string|number} seed

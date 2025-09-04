@@ -43,7 +43,6 @@ type SavedImage = {
 
 const EMAIL_TYPES: { value: EmailType; label: string; description: string }[] = [
   { value: 'Promotion',   label: 'Promotional',       description: 'Sales and special offers' },
-  { value: 'Productgrid', label: 'Product Catalogue', description: 'Featured products showcase' },
   { value: 'Newsletter',  label: 'Newsletter',        description: 'Regular updates and news' },
 ];
 
@@ -246,7 +245,6 @@ function buildUserContext(opts: {
 
   const typeLine: Record<EmailType, string> = {
     Promotion:    `${occName} savings are live for ${brandName}.`,
-    Productgrid:  `Browse ${brandName} picks for ${occName}.`,
     Newsletter:   `${brandName} updates for ${occName}.`,
   };
 
@@ -611,7 +609,7 @@ export const Step2EmailType: React.FC<Step2EmailTypeProps> = ({
       <motion.div variants={fadeInUp}>
         <fieldset className="space-y-3">
           <legend className="text-lg font-medium text-foreground">Email Type</legend>
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 w-full">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 w-full">
           {EMAIL_TYPES.map(t => {
             const active = selectedEmailType === t.value;
             return (
