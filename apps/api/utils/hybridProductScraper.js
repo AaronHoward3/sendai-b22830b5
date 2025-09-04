@@ -956,5 +956,46 @@ function isValidProductName(name) {
   const singleWords = ['more', 'all', 'new', 'sale', 'hot', 'best'];
   if (singleWords.includes(lowerName)) return false;
   
+  // Check for navigation/category patterns
+  const navigationPatterns = [
+    /^shop\s+by/i,
+    /^shop\s+for/i,
+    /^browse\s+by/i,
+    /^browse\s+for/i,
+    /^view\s+all/i,
+    /^see\s+all/i,
+    /^all\s+products/i,
+    /^new\s+arrivals/i,
+    /^trending/i,
+    /^featured/i,
+    /^popular/i,
+    /^sale/i,
+    /^clearance/i,
+    /^deals/i,
+    /^offers/i
+  ];
+  
+  if (navigationPatterns.some(pattern => pattern.test(lowerName))) {
+    return false;
+  }
+  
+  // Check for names that are too generic (likely navigation)
+  const genericPatterns = [
+    /^shop\s+men$/i,
+    /^shop\s+women$/i,
+    /^shop\s+kids$/i,
+    /^shop\s+boys$/i,
+    /^shop\s+girls$/i,
+    /^men$/i,
+    /^women$/i,
+    /^kids$/i,
+    /^boys$/i,
+    /^girls$/i
+  ];
+  
+  if (genericPatterns.some(pattern => pattern.test(lowerName))) {
+    return false;
+  }
+  
   return true;
 }

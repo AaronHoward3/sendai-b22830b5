@@ -1,44 +1,76 @@
-import { scrapeProductsFromDomain } from "../utils/enhancedProductScraper.js";
+import { scrapeProductsFromDomain } from "../utils/hybridProductScraper.js";
 import { scrapeProductsFromDomain as legacyScrapeProducts } from "../utils/productScraper.js";
+import { scrapeProductsFromDomain as enhancedScrapeProducts } from "../utils/enhancedProductScraper.js";
 
 export async function scrapeProducts(req, res) {
-  const { domain, useLegacy } = req.body;
+  const { domain, useLegacy, useEnhanced, maxProducts = 6, minConfidence = 0.4 } = req.body;
 
   if (!domain) {
     return res.status(400).json({ error: "Domain is required" });
   }
 
   try {
-    // Use enhanced scraper by default, with legacy fallback option
-    const products = useLegacy 
-      ? await legacyScrapeProducts(domain)
-      : await scrapeProductsFromDomain(domain);
+    let products;
+    let scraperType;
+
+    if (useLegacy) {
+      // Use legacy scraper
+      products = await legacyScrapeProducts(domain);
+      scraperType = 'legacy';
+    } else if (useEnhanced) {
+      // Use enhanced scraper
+      products = await enhancedScrapeProducts(domain);
+      scraperType = 'enhanced';
+    } else {
+      // Use hybrid scraper (default)
+      products = await scrapeProductsFromDomain(domain, { 
+        maxProducts, 
+        minConfidence 
+      });
+      scraperType = 'hybrid';
+    }
     
-    console.log(`✅ Successfully scraped ${products.length} products from ${domain}`);
+    console.log(`✅ Successfully scraped ${products.length} products from ${domain} using ${scraperType} scraper`);
     
     res.json({ 
       products,
       count: products.length,
       domain,
-      scraper: useLegacy ? 'legacy' : 'enhanced'
+      scraper: scraperType,
+      confidence: products.length > 0 ? products[0].confidence : null
     });
   } catch (err) {
     console.error("❌ Product scrape error:", err.message);
     
-    // If enhanced scraper fails, try legacy as fallback
-    if (!useLegacy) {
-      console.log("🔄 Falling back to legacy scraper...");
+    // If hybrid scraper fails, try enhanced as fallback
+    if (!useLegacy && !useEnhanced) {
+      console.log("🔄 Falling back to enhanced scraper...");
       try {
-        const products = await legacyScrapeProducts(domain);
+        const products = await enhancedScrapeProducts(domain);
         return res.json({ 
           products,
           count: products.length,
           domain,
-          scraper: 'legacy-fallback',
-          warning: 'Enhanced scraper failed, used legacy fallback'
+          scraper: 'enhanced-fallback',
+          warning: 'Hybrid scraper failed, used enhanced fallback'
         });
       } catch (fallbackErr) {
-        console.error("❌ Legacy fallback also failed:", fallbackErr.message);
+        console.error("❌ Enhanced fallback also failed:", fallbackErr.message);
+        
+        // Try legacy as last resort
+        console.log("🔄 Falling back to legacy scraper...");
+        try {
+          const products = await legacyScrapeProducts(domain);
+          return res.json({ 
+            products,
+            count: products.length,
+            domain,
+            scraper: 'legacy-fallback',
+            warning: 'Hybrid and enhanced scrapers failed, used legacy fallback'
+          });
+        } catch (legacyErr) {
+          console.error("❌ Legacy fallback also failed:", legacyErr.message);
+        }
       }
     }
     
@@ -60,9 +92,10 @@ export async function testScraper(req, res) {
   try {
     const startTime = Date.now();
     
-    // Test both scrapers for comparison
-    const [enhancedResults, legacyResults] = await Promise.allSettled([
-      scrapeProductsFromDomain(domain),
+    // Test all three scrapers for comparison
+    const [hybridResults, enhancedResults, legacyResults] = await Promise.allSettled([
+      scrapeProductsFromDomain(domain, { maxProducts: 6, minConfidence: 0.4 }),
+      enhancedScrapeProducts(domain),
       legacyScrapeProducts(domain)
     ]);
     
@@ -71,6 +104,14 @@ export async function testScraper(req, res) {
     const response = {
       domain,
       executionTime: `${endTime - startTime}ms`,
+      hybrid: {
+        status: hybridResults.status,
+        products: hybridResults.status === 'fulfilled' ? hybridResults.value : [],
+        count: hybridResults.status === 'fulfilled' ? hybridResults.value.length : 0,
+        error: hybridResults.status === 'rejected' ? hybridResults.reason.message : null,
+        avgConfidence: hybridResults.status === 'fulfilled' && hybridResults.value.length > 0 ? 
+          hybridResults.value.reduce((sum, p) => sum + (p.confidence || 0), 0) / hybridResults.value.length : 0
+      },
       enhanced: {
         status: enhancedResults.status,
         products: enhancedResults.status === 'fulfilled' ? enhancedResults.value : [],
@@ -87,18 +128,25 @@ export async function testScraper(req, res) {
     
     if (debug) {
       response.comparison = {
-        enhancedAdvantage: response.enhanced.count - response.legacy.count,
-        commonProducts: findCommonProducts(response.enhanced.products, response.legacy.products),
+        hybridAdvantage: response.hybrid.count - Math.max(response.enhanced.count, response.legacy.count),
+        commonProducts: findCommonProducts(response.hybrid.products, response.enhanced.products),
+        uniqueToHybrid: response.hybrid.products.filter(p => 
+          !response.enhanced.products.some(ep => ep.name === p.name || ep.url === p.url) &&
+          !response.legacy.products.some(lp => lp.name === p.name || lp.url === p.url)
+        ),
         uniqueToEnhanced: response.enhanced.products.filter(p => 
+          !response.hybrid.products.some(hp => hp.name === p.name || hp.url === p.url) &&
           !response.legacy.products.some(lp => lp.name === p.name || lp.url === p.url)
         ),
         uniqueToLegacy: response.legacy.products.filter(p => 
+          !response.hybrid.products.some(hp => hp.name === p.name || hp.url === p.url) &&
           !response.enhanced.products.some(ep => ep.name === p.name || ep.url === p.url)
         )
       };
     }
     
     console.log(`🧪 Test results for ${domain}:`);
+    console.log(`   Hybrid: ${response.hybrid.count} products (avg confidence: ${(response.hybrid.avgConfidence * 100).toFixed(1)}%)`);
     console.log(`   Enhanced: ${response.enhanced.count} products`);
     console.log(`   Legacy: ${response.legacy.count} products`);
     
@@ -113,12 +161,12 @@ export async function testScraper(req, res) {
   }
 }
 
-function findCommonProducts(enhanced, legacy) {
-  return enhanced.filter(ep => 
-    legacy.some(lp => 
-      lp.name === ep.name || 
-      lp.url === ep.url ||
-      (lp.name && ep.name && lp.name.toLowerCase().includes(ep.name.toLowerCase()))
+function findCommonProducts(hybrid, enhanced) {
+  return hybrid.filter(hp => 
+    enhanced.some(ep => 
+      ep.name === hp.name || 
+      ep.url === hp.url ||
+      (ep.name && hp.name && ep.name.toLowerCase().includes(hp.name.toLowerCase()))
     )
   );
 }
