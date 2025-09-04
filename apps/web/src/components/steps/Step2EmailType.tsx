@@ -458,49 +458,15 @@ export const Step2EmailType: React.FC<Step2EmailTypeProps> = ({
   // ------------ Scraped products + seed ------------
   const scrapedProducts = useMemo(() => getScrapedProductsFromFormData(formData), [formData]);
 
-  // Debug: Log scraped products to see what we're getting
+  const [products, setProducts] = useState<ProductLink[]>([]);
+
+  // Set products once when scrapedProducts are available
   useEffect(() => {
     if (scrapedProducts.length > 0) {
-      console.log('🔍 Scraped products:', scrapedProducts);
-      console.log('🔍 First product details:', {
-        name: scrapedProducts[0]?.name,
-        url: scrapedProducts[0]?.url,
-        image: scrapedProducts[0]?.image,
-        hasImage: !!scrapedProducts[0]?.image
-      });
-    }
-  }, [scrapedProducts]); // Remove formData from dependencies
-
-  const [products, setProducts] = useState<ProductLink[]>(
-    Array.isArray(formData.products) && formData.products.length > 0
-      ? formData.products
-      : scrapedProducts
-  );
-
-  // Update products when scrapedProducts changes
-  useEffect(() => {
-    if (scrapedProducts.length > 0) {
-      console.log('🔍 Setting products from scraped products');
+      console.log('🔍 Setting products from scraped products:', scrapedProducts.length);
       setProducts(scrapedProducts);
     }
-  }, [scrapedProducts]);
-
-  // TEMPORARY: Force add a test product to verify image display
-  useEffect(() => {
-    console.log('🔍 Current products:', products);
-    console.log('🔍 Scraped products:', scrapedProducts);
-    
-    // Only add test product if no products exist
-    if (products.length === 0 && scrapedProducts.length === 0) {
-      console.log('🔍 Adding test product');
-      const testProduct: ProductLink = {
-        name: 'Test Product with Image',
-        url: 'https://example.com/product',
-        image: 'https://via.placeholder.com/300x300/FF0000/FFFFFF?text=Test+Product'
-      };
-      setProducts([testProduct]);
-    }
-  }, [products.length, scrapedProducts.length]);
+  }, [scrapedProducts.length]); // Only depend on length to prevent infinite loops
 
   /* ---------- Auto-suggest contexts on entry (human-friendly) ---------- */
   const generateContexts = React.useCallback(() => {
