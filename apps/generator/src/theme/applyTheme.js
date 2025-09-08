@@ -193,8 +193,8 @@ export function applyTheme(mjml, payloadBrand, skinIdRaw) {
         s = s.replace(/<mj-section\b/i, `<mj-section background-color="${slab}"`);
       }
     }
-    // Default: ensure section background exists if none
-    else {
+    // Default: ensure section background exists if none (but NOT when gradient is active)
+    else if (!gradientActive) {
       const hasBgColor = /\sbackground-color="[^"]*"/i.test(s);
       const hasBgUrl = /\sbackground-url="[^"]*"/i.test(s);
       if (!hasBgColor && !hasBgUrl) {
