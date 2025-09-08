@@ -4,6 +4,8 @@ import { AnimatedBlobLoader } from "@/components/ui/AnimatedBlobLoader";
 import { supabase } from "@/lib/supabaseClient";
 import { postJSON } from "@/lib/api";
 
+const API_ROOT = '/api';
+
 interface Step4GenerationProps {
   formData: FormData;
   updateFormData: (updates: Partial<FormData>) => void;
@@ -40,6 +42,26 @@ export const Step4Generation: React.FC<Step4GenerationProps> = ({
         const { data: { session } } = await supabase.auth.getSession();
         const token = session?.access_token;
 
+        // First, get a CSRF token
+        setStatus("Getting security token…");
+        const csrfResponse = await fetch(`${API_ROOT}/generate/csrf`, {
+          method: "GET",
+          headers: {
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          },
+          signal: controller.signal,
+        });
+
+        if (!csrfResponse.ok) {
+          throw new Error(`Failed to get CSRF token: ${csrfResponse.status} ${csrfResponse.statusText}`);
+        }
+
+        const csrfToken = csrfResponse.headers.get('X-CSRF-Token');
+        if (!csrfToken) {
+          throw new Error('No CSRF token received from server');
+        }
+
+        setStatus("Generating email…");
         const data = await postJSON<{ 
           emails?: Array<{ content?: string; html?: string; subject?: string }>; 
           subjectLine?: string;

@@ -19,6 +19,11 @@ const generateLimiter = rateLimit({
   keyGenerator: (req) => req.user?.id || req.ip,
 });
 
+// GET /api/generate/csrf - Get CSRF token for authenticated user
+router.get("/csrf", requireAuth, attachCSRFToken, (req, res) => {
+  res.json({ success: true });
+});
+
 // POST /api/generate
 router.post("/", requireAuth, generateLimiter, attachCSRFToken, requireCSRF, validateRequest(generateEmailSchema), maybeConsumeImageCredit, requireEmailCredit, generateEmails);
 
