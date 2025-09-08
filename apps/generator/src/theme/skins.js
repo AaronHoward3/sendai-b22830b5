@@ -108,9 +108,22 @@ export function makeSkin(tokens, skinIdRaw) {
         hrefs: [],
         isSerif: true
       };
+      
+      // Override palette to pure black and white
+      base.palette = {
+        pageBg: "#ffffff",      // White background
+        sectionBg: "#ffffff",   // White sections
+        text: "#000000",        // Black text
+        muted: "#666666",       // Gray muted text
+        brand: "#000000",       // Black brand color
+        brandAlt: "#000000",    // Black brand alt
+        border: "#000000",      // Black borders
+        cardBg: "#ffffff"       // White cards
+      };
+      
       base.radii = { card: 0, img: 0, btn: 0 };
       base.buttons.variant = "outline";
-      base.extras.colorOverrides = false;
+      base.extras.colorOverrides = true; // Enable color overrides for black/white enforcement
     }
     if (skinId === "neo_brutalist") {
       base.radii = { card: 0, img: 0, btn: 0 };
@@ -163,14 +176,15 @@ export function makeSkin(tokens, skinIdRaw) {
     }
 
     case "gradient_glow": {
-      base.h1 = { size: 44, weight: 800 };
-      base.h2 = { size: 26, weight: 700 };
+      // Extra bold headings for better visibility on gradient background
+      base.h1 = { size: 48, weight: 900 };  // Increased size and weight
+      base.h2 = { size: 30, weight: 900 };   // Increased size and weight
       base.radii = { card: 16, img: 16, btn: 9999 };
       base.buttons = { ...base.buttons, variant: "gradient", pad: "14px 22px", caps: true, letterSpacing: 0.06 };
       base.img = { width: 540 };
       base.space = { cardPad: 28 };
       base.shadow = { card: "0 8px 24px rgba(0,0,0,.12)" };
-      base.typography = { ...base.typography, h1LS: 0, h2LS: 0, capsHeadings: false };
+      base.typography = { ...base.typography, h1LS: -0.01, h2LS: -0.01, capsHeadings: false }; // Tighter letter spacing for bold text
       base.extras.globalGradient = true;
       base.extras.buttonContrastFromBg = true;
 

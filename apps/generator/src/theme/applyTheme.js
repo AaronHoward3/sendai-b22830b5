@@ -117,8 +117,8 @@ function buildHead(skin) {
       <mj-class name="h2" font-family="${H?.name || "Inter"}, ${(H?.isSerif ? serifFallback : sansFallback)}" font-weight="${skin.h2.weight}" font-size="${skin.h2.size}px" line-height="1.3" text-transform="${skin.typography?.capsHeadings ? "uppercase" : "none"}" letter-spacing="${(skin.typography?.h2LS ?? 0)}em" color="${skin.palette.text}"></mj-class>
 
       <!-- Thick title helpers (used esp. by bold_contrasting) -->
-      <mj-class name="title" font-family="${H?.name || "Inter"}, ${(H?.isSerif ? serifFallback : sansFallback)}" font-weight="900" font-size="${Math.max(24, skin.h2.size)}px" line-height="1.25" color="${skin.palette.text}"></mj-class>
-      <mj-class name="product-title" font-family="${H?.name || "Inter"}, ${(H?.isSerif ? serifFallback : sansFallback)}" font-weight="900" font-size="${Math.max(20, Math.round(skin.h2.size * 0.9))}px" line-height="1.25" color="${skin.palette.text}"></mj-class>
+      <mj-class name="title" font-family="${H?.name || "Inter"}, ${(H?.isSerif ? serifFallback : sansFallback)}" font-weight="900" font-size="${skin.id === 'gradient_glow' ? Math.max(36, skin.h1.size) : Math.max(24, skin.h2.size)}px" line-height="1.2" color="${skin.palette.text}" letter-spacing="${skin.id === 'gradient_glow' ? '-0.02em' : '0em'}"></mj-class>
+      <mj-class name="product-title" font-family="${H?.name || "Inter"}, ${(H?.isSerif ? serifFallback : sansFallback)}" font-weight="900" font-size="${skin.id === 'gradient_glow' ? Math.max(28, skin.h2.size) : Math.max(20, Math.round(skin.h2.size * 0.9))}px" line-height="1.25" color="${skin.palette.text}" letter-spacing="${skin.id === 'gradient_glow' ? '-0.01em' : '0em'}"></mj-class>
       <mj-class name="no-pad" padding="0"></mj-class>
 
       <mj-class name="muted" color="${skin.palette.muted}"></mj-class>
@@ -299,16 +299,35 @@ export function applyTheme(mjml, payloadBrand, skinIdRaw) {
     out = out.replace(/<mj-image\b[^>]*>/gi, (tag) => addOrReplaceAttr(tag, "padding", "0"));
   }
   
-  // 3) Fallback: swap common hardcoded colors to brand tones (skip exempt skins)
-  if (!["neo_brutalist", "luxe_mono"].includes(skin.id)) {
-    const swaps = [
-      { re: /color="#ffd700"/gi, repl: `color="${skin.palette.brand}"` },
-      { re: /color="#ffb400"/gi, repl: `color="${skin.palette.brand}"` },
-      { re: /color="#ff4d4d"/gi, repl: `color="${skin.palette.brandAlt}"` },
-      { re: /background-color="#ffd700"/gi, repl: `background-color="${skin.palette.brand}"` },
-      { re: /background-color="#ffb400"/gi, repl: `background-color="${skin.palette.brand}"` },
-      { re: /background-color="#ff4d4d"/gi, repl: `background-color="${skin.palette.brandAlt}"` }
-    ];
+  // 3) Color overrides: swap hardcoded colors to brand tones or black/white for luxe_mono
+  if (skin.extras.colorOverrides) {
+    let swaps = [];
+    
+    if (skin.id === "luxe_mono") {
+      // Luxe mono: force everything to black and white
+      swaps = [
+        // Convert any color to black
+        { re: /color="#[0-9a-fA-F]{6}"/gi, repl: `color="${skin.palette.text}"` },
+        { re: /color="#[0-9a-fA-F]{3}"/gi, repl: `color="${skin.palette.text}"` },
+        // Convert any background-color to white or black based on context
+        { re: /background-color="#[0-9a-fA-F]{6}"/gi, repl: `background-color="${skin.palette.pageBg}"` },
+        { re: /background-color="#[0-9a-fA-F]{3}"/gi, repl: `background-color="${skin.palette.pageBg}"` },
+        // Convert borders to black
+        { re: /border-color="#[0-9a-fA-F]{6}"/gi, repl: `border-color="${skin.palette.border}"` },
+        { re: /border-color="#[0-9a-fA-F]{3}"/gi, repl: `border-color="${skin.palette.border}"` }
+      ];
+    } else {
+      // Other skins: swap common hardcoded colors to brand tones
+      swaps = [
+        { re: /color="#ffd700"/gi, repl: `color="${skin.palette.brand}"` },
+        { re: /color="#ffb400"/gi, repl: `color="${skin.palette.brand}"` },
+        { re: /color="#ff4d4d"/gi, repl: `color="${skin.palette.brandAlt}"` },
+        { re: /background-color="#ffd700"/gi, repl: `background-color="${skin.palette.brand}"` },
+        { re: /background-color="#ffb400"/gi, repl: `background-color="${skin.palette.brand}"` },
+        { re: /background-color="#ff4d4d"/gi, repl: `background-color="${skin.palette.brandAlt}"` }
+      ];
+    }
+    
     for (const { re, repl } of swaps) out = out.replace(re, repl);
   }
 
