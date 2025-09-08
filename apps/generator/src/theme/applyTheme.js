@@ -183,6 +183,11 @@ export function applyTheme(mjml, payloadBrand, skinIdRaw) {
       s = s
         .replace(/(<mj-section\b[^>]*?)\s+background-color="[^"]*"/gi, "$1")
         .replace(/(<mj-section\b[^>]*?)\s+background-url="[^"]*"/gi, "$1");
+      
+      // Explicitly set sections to be transparent when gradient is active
+      if (!/\sbackground-color="[^"]*"/i.test(s)) {
+        s = s.replace(/<mj-section\b/i, `<mj-section background-color="transparent"`);
+      }
     }
     // Bold-contrasting slabs (only when NOT gradient)
     else if (skin.extras.slabMode === "dark") {
