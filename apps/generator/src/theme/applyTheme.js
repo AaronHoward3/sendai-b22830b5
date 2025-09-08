@@ -161,12 +161,22 @@ export function applyTheme(mjml, payloadBrand, skinIdRaw) {
   // Always set base background-color
   newBody = addOrReplaceAttr(newBody, "background-color", tokens.pageBg);
 
-  // If gradient skin, set a global background-url with inline SVG gradient
+  // If gradient skin, set a global background using CSS gradient
   if (gradientActive) {
-    const dataUri = svgGradientDataUri(ang, g1, g2);
-    newBody = addOrReplaceAttr(newBody, "background-url", dataUri);
-    newBody = addOrReplaceAttr(newBody, "background-size", "cover");
-    newBody = addOrReplaceAttr(newBody, "background-repeat", "no-repeat");
+    // Use CSS gradient for better MJML compatibility
+    const cssGradient = `linear-gradient(${ang}deg, ${g1}, ${g2})`;
+    
+    // Add CSS gradient to the style section
+    const gradientCss = `.gradient-bg { background: ${cssGradient} !important; }`;
+    
+    // Insert gradient CSS into the existing style tag
+    out = out.replace(
+      /(<mj-style>)([\s\S]*?)(<\/mj-style>)/i,
+      `$1$2${gradientCss}$3`
+    );
+    
+    // Set the body to use the gradient class
+    newBody = addOrReplaceAttr(newBody, "css-class", "gradient-bg");
   } else {
     // No gradient: ensure clean base
     newBody = newBody.replace(/\sbackground-url="[^"]*"/i, "");
