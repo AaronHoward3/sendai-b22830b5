@@ -31,7 +31,7 @@ async function parseJsonOrThrow(res: Response) {
   }
 }
 
-export async function postJSON<T>(path: string, body?: unknown): Promise<T> {
+export async function postJSON<T>(path: string, body?: unknown, authToken?: string, signal?: AbortSignal): Promise<T> {
   const headers: Record<string, string> = { "Content-Type": "application/json" };
   
   // Add CSRF token if available
@@ -39,11 +39,17 @@ export async function postJSON<T>(path: string, body?: unknown): Promise<T> {
     headers['X-CSRF-Token'] = csrfToken;
   }
   
+  // Add authorization token if provided
+  if (authToken) {
+    headers['Authorization'] = `Bearer ${authToken}`;
+  }
+  
   const res = await fetch(apiPath(path), {
     method: "POST",
     headers,
     credentials: "include", // keep auth cookies for requireAuth
     body: body ? JSON.stringify(body) : undefined,
+    signal,
   });
   return parseJsonOrThrow(res) as Promise<T>;
 }

@@ -2,8 +2,7 @@ import React, { useEffect, useRef, useState } from "react";
 import { FormData } from "../EmailGenerator";
 import { AnimatedBlobLoader } from "@/components/ui/AnimatedBlobLoader";
 import { supabase } from "@/lib/supabaseClient";
-
-const API_ROOT = '/api';
+import { postJSON } from "@/lib/api";
 
 interface Step4GenerationProps {
   formData: FormData;
@@ -41,52 +40,24 @@ export const Step4Generation: React.FC<Step4GenerationProps> = ({
         const { data: { session } } = await supabase.auth.getSession();
         const token = session?.access_token;
 
-        const res = await fetch(`${API_ROOT}/generate`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            ...(token ? { Authorization: `Bearer ${token}` } : {}),
-          },
-          body: JSON.stringify({
-            domain: formData.domain,
-            emailType: formData.emailType,
-            designAesthetic: formData.designAesthetic,
-            tone: formData.tone,
-            userContext: formData.userContext,
-            imageContext: formData.imageContext,
-            products: formData.products || [],
-            brandData: formData.brandData || {},
-            customHeroImage: formData.useCustomHero ?? true,
-            savedHeroImageUrl: formData.savedHeroImageUrl || null, // NEW: backend uses this to inject
-            // kept for future compatibility if you ever resolve by id:
-            savedHeroImageId: formData.savedHeroImageId || null,
-          }),
-          signal: controller.signal,
-        });
-
-        if (res.status === 402) {
-          stopFake();
-          setStatus("No email credits left. Redirecting to Manage Plan…");
-          window.location.href = "/settings?plan=1";
-          return;
-        }
-
-        if (!res.ok) {
-          stopFake();
-          setStatus(`Error: ${res.status} ${res.statusText}`);
-          return;
-        }
-
-        const text = await res.text();
-        let data: { emails?: Array<{ content?: string; html?: string; subject?: string }>; subjectLine?: string };
-        try {
-          data = JSON.parse(text);
-        } catch {
-          stopFake();
-          console.error("Invalid JSON from backend:", text);
-          setStatus("Error: Invalid JSON from backend");
-          return;
-        }
+        const data = await postJSON<{ 
+          emails?: Array<{ content?: string; html?: string; subject?: string }>; 
+          subjectLine?: string;
+          success?: boolean;
+        }>("/generate", {
+          domain: formData.domain,
+          emailType: formData.emailType,
+          designAesthetic: formData.designAesthetic,
+          tone: formData.tone,
+          userContext: formData.userContext,
+          imageContext: formData.imageContext,
+          products: formData.products || [],
+          brandData: formData.brandData || {},
+          customHeroImage: formData.useCustomHero ?? true,
+          savedHeroImageUrl: formData.savedHeroImageUrl || null, // NEW: backend uses this to inject
+          // kept for future compatibility if you ever resolve by id:
+          savedHeroImageId: formData.savedHeroImageId || null,
+        }, token, controller.signal);
 
         const first = data?.emails?.[0];
         if (!first) {
@@ -126,7 +97,18 @@ export const Step4Generation: React.FC<Step4GenerationProps> = ({
         }
         stopFake();
         console.error("Generate failed:", err);
-        setStatus("Error: " + (err instanceof Error ? err.message : "unknown"));
+        
+        // Handle specific error cases
+        if (err instanceof Error) {
+          if (err.message.includes("HTTP 402")) {
+            setStatus("No email credits left. Redirecting to Manage Plan…");
+            window.location.href = "/settings?plan=1";
+            return;
+          }
+          setStatus("Error: " + err.message);
+        } else {
+          setStatus("Error: unknown");
+        }
       }
     };
 
