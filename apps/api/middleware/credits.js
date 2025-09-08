@@ -7,6 +7,12 @@ export async function requireEmailCredit(req, res, next) {
     const uid = req.user?.id;
     if (!uid) return res.status(401).json({ error: "Unauthorized" });
 
+    // Check if Supabase is available
+    if (!supabase) {
+      console.warn("[credits] Supabase not available, skipping credit check");
+      return next();
+    }
+
     const { data: ok, error } = await supabase.rpc("consume_credits_admin", {
       uid,
       p_emails: 1,
@@ -19,6 +25,7 @@ export async function requireEmailCredit(req, res, next) {
     if (!ok) return res.status(402).json({ error: "Not enough email credits" });
     next();
   } catch (e) {
+    console.error("[credits] requireEmailCredit error:", e);
     res.status(500).json({ error: e.message || "Email credit check failed" });
   }
 }
@@ -28,6 +35,12 @@ export async function maybeConsumeImageCredit(req, res, next) {
   try {
     const uid = req.user?.id;
     if (!uid) return res.status(401).json({ error: "Unauthorized" });
+
+    // Check if Supabase is available
+    if (!supabase) {
+      console.warn("[credits] Supabase not available, skipping image credit check");
+      return next();
+    }
 
     const wantsCustomHero = !!req.body?.customHeroImage;
     const hasSaved = !!req.body?.savedHeroImageId; // when user reuses an image, skip charging
@@ -45,6 +58,7 @@ export async function maybeConsumeImageCredit(req, res, next) {
     }
     next();
   } catch (e) {
+    console.error("[credits] maybeConsumeImageCredit error:", e);
     res.status(500).json({ error: e.message || "Image credit check failed" });
   }
 }

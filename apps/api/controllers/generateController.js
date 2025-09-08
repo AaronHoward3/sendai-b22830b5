@@ -202,6 +202,12 @@ export async function generateEmails(req, res) {
 
     // ---- Call Generator ----
     console.log("[generateController] Forwarding to Generator...");
+    
+    if (!process.env.GENERATOR_URL) {
+      console.error("[generateController] GENERATOR_URL not configured");
+      return res.status(500).json({ error: "Generator service not configured" });
+    }
+    
     const genStart = Date.now();
     const generatorResponse = await fetch(process.env.GENERATOR_URL, {
       method: "POST",
@@ -212,11 +218,19 @@ export async function generateEmails(req, res) {
 
     if (!generatorResponse.ok) {
       console.log("Generator server error code:", generatorResponse.status);
+      const errorText = await generatorResponse.text().catch(() => "Unknown error");
+      console.error("[generateController] Generator error:", errorText);
       return res.status(500).json({ error: "Email generator failed", status: generatorResponse.status });
     }
 
     const headerHero = generatorResponse.headers.get("x-hero-image-url-used") || null;
-    const generated = await generatorResponse.json();
+    let generated;
+    try {
+      generated = await generatorResponse.json();
+    } catch (parseError) {
+      console.error("[generateController] Failed to parse generator response:", parseError);
+      return res.status(500).json({ error: "Invalid response from generator service" });
+    }
 
     // Compile MJML -> HTML
     const htmlEmails = (generated.emails || []).map((email) => {
