@@ -6,7 +6,6 @@ import { requireEmailCredit } from "../middleware/credits.js";
 import { generateEmails } from "../controllers/generateController.js";
 import { maybeConsumeImageCredit } from "../middleware/credits.js";
 import { validateRequest, generateEmailSchema } from "../middleware/validation.js";
-import { requireCSRF, attachCSRFToken } from "../middleware/csrf.js";
 
 const router = Router();
 
@@ -19,12 +18,7 @@ const generateLimiter = rateLimit({
   keyGenerator: (req) => req.user?.id || req.ip,
 });
 
-// GET /api/generate/csrf - Get CSRF token for authenticated user
-router.get("/csrf", requireAuth, attachCSRFToken, (req, res) => {
-  res.json({ success: true });
-});
-
 // POST /api/generate
-router.post("/", requireAuth, generateLimiter, attachCSRFToken, requireCSRF, validateRequest(generateEmailSchema), maybeConsumeImageCredit, requireEmailCredit, generateEmails);
+router.post("/", requireAuth, generateLimiter, validateRequest(generateEmailSchema), maybeConsumeImageCredit, requireEmailCredit, generateEmails);
 
 export default router;

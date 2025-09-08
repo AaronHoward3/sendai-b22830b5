@@ -37,49 +37,48 @@ export const Step4Generation: React.FC<Step4GenerationProps> = ({
 
     let didAbort = false;
     const run = async () => {
-      setStatus("Contacting generator…");
+      setStatus("Generating email…");
       try {
         const { data: { session } } = await supabase.auth.getSession();
         const token = session?.access_token;
 
-        // First, get a CSRF token
-        setStatus("Getting security token…");
-        const csrfResponse = await fetch(`${API_ROOT}/generate/csrf`, {
-          method: "GET",
+        // Make the generate request directly
+        const generateResponse = await fetch(`${API_ROOT}/generate`, {
+          method: "POST",
           headers: {
+            "Content-Type": "application/json",
             ...(token ? { Authorization: `Bearer ${token}` } : {}),
           },
+          body: JSON.stringify({
+            domain: formData.domain,
+            emailType: formData.emailType,
+            designAesthetic: formData.designAesthetic,
+            tone: formData.tone,
+            userContext: formData.userContext,
+            imageContext: formData.imageContext,
+            products: formData.products || [],
+            brandData: formData.brandData || {},
+            customHeroImage: formData.useCustomHero ?? true,
+            savedHeroImageUrl: formData.savedHeroImageUrl || null, // NEW: backend uses this to inject
+            // kept for future compatibility if you ever resolve by id:
+            savedHeroImageId: formData.savedHeroImageId || null,
+          }),
           signal: controller.signal,
         });
 
-        if (!csrfResponse.ok) {
-          throw new Error(`Failed to get CSRF token: ${csrfResponse.status} ${csrfResponse.statusText}`);
+        if (generateResponse.status === 402) {
+          stopFake();
+          setStatus("No email credits left. Redirecting to Manage Plan…");
+          window.location.href = "/settings?plan=1";
+          return;
         }
 
-        const csrfToken = csrfResponse.headers.get('X-CSRF-Token');
-        if (!csrfToken) {
-          throw new Error('No CSRF token received from server');
+        if (!generateResponse.ok) {
+          const errorText = await generateResponse.text();
+          throw new Error(`HTTP ${generateResponse.status} ${generateResponse.statusText}\n${errorText.slice(0, 800)}`);
         }
 
-        setStatus("Generating email…");
-        const data = await postJSON<{ 
-          emails?: Array<{ content?: string; html?: string; subject?: string }>; 
-          subjectLine?: string;
-          success?: boolean;
-        }>("/generate", {
-          domain: formData.domain,
-          emailType: formData.emailType,
-          designAesthetic: formData.designAesthetic,
-          tone: formData.tone,
-          userContext: formData.userContext,
-          imageContext: formData.imageContext,
-          products: formData.products || [],
-          brandData: formData.brandData || {},
-          customHeroImage: formData.useCustomHero ?? true,
-          savedHeroImageUrl: formData.savedHeroImageUrl || null, // NEW: backend uses this to inject
-          // kept for future compatibility if you ever resolve by id:
-          savedHeroImageId: formData.savedHeroImageId || null,
-        }, token, controller.signal);
+        const data = await generateResponse.json();
 
         const first = data?.emails?.[0];
         if (!first) {

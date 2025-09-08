@@ -8,13 +8,28 @@ export function generateCSRFToken() {
 }
 
 export function validateCSRFToken(token, userId) {
-  if (!token || !userId) return false;
+  if (!token || !userId) {
+    console.log('[CSRF] Validation failed: missing token or userId', { hasToken: !!token, hasUserId: !!userId });
+    return false;
+  }
   
   const storedToken = csrfTokens.get(userId);
-  if (!storedToken || storedToken !== token) return false;
+  console.log('[CSRF] Token validation:', { 
+    userId, 
+    hasStoredToken: !!storedToken, 
+    tokensMatch: storedToken === token,
+    storedTokenPreview: storedToken ? storedToken.slice(0, 8) + '...' : 'none',
+    receivedTokenPreview: token.slice(0, 8) + '...'
+  });
+  
+  if (!storedToken || storedToken !== token) {
+    console.log('[CSRF] Token validation failed');
+    return false;
+  }
   
   // Remove token after use (one-time use)
   csrfTokens.delete(userId);
+  console.log('[CSRF] Token validated and consumed');
   return true;
 }
 
@@ -30,6 +45,19 @@ export function requireCSRF(req, res, next) {
   }
 
   const csrfToken = req.headers['x-csrf-token'] || req.body._csrf;
+  
+  console.log('[CSRF] requireCSRF middleware:', {
+    method: req.method,
+    path: req.path,
+    userId,
+    hasTokenInHeaders: !!req.headers['x-csrf-token'],
+    hasTokenInBody: !!req.body._csrf,
+    tokenFromHeaders: req.headers['x-csrf-token'] ? req.headers['x-csrf-token'].slice(0, 8) + '...' : 'none',
+    tokenFromBody: req.body._csrf ? req.body._csrf.slice(0, 8) + '...' : 'none',
+    allHeaders: Object.keys(req.headers).filter(h => h.toLowerCase().includes('csrf')),
+    csrfTokenPreview: csrfToken ? csrfToken.slice(0, 8) + '...' : 'none'
+  });
+  
   if (!validateCSRFToken(csrfToken, userId)) {
     return res.status(403).json({ error: 'Invalid CSRF token' });
   }
@@ -43,6 +71,12 @@ export function attachCSRFToken(req, res, next) {
 
   const token = generateCSRFToken();
   csrfTokens.set(userId, token);
+  
+  console.log('[CSRF] Generated new token for user:', { 
+    userId, 
+    tokenPreview: token.slice(0, 8) + '...',
+    totalTokensStored: csrfTokens.size 
+  });
   
   // Add token to response headers
   res.setHeader('X-CSRF-Token', token);

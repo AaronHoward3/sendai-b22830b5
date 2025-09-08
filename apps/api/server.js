@@ -67,7 +67,7 @@ app.use("/api/brand", brandRoutes);   // existing mount (singular)
 app.use("/api/brands", brandRoutes);
 
 app.use("/api/products", productRoutes);
-app.use("/api/generate", requireAuth, generateRoutes);
+app.use("/api/generate", generateRoutes);
 
 // Billing lives under /api/billing so frontend path matches
 app.use("/api/billing", billingRoutes);
@@ -95,6 +95,7 @@ console.log(`- OPENAI_API_KEY: ${process.env.OPENAI_API_KEY ? "✅ yes" : "❌ n
 console.log(`- STRIPE_SECRET_KEY: ${process.env.STRIPE_SECRET_KEY ? "✅ yes" : "❌ no"}`);
 console.log(`- STRIPE_WEBHOOK_SECRET: ${process.env.STRIPE_WEBHOOK_SECRET ? "✅ yes" : "❌ no"}`);
 console.log(`- SCRAPINGBEE_API_KEY: ${process.env.SCRAPINGBEE_API_KEY ? "✅ yes" : "❌ no"}`);
+console.log(`- GENERATOR_URL: ${process.env.GENERATOR_URL ? "✅ yes" : "❌ no"}`);
 console.log(`- CLIENT_URL: ${process.env.CLIENT_URL}`);
 
 console.log("\n📡 Available Routes (high level):");

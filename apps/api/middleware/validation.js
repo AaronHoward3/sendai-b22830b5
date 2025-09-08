@@ -24,8 +24,10 @@ export const generateEmailSchema = z.object({
   userContext: z.string().max(1000, 'User context too long'),
   imageContext: z.string().max(1000, 'Image context too long').optional(),
   products: z.array(productSchema).max(4, 'Too many products'),
-  useCustomHero: z.boolean(),
+  customHeroImage: z.boolean(),
   savedHeroImageUrl: z.string().url().optional(),
+  savedHeroImageId: z.string().optional(),
+  brandData: z.object({}).optional(),
 });
 
 export function validateRequest(schema) {
