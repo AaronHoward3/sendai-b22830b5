@@ -96,11 +96,18 @@ export function makeSkin(tokens, skinIdRaw) {
   // EXEMPT skins keep their own stark rules
   if (EXEMPT.has(skinId)) {
     if (skinId === "luxe_mono") {
-      base.fonts.heading.name = "Playfair Display";
-      base.fonts.heading.hrefs = [
-        "https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&display=swap"
-      ];
-      base.fonts.body.name = "Georgia";
+      base.fonts.heading = {
+        name: "Playfair Display",
+        hrefs: [
+          "https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&display=swap"
+        ],
+        isSerif: true
+      };
+      base.fonts.body = {
+        name: "Georgia",
+        hrefs: [],
+        isSerif: true
+      };
       base.radii = { card: 0, img: 0, btn: 0 };
       base.buttons.variant = "outline";
       base.extras.colorOverrides = false;
@@ -167,10 +174,18 @@ export function makeSkin(tokens, skinIdRaw) {
       base.extras.globalGradient = true;
       base.extras.buttonContrastFromBg = true;
 
+      // Ensure we have distinct gradient colors
       let g1 = tokens.gradient.from;
       let g2 = tokens.gradient.to;
       if (!g2 || g2.toLowerCase() === g1.toLowerCase()) g2 = deriveSecondStop(g1);
-      base.pattern = { kind: "linear", grad1: g1, grad2: g2, angle: tokens.gradient.angle };
+      
+      // Make gradient more dramatic by ensuring good contrast
+      base.pattern = { 
+        kind: "linear", 
+        grad1: g1, 
+        grad2: g2, 
+        angle: 135 // Fixed angle for better visibility
+      };
       break;
     }
 
@@ -201,10 +216,18 @@ export function makeSkin(tokens, skinIdRaw) {
     }
 
     case "magazine_serif": {
-      base.fonts.heading.name = "Playfair Display";
-      base.fonts.heading.hrefs = [
-        "https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&display=swap"
-      ];
+      base.fonts.heading = {
+        name: "Playfair Display",
+        hrefs: [
+          "https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&display=swap"
+        ],
+        isSerif: true
+      };
+      base.fonts.body = {
+        name: "Georgia",
+        hrefs: [],
+        isSerif: true
+      };
       base.h1 = { size: 44, weight: 700 };
       base.h2 = { size: 28, weight: 700 };
       base.bodySize = 17;
