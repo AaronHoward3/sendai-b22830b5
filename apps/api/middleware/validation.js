@@ -39,10 +39,8 @@ export function validateRequest(schema) {
         ...req.params
       });
       
-      // Replace request data with validated data
+      // Only replace request body with validated data (query and params are read-only)
       req.body = { ...req.body, ...validatedData };
-      req.query = { ...req.query, ...validatedData };
-      req.params = { ...req.params, ...validatedData };
       
       next();
     } catch (error) {
