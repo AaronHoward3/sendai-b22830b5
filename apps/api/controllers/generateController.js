@@ -139,27 +139,50 @@ function extractHeroUrl({ generated, headerHero, mjml, html }) {
 }
 
 export async function generateEmails(req, res) {
+  console.log("🎯 [CONTROLLER] generateEmails started");
   const startTime = Date.now();
 
-  const {
-    domain,
-    emailType,
-    userContext,
-    imageContext,
-    tone,
-    customHeroImage,
-    designAesthetic,
-    products,
-    savedHeroImageUrl, // pass-through for reusing a saved image
-    savedHeroImageId,  // reserved for future id->url resolution
-  } = req.body || {};
-
-  if (!domain) return res.status(400).json({ error: "Domain is required" });
-
   try {
+    console.log("🎯 [CONTROLLER] Extracting request body...");
+    const {
+      domain,
+      emailType,
+      userContext,
+      imageContext,
+      tone,
+      customHeroImage,
+      designAesthetic,
+      products,
+      savedHeroImageUrl, // pass-through for reusing a saved image
+      savedHeroImageId,  // reserved for future id->url resolution
+    } = req.body || {};
+
+    console.log("🎯 [CONTROLLER] Request data:", {
+      domain,
+      emailType,
+      tone,
+      designAesthetic,
+      customHeroImage,
+      hasProducts: !!products,
+      hasSavedHeroImageUrl: !!savedHeroImageUrl,
+      hasSavedHeroImageId: !!savedHeroImageId
+    });
+
+    if (!domain) {
+      console.error("❌ [CONTROLLER] Domain is required");
+      return res.status(400).json({ error: "Domain is required" });
+    }
+
+    console.log("🎯 [CONTROLLER] Normalizing domain...");
     const normalizedDomain = normalizeDomain(domain);
+    console.log("🎯 [CONTROLLER] Normalized domain:", normalizedDomain);
+
+    console.log("🎯 [CONTROLLER] Getting stored brand...");
     const existing = await getStoredBrand(normalizedDomain);
+    console.log("🎯 [CONTROLLER] Brand lookup result:", !!existing?.brand);
+    
     if (!existing?.brand) {
+      console.error("❌ [CONTROLLER] Brand info not found for domain:", normalizedDomain);
       return res.status(404).json({ error: "Brand info not found for domain", domain: normalizedDomain });
     }
 
@@ -208,6 +231,9 @@ export async function generateEmails(req, res) {
       return res.status(500).json({ error: "Generator service not configured" });
     }
     
+    console.log("🎯 [CONTROLLER] Generator URL:", process.env.GENERATOR_URL);
+    console.log("🎯 [CONTROLLER] Brand JSON payload size:", JSON.stringify(brandJson).length);
+    
     const genStart = Date.now();
     const generatorResponse = await fetch(process.env.GENERATOR_URL, {
       method: "POST",
@@ -223,10 +249,12 @@ export async function generateEmails(req, res) {
       return res.status(500).json({ error: "Email generator failed", status: generatorResponse.status });
     }
 
+    console.log("🎯 [CONTROLLER] Generator response OK, parsing JSON...");
     const headerHero = generatorResponse.headers.get("x-hero-image-url-used") || null;
     let generated;
     try {
       generated = await generatorResponse.json();
+      console.log("🎯 [CONTROLLER] Generator JSON parsed successfully");
     } catch (parseError) {
       console.error("[generateController] Failed to parse generator response:", parseError);
       return res.status(500).json({ error: "Invalid response from generator service" });
@@ -351,7 +379,9 @@ export async function generateEmails(req, res) {
       debug: { colorsSent: resolveEffectiveColors(brandJson).resolved },
     });
   } catch (err) {
-    console.error("Generate error:", err);
-    return res.status(500).json({ error: "Failed to generate emails" });
+    console.error("🚨 [CONTROLLER] Generate error:", err);
+    console.error("🚨 [CONTROLLER] Error stack:", err.stack);
+    console.error("🚨 [CONTROLLER] Error message:", err.message);
+    return res.status(500).json({ error: "Failed to generate emails", details: err.message });
   }
 }

@@ -1,13 +1,14 @@
 // Error handling middleware to prevent information disclosure
 export function errorHandler(err, req, res, next) {
   // Log the full error for debugging (but don't send to client)
-  console.error('Error:', {
+  console.error('🚨 FULL ERROR DETAILS:', {
     message: err.message,
     stack: err.stack,
     url: req.url,
     method: req.method,
     user: req.user?.id,
-    timestamp: new Date().toISOString()
+    timestamp: new Date().toISOString(),
+    body: req.body ? JSON.stringify(req.body, null, 2) : 'no body'
   });
 
   // Don't expose internal errors to clients
@@ -32,10 +33,13 @@ export function errorHandler(err, req, res, next) {
     });
   }
 
-  // Generic error response
+  // For debugging - show real error in development
   res.status(500).json({
-    error: isProduction ? 'Internal server error' : err.message,
-    ...(isProduction ? {} : { stack: err.stack })
+    error: err.message,
+    stack: err.stack,
+    url: req.url,
+    method: req.method,
+    timestamp: new Date().toISOString()
   });
 }
 
