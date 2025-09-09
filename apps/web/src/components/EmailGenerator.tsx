@@ -128,6 +128,21 @@ const EmailGenerator: React.FC = () => {
     });
   };
 
+  const handleHomeClick = () => {
+    setCurrentStep(1);
+    setFormData({
+      domain: '',
+      emailType: null,
+      useCustomHero: true,
+      userContext: '',
+      imageContext: '',
+      tone: 'bold',
+      designAesthetic: 'bold_contrasting',
+      products: [],
+      subjectLine: '',
+    });
+  };
+
   const renderStep = () => {
     switch (currentStep) {
       case 1:
@@ -171,7 +186,7 @@ const EmailGenerator: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      <Navigation onHomeClick={() => setCurrentStep(1)} />
+      <Navigation onHomeClick={handleHomeClick} />
       <div className="container mx-auto px-4 py-8">
         <div className="max-w-2xl mx-auto">
           {renderStep()}
