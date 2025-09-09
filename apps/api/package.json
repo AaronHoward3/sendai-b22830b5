@@ -27,6 +27,7 @@
     "mjml-core": "^4.15.3",
     "mjml-preset-core": "^4.15.3",
     "node-fetch": "^3.3.2",
+    "openai": "^4.67.0",
     "stripe": "^18.4.0",
     "zod": "^3.23.8"
   },
