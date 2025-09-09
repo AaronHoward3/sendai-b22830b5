@@ -290,7 +290,7 @@ export const Step1Domain: React.FC<{
 
             {showSuggestions && filteredSuggestions.length > 0 && (
               <div
-                className={`absolute z-20 mt-2 w-full max-h-56 overflow-auto rounded-xl border shadow-xl minimal-scrollbar ${
+                className={`absolute z-20 mt-2 w-full max-h-56 overflow-auto rounded-xl border shadow-xl ${
                   isDark ? 'bg-[#111111]/95 border-white/10' : 'bg-white/95 border-black/10'
                 }`}
               >
@@ -350,39 +350,6 @@ export const Step1Domain: React.FC<{
           100% { background-position: 100% 50%; }
         }
         .animate-gradient-sweep { animation: gradient-sweep 10s linear infinite; }
-        
-        /* Minimal scrollbar styling */
-        .minimal-scrollbar::-webkit-scrollbar {
-          width: 6px;
-        }
-        .minimal-scrollbar::-webkit-scrollbar-track {
-          background: transparent;
-        }
-        .minimal-scrollbar::-webkit-scrollbar-thumb {
-          background: rgba(255, 255, 255, 0.2);
-          border-radius: 3px;
-          transition: background 0.2s ease;
-        }
-        .minimal-scrollbar::-webkit-scrollbar-thumb:hover {
-          background: rgba(255, 255, 255, 0.3);
-        }
-        
-        /* Dark theme scrollbar */
-        .dark .minimal-scrollbar::-webkit-scrollbar-thumb {
-          background: rgba(255, 255, 255, 0.15);
-        }
-        .dark .minimal-scrollbar::-webkit-scrollbar-thumb:hover {
-          background: rgba(255, 255, 255, 0.25);
-        }
-        
-        /* Firefox scrollbar styling */
-        .minimal-scrollbar {
-          scrollbar-width: thin;
-          scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
-        }
-        .dark .minimal-scrollbar {
-          scrollbar-color: rgba(255, 255, 255, 0.15) transparent;
-        }
       `}</style>
     </div>
   );
