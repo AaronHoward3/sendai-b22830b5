@@ -248,11 +248,11 @@ export const Step1Domain: React.FC<{
   }, [domain, savedDomains]);
 
   return (
-    <div className="fixed inset-0 overflow-hidden z-0 bg-transparent">
+    <div className="fixed inset-0 z-0 bg-transparent">
       {/* Background blobs */}
       <Background variant="blobs" />
 
-      <div className="relative z-10 h-screen flex items-center justify-center px-4">
+      <div className="relative z-10 h-screen flex items-center justify-center px-4 overflow-hidden">
         <motion.div className="text-center max-w-lg w-full" variants={containerVariants} initial="hidden" animate="show">
           <motion.div className="space-y-2" variants={fadeInUp}>
             <h1 className="text-4xl font-semibold text-foreground tracking-tight">Let's create amazing emails</h1>
@@ -313,7 +313,12 @@ export const Step1Domain: React.FC<{
               </div>
             )}
 
-            {isLoading && <p className="mt-3 text-xs text-muted-foreground text-center">Fetching brand…</p>}
+            {/* Loading text positioned absolutely to prevent layout shift */}
+            {isLoading && (
+              <div className="absolute top-full left-0 right-0 mt-3">
+                <p className="text-xs text-muted-foreground text-center">Fetching brand…</p>
+              </div>
+            )}
           </motion.div>
         </motion.div>
       </div>
