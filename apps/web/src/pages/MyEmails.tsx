@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { GradientButton } from '@/components/ui/gradient-button';
 import { Badge } from '@/components/ui/badge';
-import { Eye, Copy, Trash2, X, ChevronDown, Plus } from 'lucide-react';
+import { Eye, Copy, Trash2, X, ChevronDown, Plus, Download } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/lib/supabaseClient';
 import { useSupabaseAuth } from '@/hooks/useSupabaseAuth';
@@ -16,7 +16,7 @@ type Row = {
   html: string | null;
   mjml: string | null;
   brand_domain: string | null;
-  style_meta: any;
+  style_meta: Record<string, unknown> | null;
   created_at: string;
 };
 
@@ -27,6 +27,7 @@ const MyEmails: React.FC = () => {
   const [rows, setRows] = useState<Row[]>([]);
   const [expandedEmailId, setExpandedEmailId] = useState<string | null>(null);
   const [copyDropdownOpenId, setCopyDropdownOpenId] = useState<string | null>(null);
+  const [downloadDropdownOpenId, setDownloadDropdownOpenId] = useState<string | null>(null);
 
   const currentEmail = rows.find(r => r.id === expandedEmailId);
 
@@ -52,6 +53,22 @@ const MyEmails: React.FC = () => {
     if (!text) return;
     await navigator.clipboard.writeText(text);
     toast({ title: `Copied ${label}` });
+  };
+
+  const handleDownload = async (content: string | null | undefined, filename: string, label: string) => {
+    if (!content) return;
+    
+    const blob = new Blob([content], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+    
+    toast({ title: `Downloaded ${label}` });
   };
 
   const handleDelete = async (id: string) => {
@@ -140,7 +157,7 @@ const MyEmails: React.FC = () => {
                   <div className="space-y-1 min-w-0">
                     <h3 className="font-semibold text-base text-foreground truncate">{row.subject || '(No Subject)'}</h3>
                     <p className="text-sm text-muted-foreground truncate">
-                      {row.brand_domain || 'Unknown domain'} • {row.style_meta?.emailType || 'Unknown'} • {formatDate(row.created_at)}
+                      {row.brand_domain || 'Unknown domain'} • {(row.style_meta as Record<string, string>)?.emailType || 'Unknown'} • {formatDate(row.created_at)}
                     </p>
                   </div>
                   <div className="flex flex-wrap gap-2 sm:justify-end relative">
@@ -167,6 +184,25 @@ const MyEmails: React.FC = () => {
                             className="block w-full text-left px-4 py-2 text-sm hover:bg-accent">Copy MJML</button>
                           <button onClick={() => handleCopy(row.html, 'HTML')}
                             className="block w-full text-left px-4 py-2 text-sm hover:bg-accent">Copy HTML</button>
+                        </div>
+                      )}
+                    </div>
+
+                    <div
+                      className="relative inline-block"
+                      onMouseEnter={() => setDownloadDropdownOpenId(row.id)}
+                      onMouseLeave={() => setDownloadDropdownOpenId(null)}
+                    >
+                      <Button variant="outline" size="sm"
+                        className="!bg-background !text-foreground !border !border-border hover:!bg-muted">
+                        <Download className="h-4 w-4 mr-1" /> Download <ChevronDown className="h-3 w-3 ml-1" />
+                      </Button>
+                      {downloadDropdownOpenId === row.id && (
+                        <div className="absolute top-[100%] right-0 bg-popover border rounded-md shadow-md z-50 overflow-hidden">
+                          <button onClick={() => handleDownload(row.mjml, `${row.subject || 'email'}.mjml`, 'MJML')}
+                            className="block w-full text-left px-4 py-2 text-sm hover:bg-accent">Download MJML</button>
+                          <button onClick={() => handleDownload(row.html, `${row.subject || 'email'}.html`, 'HTML')}
+                            className="block w-full text-left px-4 py-2 text-sm hover:bg-accent">Download HTML</button>
                         </div>
                       )}
                     </div>
@@ -213,11 +249,18 @@ const MyEmails: React.FC = () => {
                 <div className="flex-1 min-h-0 bg-muted rounded-lg border border-border flex flex-col shadow overflow-hidden">
                   <div className="p-4 border-b border-border flex justify-between items-center">
                     <h3 className="font-semibold text-foreground">MJML Code</h3>
-                    <GradientButton size="sm" variant="white-outline"
-                      onClick={() => handleCopy(currentEmail.mjml, 'MJML')}
-                      className="hover:scale-105 !bg-background !text-foreground !border !border-border hover:!bg-muted">
-                      <Copy className="w-4 h-4 mr-2" /> Copy MJML
-                    </GradientButton>
+                    <div className="flex gap-2">
+                      <GradientButton size="sm" variant="white-outline"
+                        onClick={() => handleCopy(currentEmail.mjml, 'MJML')}
+                        className="hover:scale-105 !bg-background !text-foreground !border !border-border hover:!bg-muted">
+                        <Copy className="w-4 h-4 mr-2" /> Copy MJML
+                      </GradientButton>
+                      <GradientButton size="sm" variant="white-outline"
+                        onClick={() => handleDownload(currentEmail.mjml, `${currentEmail.subject || 'email'}.mjml`, 'MJML')}
+                        className="hover:scale-105 !bg-background !text-foreground !border !border-border hover:!bg-muted">
+                        <Download className="w-4 h-4 mr-2" /> Download MJML
+                      </GradientButton>
+                    </div>
                   </div>
                   <div className="flex-1 min-h-0 overflow-auto p-4 bg-background text-sm text-muted-foreground">
                     <pre className="whitespace-pre-wrap break-words">{currentEmail.mjml}</pre>
@@ -227,11 +270,18 @@ const MyEmails: React.FC = () => {
                 <div className="flex-1 min-h-0 bg-muted rounded-lg border border-border flex flex-col shadow overflow-hidden">
                   <div className="p-4 border-b border-border flex justify-between items-center">
                     <h3 className="font-semibold text-foreground">HTML Code</h3>
-                    <GradientButton size="sm" variant="white-outline"
-                      onClick={() => handleCopy(currentEmail.html, 'HTML')}
-                      className="hover:scale-105 !bg-background !text-foreground !border !border-border hover:!bg-muted">
-                      <Copy className="w-4 h-4 mr-2" /> Copy HTML
-                    </GradientButton>
+                    <div className="flex gap-2">
+                      <GradientButton size="sm" variant="white-outline"
+                        onClick={() => handleCopy(currentEmail.html, 'HTML')}
+                        className="hover:scale-105 !bg-background !text-foreground !border !border-border hover:!bg-muted">
+                        <Copy className="w-4 h-4 mr-2" /> Copy HTML
+                      </GradientButton>
+                      <GradientButton size="sm" variant="white-outline"
+                        onClick={() => handleDownload(currentEmail.html, `${currentEmail.subject || 'email'}.html`, 'HTML')}
+                        className="hover:scale-105 !bg-background !text-foreground !border !border-border hover:!bg-muted">
+                        <Download className="w-4 h-4 mr-2" /> Download HTML
+                      </GradientButton>
+                    </div>
                   </div>
                   <div className="flex-1 min-h-0 overflow-auto p-4 bg-background text-sm text-muted-foreground">
                     <pre className="whitespace-pre-wrap break-words">{currentEmail.html}</pre>
