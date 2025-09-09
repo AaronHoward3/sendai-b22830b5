@@ -20,6 +20,7 @@ import {
   ProductLink,
   DesignAesthetic,
 } from '../EmailGenerator';
+import { generateAIContext } from '@/lib/contextService';
 
 import { supabase } from '@/lib/supabaseClient';
 import { sanitizeInput, validateUrl } from '@/lib/security';
@@ -391,6 +392,7 @@ export const Step2EmailType: React.FC<Step2EmailTypeProps> = ({
   const [tone, setTone] = useState<Tone>(formData.tone ?? 'bold');
   const [designAesthetic, setDesignAesthetic] =
     useState<DesignAesthetic>(formData.designAesthetic ?? 'bold_contrasting');
+  const [isGeneratingContext, setIsGeneratingContext] = useState<boolean>(false);
 
   // Helper function to safely get string values from brand data
   const getBrandString = (value: unknown): string => {
@@ -494,12 +496,45 @@ export const Step2EmailType: React.FC<Step2EmailTypeProps> = ({
     return { uc, ic, occ };
   }, [brandName, brandDesc, selectedEmailType, tone, designAesthetic, brandPrimary, brandLink, products, scrapedProducts]);
 
+  /* ---------- AI-powered context generation ---------- */
+  const generateAIContexts = React.useCallback(async () => {
+    if (!formData.domain) return;
+
+    setIsGeneratingContext(true);
+    try {
+      const occ = nearestOccasion(new Date());
+      const productsForContext = products.length > 0 ? products : scrapedProducts;
+
+      const response = await generateAIContext({
+        brandData: formData.brandData,
+        emailType: selectedEmailType || 'Promotion',
+        tone,
+        designAesthetic,
+        products: productsForContext,
+        occasion: occ.short || occ.label,
+        domain: formData.domain,
+      });
+
+      if (response.success) {
+        setUserContext(response.userContext);
+        setImageContext(response.imageContext);
+      }
+    } catch (error) {
+      console.error('Failed to generate AI context:', error);
+      // Fallback to template-based generation
+      const { uc, ic } = generateContexts();
+      setUserContext(uc);
+      setImageContext(ic);
+    } finally {
+      setIsGeneratingContext(false);
+    }
+  }, [formData.domain, formData.brandData, selectedEmailType, tone, designAesthetic, products, scrapedProducts, generateContexts]);
+
   useEffect(() => {
     // Prefill only if empty so we never overwrite user text when returning to Step 2
     if (!userContext?.trim() || !imageContext?.trim()) {
-      const { uc, ic } = generateContexts();
-      if (!userContext?.trim()) setUserContext(uc);
-      if (!imageContext?.trim()) setImageContext(ic);
+      // Use AI-powered context generation for better results
+      generateAIContexts();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); // run once on mount
@@ -804,14 +839,13 @@ export const Step2EmailType: React.FC<Step2EmailTypeProps> = ({
             <div className="flex gap-2">
               <GradientButton
                 variant="white-outline"
-                onClick={() => {
-                  const { ic } = generateContexts();
-                  setImageContext(ic);
-                }}
-                className="!bg-background !text-foreground !border !border-border hover:!bg-muted px-3 py-1.5 text-sm"
-                title="Regenerate Image Context"
+                onClick={generateAIContexts}
+                disabled={isGeneratingContext}
+                className="!bg-background !text-foreground !border !border-border hover:!bg-muted px-3 py-1.5 text-sm disabled:opacity-50"
+                title="Regenerate Image Context with AI"
               >
-                <Sparkles className="w-4 h-4 mr-1.5" /> Regenerate
+                <Sparkles className="w-4 h-4 mr-1.5" /> 
+                {isGeneratingContext ? 'Generating...' : 'AI Regenerate'}
               </GradientButton>
             </div>
           </div>
@@ -833,14 +867,13 @@ export const Step2EmailType: React.FC<Step2EmailTypeProps> = ({
           <div className="flex gap-2">
             <GradientButton
               variant="white-outline"
-              onClick={() => {
-                const { uc } = generateContexts();
-                setUserContext(uc);
-              }}
-              className="!bg-background !text-foreground !border !border-border hover:!bg-muted px-3 py-1.5 text-sm"
-              title="Regenerate User Context"
+              onClick={generateAIContexts}
+              disabled={isGeneratingContext}
+              className="!bg-background !text-foreground !border !border-border hover:!bg-muted px-3 py-1.5 text-sm disabled:opacity-50"
+              title="Regenerate User Context with AI"
             >
-              <RotateCcw className="w-4 h-4 mr-1.5" /> Regenerate
+              <Sparkles className="w-4 h-4 mr-1.5" /> 
+              {isGeneratingContext ? 'Generating...' : 'AI Regenerate'}
             </GradientButton>
           </div>
         </div>

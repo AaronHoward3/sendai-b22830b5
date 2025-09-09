@@ -12,6 +12,7 @@ import productRoutes from "./routes/productRoutes.js";
 import generateRoutes from "./routes/generateRoutes.js";
 import billingRoutes from "./routes/billingRoutes.js";
 import adminRoutes from "./routes/adminRoutes.js";
+import contextRoutes from "./routes/contextRoutes.js";
 import { requireAdminUser } from "./middleware/requireAdminUser.js";
 import { stripeWebhook } from "./controllers/billingController.js";
 import { requireAuth } from "./middleware/requireAuth.js";
@@ -68,6 +69,7 @@ app.use("/api/brands", brandRoutes);
 
 app.use("/api/products", productRoutes);
 app.use("/api/generate", generateRoutes);
+app.use("/api/context", contextRoutes);
 
 // Billing lives under /api/billing so frontend path matches
 app.use("/api/billing", billingRoutes);
