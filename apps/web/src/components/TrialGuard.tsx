@@ -39,7 +39,7 @@ interface TrialGuardProps {
 }
 
 export const TrialGuard: React.FC<TrialGuardProps> = ({ children }) => {
-  const { user } = useSupabaseAuth();
+  const { user, loading: authLoading } = useSupabaseAuth();
   const [isTrialBlocked, setIsTrialBlocked] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [blockReason, setBlockReason] = useState<'localStorage' | 'ip'>('localStorage');
@@ -50,6 +50,11 @@ export const TrialGuard: React.FC<TrialGuardProps> = ({ children }) => {
       console.log('🔧 Development mode: Trial blocking disabled');
       setIsTrialBlocked(false);
       setIsLoading(false);
+      return;
+    }
+
+    // Wait for auth to finish loading before making any decisions
+    if (authLoading) {
       return;
     }
 
@@ -127,7 +132,7 @@ export const TrialGuard: React.FC<TrialGuardProps> = ({ children }) => {
       // If check fails, allow access (don't block legitimate users)
       setIsLoading(false);
     });
-  }, [user]);
+  }, [user, authLoading]);
 
   const checkIPTrialStatus = async (): Promise<boolean> => {
     try {
@@ -168,8 +173,8 @@ export const TrialGuard: React.FC<TrialGuardProps> = ({ children }) => {
     window.location.href = "/settings";
   };
 
-  // Show loading state briefly to prevent flash
-  if (isLoading) {
+  // Show loading state while auth is loading or while we're checking trial status
+  if (isLoading || authLoading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>

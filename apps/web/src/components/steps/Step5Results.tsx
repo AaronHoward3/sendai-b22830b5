@@ -20,6 +20,30 @@ export const Step5Results: React.FC<Step5ResultsProps> = ({
 }) => {
   const { toast } = useToast();
   const { user } = useSupabaseAuth();
+  const [isAdmin, setIsAdmin] = useState(false);
+  
+  // Check admin status
+  useEffect(() => {
+    const checkAdmin = async () => {
+      if (user?.id) {
+        try {
+          const { data } = await supabase
+            .from('profiles')
+            .select('is_admin')
+            .eq('user_id', user.id)
+            .maybeSingle();
+          setIsAdmin(Boolean(data?.is_admin));
+        } catch (error) {
+          console.error('Failed to check admin status:', error);
+          setIsAdmin(false);
+        }
+      } else {
+        setIsAdmin(false);
+      }
+    };
+    
+    checkAdmin();
+  }, [user?.id]);
 
   // Check if user has already used their free trial
   const [hasUsedFreeTrial, setHasUsedFreeTrial] = useState(false);
@@ -127,8 +151,8 @@ export const Step5Results: React.FC<Step5ResultsProps> = ({
     );
   }
 
-  // Show subscription prompt for preview mode users
-  if (formData.isPreviewMode) {
+  // Show subscription prompt for preview mode users (but not for admins)
+  if (formData.isPreviewMode && !isAdmin) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center p-4">
         <div className="w-full max-w-4xl space-y-8">

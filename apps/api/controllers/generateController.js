@@ -259,14 +259,16 @@ export async function generateEmails(req, res) {
       brandJson.logo_url = brandJson.brandData?.logo_url || brandJson.logo || null;
     }
     // Normalize products to match generator expectations
+    console.log("🔍 [DEBUG] Raw products before normalization:", products?.slice(0, 2));
     const normalizedProducts = Array.isArray(products) ? products.map(p => ({
       title: p.name || p.title || '',
       subtitle: p.description || p.subtitle || '',
       price: p.price || '',
-      imageUrl: p.image_url || p.imageUrl || 'https://picsum.photos/300/300?random=1',
+      imageUrl: p.image_url || p.imageUrl || '',
       buttonText: p.buttonText || 'View',
       buttonUrl: p.url || p.buttonUrl || p.buttonURL || ''
     })) : (brandJson.brandData.products || []);
+    console.log("🔍 [DEBUG] Normalized products:", normalizedProducts?.slice(0, 2));
     
     brandJson.brandData.products = normalizedProducts;
     brandJson.products = normalizedProducts; // Also put products at top level for generator
