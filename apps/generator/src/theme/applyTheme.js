@@ -141,6 +141,14 @@ export function applyTheme(mjml, payloadBrand, skinIdRaw) {
 
   // 0) Replace any existing head with our head
   let out = String(mjml || "");
+  console.log("🔍 [DEBUG] applyTheme input MJML:", {
+    hasMjml: out.includes("<mjml>"),
+    hasMjBody: out.includes("<mj-body>"),
+    hasMjBodyClose: out.includes("</mj-body>"),
+    length: out.length,
+    preview: out.substring(0, 200)
+  });
+  
   out = out.replace(/<mj-head[\s\S]*?<\/mj-head>/gi, "");
   const head = buildHead(skin);
   out = out.includes("<mjml>") ? out.replace("<mjml>", `<mjml>\n${head}\n`) : `<mjml>\n${head}\n${out}`;
@@ -183,6 +191,14 @@ export function applyTheme(mjml, payloadBrand, skinIdRaw) {
   }
 
   out = hasBody ? out.replace(bodyTag, newBody) : out.replace("<mjml>", `<mjml>\n${newBody}\n`);
+
+  console.log("🔍 [DEBUG] applyTheme after body processing:", {
+    hasMjml: out.includes("<mjml>"),
+    hasMjBody: out.includes("<mj-body>"),
+    hasMjBodyClose: out.includes("</mj-body>"),
+    length: out.length,
+    preview: out.substring(0, 200)
+  });
 
   // 2) Section processing
   out = out.replace(/<mj-section\b[^>]*>[\s\S]*?<\/mj-section>/gi, (section) => {

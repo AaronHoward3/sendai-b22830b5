@@ -226,6 +226,17 @@ export async function generateEmails(req, res) {
     } else {
       // Use existing brand data
       brandJson = structuredClone(existing.brand);
+      
+      // Ensure required fields for headers and footers
+      if (!brandJson.store_name) {
+        brandJson.store_name = brandJson.name || normalizedDomain;
+      }
+      if (!brandJson.store_url) {
+        brandJson.store_url = brandJson.website || `https://${normalizedDomain}`;
+      }
+      if (!brandJson.logo_url) {
+        brandJson.logo_url = brandJson.logo || null;
+      }
     }
 
     // Build payload for generator (common logic for both cases)
@@ -241,7 +252,7 @@ export async function generateEmails(req, res) {
       title: p.name || p.title || '',
       subtitle: p.description || p.subtitle || '',
       price: p.price || '',
-      imageUrl: p.image_url || p.imageUrl || '',
+      imageUrl: p.image_url || p.imageUrl || 'https://via.placeholder.com/300x300?text=Product+Image',
       buttonText: p.buttonText || 'View',
       buttonUrl: p.url || p.buttonUrl || p.buttonURL || ''
     })) : (brandJson.brandData.products || []);
