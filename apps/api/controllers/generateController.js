@@ -247,6 +247,7 @@ export async function generateEmails(req, res) {
     })) : (brandJson.brandData.products || []);
     
     brandJson.brandData.products = normalizedProducts;
+    brandJson.products = normalizedProducts; // Also put products at top level for generator
 
     // Forward saved image to generator -> it will inject and skip generating
     if (typeof savedHeroImageUrl === "string" && /^https?:\/\//i.test(savedHeroImageUrl.trim())) {
@@ -287,7 +288,15 @@ export async function generateEmails(req, res) {
     const generatorResponse = await fetch(process.env.GENERATOR_URL, {
       method: "POST",
       headers: { "Content-Type": "application/json", "Accept": "application/json" },
-      body: JSON.stringify(brandJson),
+      body: JSON.stringify({
+        brandData: brandJson,
+        emailType: brandJson.emailType,
+        userContext: brandJson.userContext,
+        imageContext: brandJson.imageContext,
+        designAesthetic: brandJson.designAesthetic,
+        styleId: brandJson.designAesthetic,
+        savedHeroImageUrl: brandJson.savedHeroImageUrl
+      }),
     });
     console.log(`[generateController] Generator responded in ${Date.now() - genStart} ms`);
 
