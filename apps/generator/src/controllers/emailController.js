@@ -4,6 +4,7 @@
 import { TIMEOUTS } from "../config/constants.js";
 import { generateCustomHeroAndEnrich } from "../services/heroImageService.js";
 import { processFooterTemplate } from "../services/footerService.js";
+import { processHeaderTemplate } from "../services/headerService.js";
 import { generateSubjectLine } from "../services/subjectService.js";
 import { saveMJML, updateMJML, getMJML, deleteMJML } from "../utils/inMemoryStore.js";
 import { runTwoPassGeneration } from "../pipeline/twoPassGenerator.js";
@@ -159,10 +160,11 @@ export async function generateEmails(req, res) {
 
     saveMJML(jobId, 0, refinedMjml);
 
-    // Hero replacement / footer stitching
+    // Hero replacement / header and footer stitching
     send("finalizing", {});
     const finalBrandData = await heroPromise;
     const stored = getMJML(jobId) || [];
+    const headerMjml = await processHeaderTemplate(finalBrandData);
     const footerMjml = await processFooterTemplate(finalBrandData);
 
     const fontHead = `
@@ -201,6 +203,12 @@ export async function generateEmails(req, res) {
 
       if (!updated.includes("<mj-head>")) {
         updated = updated.replace("<mjml>", `<mjml>${fontHead}`);
+      }
+
+      // Remove any previous header and inject the new one at the beginning of mj-body
+      updated = updated.replace(/<!-- Header Section -->[\s\S]*?<!-- \/Header Section -->/g, "");
+      if (headerMjml && updated.includes("<mj-body>")) {
+        updated = updated.replace("<mj-body>", `<mj-body>\n${headerMjml}`);
       }
 
       // Remove any previous footer and append the new one
