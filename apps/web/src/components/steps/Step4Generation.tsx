@@ -85,14 +85,30 @@ export const Step4Generation: React.FC<Step4GenerationProps> = ({
     const run = async () => {
       setStatus("Generating email…");
       try {
+        // Wait for admin check to complete if user is authenticated
+        if (user && isLoading) {
+          console.log("🔍 [DEBUG] Waiting for admin check to complete...");
+          // Wait a bit for admin check to complete
+          await new Promise(resolve => setTimeout(resolve, 100));
+        }
+
         // Get the current session token for authenticated requests
         const { data: { session } } = await supabase.auth.getSession();
         const token = session?.access_token;
 
-        // Choose endpoint based on authentication status
-        const endpoint = isAuthenticated ? `${API_ROOT}/generate` : `${API_ROOT}/generate/preview`;
+        // Choose endpoint based on authentication status (recalculate after waiting)
+        const finalIsAuthenticated = !!user || isAdmin;
+        const endpoint = finalIsAuthenticated ? `${API_ROOT}/generate` : `${API_ROOT}/generate/preview`;
+        
+        console.log("🔍 [DEBUG] Final endpoint selection:", {
+          hasUser: !!user,
+          isAdmin,
+          finalIsAuthenticated,
+          endpoint
+        });
 
         // Make the generate request directly
+        console.log("🔍 [DEBUG] Making API call to:", endpoint);
         const generateResponse = await fetch(endpoint, {
           method: "POST",
           headers: {
