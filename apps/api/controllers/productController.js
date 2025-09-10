@@ -9,6 +9,31 @@ export async function scrapeProducts(req, res) {
     return res.status(400).json({ error: "Domain is required" });
   }
 
+  // Check if we have the required API key for scraping
+  if (!process.env.SCRAPINGBEE_API_KEY) {
+    console.log(`No SCRAPINGBEE_API_KEY found, returning fallback products for ${domain}`);
+    
+    // Return fallback product data for freemium users
+    const fallbackProducts = [
+      {
+        name: "Sample Product",
+        url: `https://${domain}/products/sample`,
+        image_url: null,
+        description: "This is a sample product for demonstration purposes",
+        price: "$29.99",
+        source: "fallback"
+      }
+    ];
+    
+    return res.json({ 
+      products: fallbackProducts,
+      count: fallbackProducts.length,
+      domain,
+      scraper: 'fallback',
+      warning: 'No ScrapingBee API key - using fallback products'
+    });
+  }
+
   try {
     let products;
     let scraperType;

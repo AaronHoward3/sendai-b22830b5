@@ -23,6 +23,31 @@ export async function checkBrand(req, res) {
       return res.json(existing.brand);
     }
 
+    // Check if we have the required API key
+    if (!process.env.BRANDDEV_API_KEY) {
+      console.log(`No BRANDDEV_API_KEY found, returning fallback brand for ${normalizedDomain}`);
+      
+      // Return fallback brand data for freemium users
+      const fallbackBrand = {
+        name: normalizedDomain,
+        domain: normalizedDomain,
+        website: `https://${normalizedDomain}`,
+        description: `Brand for ${normalizedDomain}`,
+        primary_color: "#4f46e5",
+        link_color: "#22d3ee",
+        logo: null,
+        products: [],
+        brandData: {
+          products: [],
+          description: `Brand for ${normalizedDomain}`,
+          primary_color: "#4f46e5",
+          link_color: "#22d3ee",
+        }
+      };
+      
+      return res.json(fallbackBrand);
+    }
+
     const response = await fetch(`https://api.brand.dev/v1/brand/retrieve?domain=${normalizedDomain}`, {
       headers: {
         Authorization: `Bearer ${process.env.BRANDDEV_API_KEY}`

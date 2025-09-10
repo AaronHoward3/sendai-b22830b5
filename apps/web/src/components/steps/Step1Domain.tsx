@@ -200,9 +200,20 @@ export const Step1Domain: React.FC<{
     setIsLoading(true);
 
     try {
-      // For anonymous users, skip all brand slot checking and go directly to next step
+      // For anonymous users, do brand scraping but skip user-specific operations
       if (!isAuthenticated) {
-        updateFormData({ domain: trimmed });
+        console.log("🎯 [FREEMIUM] Fetching brand data for anonymous user...");
+        
+        const [brandData, productSuggestions] = await Promise.all([
+          fetchBrandData(trimmed),
+          fetchProductData(trimmed)
+        ]);
+
+        updateFormData({
+          domain: trimmed,
+          brandData,
+          products: productSuggestions.products,
+        });
         onNext();
         return;
       }
