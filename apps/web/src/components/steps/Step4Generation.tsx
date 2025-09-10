@@ -19,12 +19,41 @@ export const Step4Generation: React.FC<Step4GenerationProps> = ({
   onNext,
 }) => {
   const { user } = useSupabaseAuth();
-  const isAuthenticated = !!user;
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  
+  // Check admin status
+  useEffect(() => {
+    const checkAdmin = async () => {
+      if (user?.id) {
+        try {
+          const { data } = await supabase
+            .from('profiles')
+            .select('is_admin')
+            .eq('user_id', user.id)
+            .maybeSingle();
+          setIsAdmin(Boolean(data?.is_admin));
+        } catch (error) {
+          console.error('Failed to check admin status:', error);
+          setIsAdmin(false);
+        }
+      } else {
+        setIsAdmin(false);
+      }
+      setIsLoading(false);
+    };
+    
+    checkAdmin();
+  }, [user?.id]);
+  
+  // Admin users are always considered authenticated for full access
+  const isAuthenticated = !!user || isAdmin;
   
   console.log("🔍 [DEBUG] Step4Generation auth status:", {
     hasUser: !!user,
     userId: user?.id,
     userEmail: user?.email,
+    isAdmin,
     isAuthenticated
   });
   const [status, setStatus] = useState("Starting…");

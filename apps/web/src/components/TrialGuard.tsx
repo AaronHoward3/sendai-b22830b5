@@ -3,6 +3,21 @@ import { useSupabaseAuth } from '@/hooks/useSupabaseAuth';
 import { TrialBlockedOverlay } from '@/components/TrialBlockedOverlay';
 import { supabase } from '@/lib/supabaseClient';
 
+const checkAdminStatus = async (userId: string): Promise<boolean> => {
+  try {
+    const { data } = await supabase
+      .from('profiles')
+      .select('is_admin')
+      .eq('user_id', userId)
+      .maybeSingle();
+    
+    return Boolean(data?.is_admin);
+  } catch (error) {
+    console.error('Failed to check admin status:', error);
+    return false;
+  }
+};
+
 const checkSubscriptionStatus = async (userId: string): Promise<boolean> => {
   try {
     const { data } = await supabase
@@ -38,27 +53,56 @@ export const TrialGuard: React.FC<TrialGuardProps> = ({ children }) => {
       return;
     }
 
-    // If user is authenticated, check their subscription status
+    // If user is authenticated, check if they're an admin first
     if (user) {
-      checkSubscriptionStatus(user.id).then((hasActiveSubscription) => {
-        if (hasActiveSubscription) {
+      checkAdminStatus(user.id).then((isAdmin) => {
+        if (isAdmin) {
+          console.log('🔧 Admin user: Bypassing all trial and subscription checks');
           setIsTrialBlocked(false);
-        } else {
-          // User is authenticated but has no active subscription
-          // Check if they've used their trial
-          const freeTrialUsed = localStorage.getItem('freemium_trial_used');
-          if (freeTrialUsed) {
-            setIsTrialBlocked(true);
-            setBlockReason('localStorage');
-          } else {
-            setIsTrialBlocked(false);
-          }
+          setIsLoading(false);
+          return;
         }
-        setIsLoading(false);
+
+        // Not an admin, check subscription status
+        checkSubscriptionStatus(user.id).then((hasActiveSubscription) => {
+          if (hasActiveSubscription) {
+            setIsTrialBlocked(false);
+          } else {
+            // User is authenticated but has no active subscription
+            // Check if they've used their trial
+            const freeTrialUsed = localStorage.getItem('freemium_trial_used');
+            if (freeTrialUsed) {
+              setIsTrialBlocked(true);
+              setBlockReason('localStorage');
+            } else {
+              setIsTrialBlocked(false);
+            }
+          }
+          setIsLoading(false);
+        }).catch(() => {
+          // If subscription check fails, allow access (don't block legitimate users)
+          setIsTrialBlocked(false);
+          setIsLoading(false);
+        });
       }).catch(() => {
-        // If subscription check fails, allow access (don't block legitimate users)
-        setIsTrialBlocked(false);
-        setIsLoading(false);
+        // If admin check fails, proceed with normal subscription check
+        checkSubscriptionStatus(user.id).then((hasActiveSubscription) => {
+          if (hasActiveSubscription) {
+            setIsTrialBlocked(false);
+          } else {
+            const freeTrialUsed = localStorage.getItem('freemium_trial_used');
+            if (freeTrialUsed) {
+              setIsTrialBlocked(true);
+              setBlockReason('localStorage');
+            } else {
+              setIsTrialBlocked(false);
+            }
+          }
+          setIsLoading(false);
+        }).catch(() => {
+          setIsTrialBlocked(false);
+          setIsLoading(false);
+        });
       });
       return;
     }
