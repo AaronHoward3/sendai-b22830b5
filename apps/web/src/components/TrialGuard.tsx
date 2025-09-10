@@ -1,6 +1,23 @@
 import React, { useState, useEffect } from 'react';
 import { useSupabaseAuth } from '@/hooks/useSupabaseAuth';
 import { TrialBlockedOverlay } from '@/components/TrialBlockedOverlay';
+import { supabase } from '@/lib/supabaseClient';
+
+const checkSubscriptionStatus = async (userId: string): Promise<boolean> => {
+  try {
+    const { data } = await supabase
+      .from('subscriptions')
+      .select('status')
+      .eq('user_id', userId)
+      .maybeSingle();
+    
+    // Check if user has an active subscription
+    return data?.status === 'active';
+  } catch (error) {
+    console.error('Failed to check subscription status:', error);
+    return false;
+  }
+};
 
 interface TrialGuardProps {
   children: React.ReactNode;
@@ -21,10 +38,28 @@ export const TrialGuard: React.FC<TrialGuardProps> = ({ children }) => {
       return;
     }
 
-    // If user is authenticated, they can access everything
+    // If user is authenticated, check their subscription status
     if (user) {
-      setIsTrialBlocked(false);
-      setIsLoading(false);
+      checkSubscriptionStatus(user.id).then((hasActiveSubscription) => {
+        if (hasActiveSubscription) {
+          setIsTrialBlocked(false);
+        } else {
+          // User is authenticated but has no active subscription
+          // Check if they've used their trial
+          const freeTrialUsed = localStorage.getItem('freemium_trial_used');
+          if (freeTrialUsed) {
+            setIsTrialBlocked(true);
+            setBlockReason('localStorage');
+          } else {
+            setIsTrialBlocked(false);
+          }
+        }
+        setIsLoading(false);
+      }).catch(() => {
+        // If subscription check fails, allow access (don't block legitimate users)
+        setIsTrialBlocked(false);
+        setIsLoading(false);
+      });
       return;
     }
 

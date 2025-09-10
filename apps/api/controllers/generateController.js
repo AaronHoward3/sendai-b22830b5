@@ -247,6 +247,17 @@ export async function generateEmails(req, res) {
     brandJson.designAesthetic = designAesthetic || "";
     brandJson.brandData = brandJson.brandData || {};
     brandJson.brandData.customHeroImage = customHeroImage ?? true;
+    
+    // Ensure required fields are at the top level for generator services
+    if (!brandJson.store_name) {
+      brandJson.store_name = brandJson.brandData?.store_name || brandJson.name || normalizedDomain;
+    }
+    if (!brandJson.store_url) {
+      brandJson.store_url = brandJson.brandData?.store_url || brandJson.website || `https://${normalizedDomain}`;
+    }
+    if (!brandJson.logo_url) {
+      brandJson.logo_url = brandJson.brandData?.logo_url || brandJson.logo || null;
+    }
     // Normalize products to match generator expectations
     const normalizedProducts = Array.isArray(products) ? products.map(p => ({
       title: p.name || p.title || '',
@@ -286,6 +297,18 @@ export async function generateEmails(req, res) {
 
     // ---- Call Generator ----
     console.log("[generateController] Forwarding to Generator...");
+    
+    // Debug the final brand data structure
+    console.log("🔍 [DEBUG] Final brand data structure:", {
+      hasStoreName: !!brandJson.store_name,
+      hasStoreUrl: !!brandJson.store_url,
+      hasLogoUrl: !!brandJson.logo_url,
+      hasProducts: !!brandJson.products,
+      productsLength: brandJson.products?.length || 0,
+      storeName: brandJson.store_name,
+      storeUrl: brandJson.store_url,
+      logoUrl: brandJson.logo_url
+    });
     
     if (!process.env.GENERATOR_URL) {
       console.error("[generateController] GENERATOR_URL not configured");
