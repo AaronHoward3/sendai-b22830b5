@@ -165,6 +165,8 @@ export async function generateEmails(req, res) {
       designAesthetic,
       customHeroImage,
       hasProducts: !!products,
+      productsLength: products?.length || 0,
+      productsPreview: products?.slice(0, 2) || [],
       hasSavedHeroImageUrl: !!savedHeroImageUrl,
       hasSavedHeroImageId: !!savedHeroImageId
     });
@@ -270,6 +272,8 @@ export async function generateEmails(req, res) {
       buttonUrl: p.url || p.buttonUrl || p.buttonURL || ''
     })) : (brandJson.brandData.products || []);
     console.log("🔍 [DEBUG] Normalized products:", normalizedProducts?.slice(0, 2));
+    console.log("🔍 [DEBUG] Normalized products count:", normalizedProducts?.length || 0);
+    console.log("🔍 [DEBUG] Products with valid imageUrl:", normalizedProducts?.filter(p => p.imageUrl && p.imageUrl.trim()).length || 0);
     
     brandJson.brandData.products = normalizedProducts;
     brandJson.products = normalizedProducts; // Also put products at top level for generator
@@ -320,13 +324,21 @@ export async function generateEmails(req, res) {
     
     console.log("🎯 [CONTROLLER] Generator URL:", process.env.GENERATOR_URL);
     console.log("🎯 [CONTROLLER] Brand JSON payload size:", JSON.stringify(brandJson).length);
+    console.log("🎯 [CONTROLLER] Sending to generator:", {
+      hasProducts: !!brandJson.products,
+      productsLength: brandJson.products?.length || 0,
+      productsPreview: brandJson.products?.slice(0, 2) || []
+    });
     
     const genStart = Date.now();
     const generatorResponse = await fetch(process.env.GENERATOR_URL, {
       method: "POST",
       headers: { "Content-Type": "application/json", "Accept": "application/json" },
       body: JSON.stringify({
-        brandData: brandJson,
+        brandData: {
+          ...brandJson,
+          products: brandJson.products // Ensure products are at the top level of brandData
+        },
         emailType: brandJson.emailType,
         userContext: brandJson.userContext,
         imageContext: brandJson.imageContext,
