@@ -11,10 +11,21 @@ export const emailSchema = z.string()
   .max(254, 'Email too long');
 
 export const productSchema = z.object({
-  name: z.string().min(1, 'Product name is required').max(200, 'Product name too long'),
-  url: z.string().url('Invalid URL format').max(500, 'URL too long'),
+  name: z.string().min(1, 'Product name is required').max(200, 'Product name too long').optional(),
+  title: z.string().min(1, 'Product title is required').max(200, 'Product title too long').optional(),
+  url: z.string().url('Invalid URL format').max(500, 'URL too long').optional(),
+  buttonUrl: z.string().url('Invalid button URL format').max(500, 'Button URL too long').optional(),
   image: z.string().url('Invalid image URL').max(500, 'Image URL too long').optional(),
-});
+  imageUrl: z.string().url('Invalid image URL').max(500, 'Image URL too long').optional(),
+  subtitle: z.string().max(200, 'Product subtitle too long').optional(),
+  price: z.string().max(50, 'Price too long').optional(),
+  buttonText: z.string().max(50, 'Button text too long').optional(),
+}).refine(
+  (data) => (data.name || data.title) && (data.url || data.buttonUrl),
+  {
+    message: "Product must have either name/title and url/buttonUrl",
+  }
+);
 
 export const generateEmailSchema = z.object({
   domain: domainSchema,

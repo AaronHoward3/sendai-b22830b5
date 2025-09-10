@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import { FormData } from "../EmailGenerator";
 import { AnimatedBlobLoader } from "@/components/ui/AnimatedBlobLoader";
+import { useSupabaseAuth } from "@/hooks/useSupabaseAuth";
 import { supabase } from "@/lib/supabaseClient";
 import { postJSON } from "@/lib/api";
 
@@ -17,6 +18,8 @@ export const Step4Generation: React.FC<Step4GenerationProps> = ({
   updateFormData,
   onNext,
 }) => {
+  const { user } = useSupabaseAuth();
+  const isAuthenticated = !!user;
   const [status, setStatus] = useState("Starting…");
   const abortRef = useRef<AbortController | null>(null);
   const timersRef = useRef<number[]>([]);
@@ -39,9 +42,9 @@ export const Step4Generation: React.FC<Step4GenerationProps> = ({
     const run = async () => {
       setStatus("Generating email…");
       try {
+        // Get the current session token for authenticated requests
         const { data: { session } } = await supabase.auth.getSession();
         const token = session?.access_token;
-        const isAuthenticated = !!token;
 
         // Choose endpoint based on authentication status
         const endpoint = isAuthenticated ? `${API_ROOT}/generate` : `${API_ROOT}/generate/preview`;
