@@ -13,6 +13,14 @@ export const TrialGuard: React.FC<TrialGuardProps> = ({ children }) => {
   const [blockReason, setBlockReason] = useState<'localStorage' | 'ip'>('localStorage');
 
   useEffect(() => {
+    // Development override - check for dev flag
+    if (process.env.NODE_ENV === 'development' && localStorage.getItem('dev_override_trial')) {
+      console.log('🔧 Development mode: Trial blocking disabled');
+      setIsTrialBlocked(false);
+      setIsLoading(false);
+      return;
+    }
+
     // If user is authenticated, they can access everything
     if (user) {
       setIsTrialBlocked(false);

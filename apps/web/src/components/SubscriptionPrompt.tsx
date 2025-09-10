@@ -1,7 +1,8 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
 import { GradientButton } from './ui/gradient-button';
 import { Check } from 'lucide-react';
+import { supabase } from '@/lib/supabaseClient';
 
 interface SubscriptionPromptProps {
   onSubscribe: () => void;
@@ -21,57 +22,99 @@ const PLANS = [
 ];
 
 export const SubscriptionPrompt: React.FC<SubscriptionPromptProps> = ({ onSubscribe, onSignIn }) => {
+  const [email, setEmail] = useState('');
+  const [sent, setSent] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const sendMagicLink = async () => {
+    const trimmed = email.trim();
+    if (!trimmed) return;
+    setLoading(true);
+    setError(null);
+    
+    const { error } = await supabase.auth.signInWithOtp({
+      email: trimmed,
+      options: { emailRedirectTo: window.location.origin },
+    });
+    
+    if (error) {
+      setError(error.message);
+    } else {
+      setSent(true);
+    }
+    setLoading(false);
+  };
+
   return (
     <div className="w-full max-w-5xl mx-auto">
-      <Card>
+      <Card className="bg-card border-border">
         <CardHeader>
-          <CardTitle className="text-center">Choose a Plan</CardTitle>
-          <CardDescription className="text-center">
-            You've seen what we can do! Subscribe to access all features and save your emails.
+          <CardTitle className="text-center text-foreground">Choose a Plan</CardTitle>
+          <CardDescription className="text-center text-muted-foreground">
+            You've seen what we can do! Sign up now to access all features and save your emails.
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4 mb-8">
             {PLANS.map((p) => (
-              <Card key={p.key} className="flex flex-col">
+              <Card key={p.key} className="flex flex-col bg-card border-border">
                 <CardHeader>
-                  <CardTitle className="text-xl">{p.title}</CardTitle>
-                  <CardDescription>{p.blurb}</CardDescription>
+                  <CardTitle className="text-xl text-foreground">{p.title}</CardTitle>
+                  <CardDescription className="text-muted-foreground">{p.blurb}</CardDescription>
                 </CardHeader>
                 <CardContent className="flex flex-1 flex-col">
-                  <div className="mb-3 text-2xl font-semibold">{p.priceLabel}</div>
+                  <div className="mb-3 text-2xl font-semibold text-foreground">{p.priceLabel}</div>
                   <ul className="mb-4 space-y-2 text-sm">
                     {p.bullets.map((b) => (
-                      <li key={b} className="flex items-center gap-2">
-                        <Check className="h-4 w-4" />
+                      <li key={b} className="flex items-center gap-2 text-muted-foreground">
+                        <Check className="h-4 w-4 text-green-500" />
                         <span>{b}</span>
                       </li>
                     ))}
                   </ul>
-                  <GradientButton
-                    variant="solid"
-                    onClick={onSubscribe}
-                    className="mt-auto !bg-primary !text-primary-foreground"
-                  >
-                    Select
-                  </GradientButton>
                 </CardContent>
               </Card>
             ))}
           </div>
           
-          {/* Sign In Option */}
-          <div className="mt-6 text-center">
-            <p className="text-sm text-muted-foreground mb-3">
-              Already have an account?
-            </p>
-            <GradientButton
-              variant="outline"
-              onClick={onSignIn}
-              className="!bg-background !text-foreground !border-border hover:!bg-muted"
-            >
-              Sign In First
-            </GradientButton>
+          {/* Sign Up Section */}
+          <div className="text-center space-y-4">
+            <div className="space-y-2">
+              <h3 className="text-lg font-semibold text-foreground">Sign up to get started</h3>
+              <p className="text-sm text-muted-foreground">
+                Enter your email to receive a magic link and create your account
+              </p>
+            </div>
+            
+            <div className="max-w-md mx-auto space-y-3">
+              <input
+                type="email"
+                placeholder="you@example.com"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    e.preventDefault();
+                    sendMagicLink();
+                  }
+                }}
+                className="w-full px-3 py-2 border border-border rounded-md bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                autoFocus
+              />
+              
+              {error && <p className="text-sm text-destructive">{error}</p>}
+              {sent && <p className="text-sm text-green-600">Magic link sent! Check your inbox.</p>}
+              
+              <GradientButton
+                variant="solid"
+                onClick={sendMagicLink}
+                disabled={loading || !email.trim()}
+                className="w-full !bg-primary !text-primary-foreground"
+              >
+                {loading ? "Sending…" : "Send magic link"}
+              </GradientButton>
+            </div>
           </div>
         </CardContent>
       </Card>
