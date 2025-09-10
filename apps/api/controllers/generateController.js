@@ -198,10 +198,24 @@ export async function generateEmails(req, res) {
           primary_color: "#4f46e5",
           link_color: "#22d3ee",
           logo: null,
+          logo_url: null, // Header service looks for this field
+          store_name: normalizedDomain, // Header service looks for this field
+          store_url: `https://${normalizedDomain}`, // Header service looks for this field
           products: [],
           brandData: {
-            products: [],
+            products: [
+              {
+                title: "Sample Product",
+                subtitle: "This is a sample product for demonstration purposes",
+                price: "$29.99",
+                imageUrl: "",
+                buttonText: "View",
+                buttonUrl: `https://${normalizedDomain}/products/sample`
+              }
+            ],
             description: `Brand for ${normalizedDomain}`,
+            primary_color: "#4f46e5",
+            link_color: "#22d3ee",
           }
         };
         brandJson = structuredClone(fallbackBrand);
@@ -222,9 +236,17 @@ export async function generateEmails(req, res) {
     brandJson.designAesthetic = designAesthetic || "";
     brandJson.brandData = brandJson.brandData || {};
     brandJson.brandData.customHeroImage = customHeroImage ?? true;
-    brandJson.brandData.products = Array.isArray(products)
-      ? products
-      : (brandJson.brandData.products || []);
+    // Normalize products to match generator expectations
+    const normalizedProducts = Array.isArray(products) ? products.map(p => ({
+      title: p.name || p.title || '',
+      subtitle: p.description || p.subtitle || '',
+      price: p.price || '',
+      imageUrl: p.image_url || p.imageUrl || '',
+      buttonText: p.buttonText || 'View',
+      buttonUrl: p.url || p.buttonUrl || p.buttonURL || ''
+    })) : (brandJson.brandData.products || []);
+    
+    brandJson.brandData.products = normalizedProducts;
 
     // Forward saved image to generator -> it will inject and skip generating
     if (typeof savedHeroImageUrl === "string" && /^https?:\/\//i.test(savedHeroImageUrl.trim())) {
