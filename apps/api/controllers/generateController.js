@@ -247,6 +247,7 @@ export async function generateEmails(req, res) {
     brandJson.designAesthetic = designAesthetic || "";
     brandJson.brandData = brandJson.brandData || {};
     brandJson.brandData.customHeroImage = customHeroImage ?? true;
+    brandJson.customHeroImage = customHeroImage ?? true; // Also set at top level for generator
     
     // Ensure required fields are at the top level for generator services
     if (!brandJson.store_name) {
@@ -264,7 +265,7 @@ export async function generateEmails(req, res) {
       title: p.name || p.title || '',
       subtitle: p.description || p.subtitle || '',
       price: p.price || '',
-      imageUrl: p.image_url || p.imageUrl || '',
+      imageUrl: p.image_url || p.imageUrl || p.image || '',
       buttonText: p.buttonText || 'View',
       buttonUrl: p.url || p.buttonUrl || p.buttonURL || ''
     })) : (brandJson.brandData.products || []);
