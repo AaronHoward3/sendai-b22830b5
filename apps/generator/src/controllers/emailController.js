@@ -164,8 +164,23 @@ export async function generateEmails(req, res) {
     send("finalizing", {});
     const finalBrandData = await heroPromise;
     const stored = getMJML(jobId) || [];
+    
+    console.log("🔍 [DEBUG] finalBrandData structure:", {
+      hasStoreName: !!finalBrandData.store_name,
+      hasStoreUrl: !!finalBrandData.store_url,
+      hasProducts: !!finalBrandData.products,
+      productsLength: finalBrandData.products?.length || 0
+    });
+    
     const headerMjml = await processHeaderTemplate(finalBrandData);
     const footerMjml = await processFooterTemplate(finalBrandData);
+    
+    console.log("🔍 [DEBUG] Header/Footer processing:", {
+      headerLength: headerMjml?.length || 0,
+      footerLength: footerMjml?.length || 0,
+      headerPreview: headerMjml?.substring(0, 100) || 'EMPTY',
+      footerPreview: footerMjml?.substring(0, 100) || 'EMPTY'
+    });
 
     const fontHead = `
       <mj-head>
@@ -208,15 +223,29 @@ export async function generateEmails(req, res) {
       // Remove any previous header and inject the new one at the beginning of mj-body
       updated = updated.replace(/<!-- Header Section -->[\s\S]*?<!-- \/Header Section -->/g, "");
       if (headerMjml && updated.includes("<mj-body>")) {
+        console.log("🔍 [DEBUG] Injecting header into MJML");
         updated = updated.replace("<mj-body>", `<mj-body>\n${headerMjml}`);
+      } else {
+        console.log("🔍 [DEBUG] Header injection skipped:", {
+          hasHeaderMjml: !!headerMjml,
+          hasMjBody: updated.includes("<mj-body>")
+        });
       }
 
       // Remove any previous footer and append the new one
       updated = updated.replace(/<!-- Footer Section -->[\s\S]*?<\/mj-body>/g, "</mj-body>");
       if (footerMjml && updated.includes("</mj-body>") && !updated.includes("mj-social")) {
+        console.log("🔍 [DEBUG] Injecting footer into MJML");
         updated = updated.replace("</mj-body>", `${footerMjml}\n</mj-body>`);
       } else if (footerMjml && updated.includes("<mj-body") && !updated.includes("mj-social")) {
+        console.log("🔍 [DEBUG] Injecting footer into MJML (alternative)");
         updated = `${updated}\n${footerMjml}\n</mj-body>`;
+      } else {
+        console.log("🔍 [DEBUG] Footer injection skipped:", {
+          hasFooterMjml: !!footerMjml,
+          hasMjBodyClose: updated.includes("</mj-body>"),
+          hasMjSocial: updated.includes("mj-social")
+        });
       }
 
       updateMJML(jobId, index, updated);

@@ -106,14 +106,28 @@ export async function runTwoPassGeneration({
   m.log("Layout chosen:", layout.layoutId);
 
   // 1.1) Product section
+  console.log("🔍 [DEBUG] Product processing:", {
+    emailType,
+    isPromotion: emailType === "Promotion",
+    hasProducts: Array.isArray(brandData?.products),
+    productsLength: brandData?.products?.length || 0,
+    productsPreview: brandData?.products?.slice(0, 2) || []
+  });
+  
   if ((emailType === "Promotion") && Array.isArray(brandData?.products)) {
     m.start("productSection");
     const productHtml = await buildProductSectionWithFallbacks({
       emailType, products: brandData.products, designAesthetic, seed: layout.layoutId
     });
+    console.log("🔍 [DEBUG] Product HTML generated:", {
+      hasProductHtml: !!productHtml,
+      productHtmlLength: productHtml?.length || 0,
+      productHtmlPreview: productHtml?.substring(0, 200) || 'EMPTY'
+    });
     baseMjml = injectProductSectionIntoMjml(baseMjml, productHtml);
     m.end("productSection");
   } else {
+    console.log("🔍 [DEBUG] Removing PRODUCT_SECTION token");
     baseMjml = baseMjml.replace(/\[\[\s*PRODUCT_SECTION\s*\]\]/gi, "");
   }
 
