@@ -24,6 +24,12 @@ services:
         sync: false
       - key: BRANDDEV_API_KEY
         sync: false
+      - key: SCRAPINGBEE_API_KEY
+        sync: false
+      - key: CLIENT_URL
+        value: https://www.irios.ai
+      - key: ALLOW_ALL_ORIGINS
+        value: "true"
     healthCheckPath: /healthz
 
   - type: web
