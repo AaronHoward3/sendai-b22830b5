@@ -20,10 +20,11 @@ import {
   ProductLink,
   DesignAesthetic,
 } from '../EmailGenerator';
-import { generateAIContext } from '@/lib/contextService';
+import { generateAIContext, generateAIContextPreview } from '@/lib/contextService';
 
 import { supabase } from '@/lib/supabaseClient';
 import { sanitizeInput, validateUrl } from '@/lib/security';
+import { useSupabaseAuth } from '@/hooks/useSupabaseAuth';
 
 const API_ROOT = '/api';
 
@@ -385,6 +386,9 @@ export const Step2EmailType: React.FC<Step2EmailTypeProps> = ({
   onNext,
   onPrev,
 }) => {
+  const { user } = useSupabaseAuth();
+  const isAuthenticated = !!user;
+  
   const [selectedEmailType, setSelectedEmailType] = useState<EmailType | null>(formData.emailType);
   const [useCustomHero, setUseCustomHero] = useState<boolean>(formData.useCustomHero ?? true);
   const [userContext, setUserContext] = useState<string>(formData.userContext ?? '');
@@ -445,7 +449,13 @@ export const Step2EmailType: React.FC<Step2EmailTypeProps> = ({
       try {
         const { data: { session } } = await supabase.auth.getSession();
         const token = session?.access_token;
-        const res = await fetch(`${API_ROOT}/images?domain=${encodeURIComponent(domain)}`, {
+        
+        // Use appropriate endpoint based on authentication status
+        const endpoint = isAuthenticated 
+          ? `${API_ROOT}/images?domain=${encodeURIComponent(domain)}`
+          : `${API_ROOT}/images/preview?domain=${encodeURIComponent(domain)}`;
+          
+        const res = await fetch(endpoint, {
           headers: token ? { Authorization: `Bearer ${token}` } : {},
         });
         if (res.ok) {
@@ -456,7 +466,7 @@ export const Step2EmailType: React.FC<Step2EmailTypeProps> = ({
         // ignore
       }
     })();
-  }, [formData.domain]);
+  }, [formData.domain, isAuthenticated]);
 
   // ------------ Scraped products + seed ------------
   const scrapedProducts = useMemo(() => getScrapedProductsFromFormData(formData), [formData]);
@@ -505,15 +515,26 @@ export const Step2EmailType: React.FC<Step2EmailTypeProps> = ({
       const occ = nearestOccasion(new Date());
       const productsForContext = products.length > 0 ? products : scrapedProducts;
 
-      const response = await generateAIContext({
-        brandData: formData.brandData,
-        emailType: selectedEmailType || 'Promotion',
-        tone,
-        designAesthetic,
-        products: productsForContext,
-        occasion: occ.short || occ.label,
-        domain: formData.domain,
-      });
+      // Use appropriate context generation based on authentication status
+      const response = isAuthenticated 
+        ? await generateAIContext({
+            brandData: formData.brandData,
+            emailType: selectedEmailType || 'Promotion',
+            tone,
+            designAesthetic,
+            products: productsForContext,
+            occasion: occ.short || occ.label,
+            domain: formData.domain,
+          })
+        : await generateAIContextPreview({
+            brandData: formData.brandData,
+            emailType: selectedEmailType || 'Promotion',
+            tone,
+            designAesthetic,
+            products: productsForContext,
+            occasion: occ.short || occ.label,
+            domain: formData.domain,
+          });
 
       if (response.success) {
         setUserContext(response.userContext);
@@ -528,7 +549,7 @@ export const Step2EmailType: React.FC<Step2EmailTypeProps> = ({
     } finally {
       setIsGeneratingContext(false);
     }
-  }, [formData.domain, formData.brandData, selectedEmailType, tone, designAesthetic, products, scrapedProducts, generateContexts]);
+  }, [formData.domain, formData.brandData, selectedEmailType, tone, designAesthetic, products, scrapedProducts, generateContexts, isAuthenticated]);
 
   useEffect(() => {
     // Prefill only if empty so we never overwrite user text when returning to Step 2
