@@ -263,7 +263,7 @@ export async function generateEmails(req, res) {
       title: p.name || p.title || '',
       subtitle: p.description || p.subtitle || '',
       price: p.price || '',
-      imageUrl: p.image_url || p.imageUrl || 'https://via.placeholder.com/300x300?text=Product+Image',
+      imageUrl: p.image_url || p.imageUrl || 'https://picsum.photos/300/300?random=1',
       buttonText: p.buttonText || 'View',
       buttonUrl: p.url || p.buttonUrl || p.buttonURL || ''
     })) : (brandJson.brandData.products || []);

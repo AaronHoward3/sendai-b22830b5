@@ -190,7 +190,7 @@ export function applyTheme(mjml, payloadBrand, skinIdRaw) {
     newBody = newBody.replace(/\sbackground-url="[^"]*"/i, "");
   }
 
-  out = hasBody ? out.replace(bodyTag, newBody) : out.replace("<mjml>", `<mjml>\n${newBody}\n`);
+  out = hasBody ? out.replace(bodyTag, newBody) : `<mjml>\n${newBody}\n${out.replace(/^<mjml>\s*/i, "")}\n</mj-body>\n</mjml>`;
 
   console.log("🔍 [DEBUG] applyTheme after body processing:", {
     hasMjml: out.includes("<mjml>"),

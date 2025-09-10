@@ -20,6 +20,13 @@ export const Step4Generation: React.FC<Step4GenerationProps> = ({
 }) => {
   const { user } = useSupabaseAuth();
   const isAuthenticated = !!user;
+  
+  console.log("🔍 [DEBUG] Step4Generation auth status:", {
+    hasUser: !!user,
+    userId: user?.id,
+    userEmail: user?.email,
+    isAuthenticated
+  });
   const [status, setStatus] = useState("Starting…");
   const abortRef = useRef<AbortController | null>(null);
   const timersRef = useRef<number[]>([]);

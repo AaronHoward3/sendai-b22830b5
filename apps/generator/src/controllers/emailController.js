@@ -95,6 +95,20 @@ export async function generateEmails(req, res) {
 
     const jobId = `${Date.now()}-${Math.random().toString(36).slice(2)}-${Math.random().toString(36).slice(2)}`;
 
+    // Debug the incoming request body structure
+    console.log(`🔍 [DEBUG] Generator ${jobId} received request body:`, {
+      hasBrandData: !!req.body?.brandData,
+      brandDataKeys: req.body?.brandData ? Object.keys(req.body.brandData) : [],
+      hasStoreName: !!req.body?.brandData?.store_name,
+      hasStoreUrl: !!req.body?.brandData?.store_url,
+      hasLogoUrl: !!req.body?.brandData?.logo_url,
+      hasProducts: !!req.body?.brandData?.products,
+      productsLength: req.body?.brandData?.products?.length || 0,
+      storeName: req.body?.brandData?.store_name,
+      storeUrl: req.body?.brandData?.store_url,
+      logoUrl: req.body?.brandData?.logo_url
+    });
+
     // Determine which hero mode we're in:
     // 1) Generate a brand-new custom image (existing path)
     // 2) Inject a previously saved image URL (new path)
