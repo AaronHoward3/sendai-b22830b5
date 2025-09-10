@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useState, useEffect } from "react";
 import { GradientButton } from "@/components/ui/gradient-button";
 import { FormData, GeneratedEmail } from "../EmailGenerator";
 import { Save, Copy } from "lucide-react";
@@ -20,6 +20,23 @@ export const Step5Results: React.FC<Step5ResultsProps> = ({
 }) => {
   const { toast } = useToast();
   const { user } = useSupabaseAuth();
+
+  // Check if user has already used their free trial
+  const [hasUsedFreeTrial, setHasUsedFreeTrial] = useState(false);
+
+  useEffect(() => {
+    // Check localStorage for free trial usage
+    const freeTrialUsed = localStorage.getItem('freemium_trial_used');
+    setHasUsedFreeTrial(!!freeTrialUsed);
+  }, []);
+
+  // Mark free trial as used when in preview mode
+  useEffect(() => {
+    if (formData.isPreviewMode && !hasUsedFreeTrial) {
+      localStorage.setItem('freemium_trial_used', 'true');
+      setHasUsedFreeTrial(true);
+    }
+  }, [formData.isPreviewMode, hasUsedFreeTrial]);
 
   const handleSubscribe = () => {
     window.location.href = "/settings?plan=1";

@@ -7,6 +7,7 @@ import { supabase } from '@/lib/supabaseClient';
 import Background from '../Background';
 import { apiPath } from '@/lib/api';
 import { useSupabaseAuth } from '@/hooks/useSupabaseAuth';
+import { useToast } from '@/hooks/use-toast';
 
 // Normalize domains to a comparable canonical form
 function normalizeDomain(dom: string): string {
@@ -26,6 +27,7 @@ export const Step1Domain: React.FC<{
 }> = ({ formData, updateFormData, onNext }) => {
   const { theme } = useTheme();
   const { user } = useSupabaseAuth();
+  const { toast } = useToast();
   const isDark = theme === 'dark';
   const isAuthenticated = !!user;
 
@@ -200,8 +202,19 @@ export const Step1Domain: React.FC<{
     setIsLoading(true);
 
     try {
-      // For anonymous users, do brand scraping but skip user-specific operations
+      // For anonymous users, check if they've already used their free trial
       if (!isAuthenticated) {
+        const freeTrialUsed = localStorage.getItem('freemium_trial_used');
+        if (freeTrialUsed) {
+          toast({
+            title: "Free trial already used",
+            description: "You've already used your free trial. Please sign in or subscribe to continue.",
+            variant: "destructive"
+          });
+          setIsLoading(false);
+          return;
+        }
+        
         console.log("🎯 [FREEMIUM] Fetching brand data for anonymous user...");
         
         const [brandData, productSuggestions] = await Promise.all([

@@ -1,99 +1,80 @@
 import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { CheckCircle, Mail, Download, Save, Zap } from 'lucide-react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
+import { GradientButton } from './ui/gradient-button';
+import { Check } from 'lucide-react';
 
 interface SubscriptionPromptProps {
   onSubscribe: () => void;
   onSignIn: () => void;
 }
 
-export const SubscriptionPrompt: React.FC<SubscriptionPromptProps> = ({
-  onSubscribe,
-  onSignIn,
-}) => {
+// Use the same plans as Settings page
+const PLANS = [
+  { key: 'PAYG', title: 'Pay As You Go', priceLabel: '$9 one-time', blurb: 'Simple credits pack. No renewal.',
+    bullets: ['10 emails', '1 image', '20 revisions', '1 brand'] },
+  { key: 'STARTER', title: 'Starter', priceLabel: '$19 / mo', blurb: 'For getting started with regular campaigns.',
+    bullets: ['30 emails', '5 images', '60 revisions', '2 brands'] },
+  { key: 'GROWTH', title: 'Growth', priceLabel: '$49 / mo', blurb: 'For growing teams and higher volume.',
+    bullets: ['120 emails', '25 images', '300 revisions', '5 brands'] },
+  { key: 'SCALE', title: 'Scale', priceLabel: '$99 / mo', blurb: 'For scale and frequent iterations.',
+    bullets: ['300 emails', '75 images', '900 revisions', '15 brands'] },
+];
+
+export const SubscriptionPrompt: React.FC<SubscriptionPromptProps> = ({ onSubscribe, onSignIn }) => {
   return (
-    <Card className="w-full max-w-2xl mx-auto border-2 border-blue-200 bg-gradient-to-br from-blue-50 to-indigo-50">
-      <CardHeader className="text-center pb-4">
-        <div className="mx-auto mb-4 w-16 h-16 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-full flex items-center justify-center">
-          <Zap className="h-8 w-8 text-white" />
-        </div>
-        <CardTitle className="text-2xl font-bold text-gray-900">
-          Unlock Full Access
-        </CardTitle>
-        <p className="text-gray-600 mt-2">
-          You've seen what we can do! Subscribe to access all features and save your emails.
-        </p>
-      </CardHeader>
-      
-      <CardContent className="space-y-6">
-        {/* Benefits */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="flex items-start space-x-3">
-            <CheckCircle className="h-5 w-5 text-green-500 mt-0.5 flex-shrink-0" />
-            <div>
-              <h4 className="font-semibold text-gray-900">Save & Access</h4>
-              <p className="text-sm text-gray-600">Save emails to your account and access them anytime</p>
-            </div>
+    <div className="w-full max-w-5xl mx-auto">
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-center">Choose a Plan</CardTitle>
+          <CardDescription className="text-center">
+            You've seen what we can do! Subscribe to access all features and save your emails.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
+            {PLANS.map((p) => (
+              <Card key={p.key} className="flex flex-col">
+                <CardHeader>
+                  <CardTitle className="text-xl">{p.title}</CardTitle>
+                  <CardDescription>{p.blurb}</CardDescription>
+                </CardHeader>
+                <CardContent className="flex flex-1 flex-col">
+                  <div className="mb-3 text-2xl font-semibold">{p.priceLabel}</div>
+                  <ul className="mb-4 space-y-2 text-sm">
+                    {p.bullets.map((b) => (
+                      <li key={b} className="flex items-center gap-2">
+                        <Check className="h-4 w-4" />
+                        <span>{b}</span>
+                      </li>
+                    ))}
+                  </ul>
+                  <GradientButton
+                    variant="solid"
+                    onClick={onSubscribe}
+                    className="mt-auto !bg-primary !text-primary-foreground"
+                  >
+                    Select
+                  </GradientButton>
+                </CardContent>
+              </Card>
+            ))}
           </div>
           
-          <div className="flex items-start space-x-3">
-            <Mail className="h-5 w-5 text-green-500 mt-0.5 flex-shrink-0" />
-            <div>
-              <h4 className="font-semibold text-gray-900">Unlimited Generations</h4>
-              <p className="text-sm text-gray-600">Generate as many emails as you need</p>
-            </div>
+          {/* Sign In Option */}
+          <div className="mt-6 text-center">
+            <p className="text-sm text-muted-foreground mb-3">
+              Already have an account?
+            </p>
+            <GradientButton
+              variant="outline"
+              onClick={onSignIn}
+              className="!bg-background !text-foreground !border-border hover:!bg-muted"
+            >
+              Sign In First
+            </GradientButton>
           </div>
-          
-          <div className="flex items-start space-x-3">
-            <Download className="h-5 w-5 text-green-500 mt-0.5 flex-shrink-0" />
-            <div>
-              <h4 className="font-semibold text-gray-900">Export Options</h4>
-              <p className="text-sm text-gray-600">Download MJML, HTML, and more formats</p>
-            </div>
-          </div>
-          
-          <div className="flex items-start space-x-3">
-            <Save className="h-5 w-5 text-green-500 mt-0.5 flex-shrink-0" />
-            <div>
-              <h4 className="font-semibold text-gray-900">Custom Images</h4>
-              <p className="text-sm text-gray-600">Save and reuse custom hero images</p>
-            </div>
-          </div>
-        </div>
-
-        {/* Pricing */}
-        <div className="bg-white rounded-lg p-4 border border-gray-200">
-          <div className="text-center">
-            <div className="text-3xl font-bold text-gray-900">$29</div>
-            <div className="text-gray-600">per month</div>
-            <div className="text-sm text-gray-500 mt-1">Cancel anytime</div>
-          </div>
-        </div>
-
-        {/* Action Buttons */}
-        <div className="flex flex-col sm:flex-row gap-3">
-          <Button 
-            onClick={onSubscribe}
-            className="flex-1 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-semibold py-3"
-          >
-            Subscribe Now
-          </Button>
-          <Button 
-            onClick={onSignIn}
-            variant="outline"
-            className="flex-1 border-blue-200 text-blue-700 hover:bg-blue-50 font-semibold py-3"
-          >
-            Sign In First
-          </Button>
-        </div>
-
-        <div className="text-center">
-          <p className="text-xs text-gray-500">
-            Already have an account? <button onClick={onSignIn} className="text-blue-600 hover:text-blue-700 underline">Sign in here</button>
-          </p>
-        </div>
-      </CardContent>
-    </Card>
+        </CardContent>
+      </Card>
+    </div>
   );
 };
