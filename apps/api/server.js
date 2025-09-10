@@ -35,6 +35,37 @@ if (!/^https?:\/\//i.test(clientUrl)) clientUrl = `http://${clientUrl}`;
 clientUrl = normalizeOrigin(clientUrl);
 process.env.CLIENT_URL = clientUrl;
 
+// Define allowed origins for CORS
+const getAllowedOrigins = () => {
+  // In development, allow all localhost origins
+  if (process.env.NODE_ENV === 'development' || process.env.ALLOW_ALL_ORIGINS === 'true') {
+    return true; // Allow all origins in development
+  }
+  
+  const origins = [
+    clientUrl, // Primary client URL
+    "http://localhost:5173", // Vite dev server
+    "http://localhost:3000", // Common React dev port
+    "http://localhost:8080", // Common dev port
+    "https://localhost:5173", // HTTPS dev
+    "https://localhost:3000", // HTTPS dev
+  ];
+  
+  // Add production URLs if they exist
+  if (process.env.PRODUCTION_URL) {
+    origins.push(process.env.PRODUCTION_URL);
+  }
+  if (process.env.VERCEL_URL) {
+    origins.push(`https://${process.env.VERCEL_URL}`);
+  }
+  if (process.env.RENDER_EXTERNAL_URL) {
+    origins.push(process.env.RENDER_EXTERNAL_URL);
+  }
+  
+  // Remove duplicates and normalize
+  return [...new Set(origins.map(normalizeOrigin))];
+};
+
 const app = express();
 const PORT = process.env.PORT || 3001;
 
@@ -50,9 +81,25 @@ app.use(
   cors({
     origin: (origin, cb) => {
       if (!origin) return cb(null, true); // same-origin/curl
-      return normalizeOrigin(origin) === clientUrl
-        ? cb(null, true)
-        : cb(new Error("CORS: origin not allowed"));
+      
+      const allowedOrigins = getAllowedOrigins();
+      
+      // If development mode allows all origins
+      if (allowedOrigins === true) {
+        return cb(null, true);
+      }
+      
+      const normalizedOrigin = normalizeOrigin(origin);
+      
+      if (allowedOrigins.includes(normalizedOrigin)) {
+        return cb(null, true);
+      }
+      
+      // Log the rejected origin for debugging
+      console.log(`🚫 CORS rejected origin: ${origin} (normalized: ${normalizedOrigin})`);
+      console.log(`✅ Allowed origins: ${allowedOrigins.join(', ')}`);
+      
+      return cb(new Error("CORS: origin not allowed"));
     },
     credentials: true,
     methods: ["GET", "POST", "PATCH", "DELETE", "OPTIONS"],
@@ -99,6 +146,8 @@ console.log(`- STRIPE_WEBHOOK_SECRET: ${process.env.STRIPE_WEBHOOK_SECRET ? "✅
 console.log(`- SCRAPINGBEE_API_KEY: ${process.env.SCRAPINGBEE_API_KEY ? "✅ yes" : "❌ no"}`);
 console.log(`- GENERATOR_URL: ${process.env.GENERATOR_URL ? "✅ yes" : "❌ no"}`);
 console.log(`- CLIENT_URL: ${process.env.CLIENT_URL}`);
+const allowedOrigins = getAllowedOrigins();
+console.log(`- Allowed CORS origins: ${allowedOrigins === true ? 'ALL (development mode)' : allowedOrigins.join(', ')}`);
 
 console.log("\n📡 Available Routes (high level):");
 console.log("- /api/brand/* and /api/brands/* (alias) ✅");
