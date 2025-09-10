@@ -56,6 +56,13 @@ export const Step4Generation: React.FC<Step4GenerationProps> = ({
     isAdmin,
     isAuthenticated
   });
+  
+  // Also log each value separately for better debugging
+  console.log("🔍 [DEBUG] hasUser:", !!user);
+  console.log("🔍 [DEBUG] userId:", user?.id);
+  console.log("🔍 [DEBUG] userEmail:", user?.email);
+  console.log("🔍 [DEBUG] isAdmin:", isAdmin);
+  console.log("🔍 [DEBUG] isAuthenticated:", isAuthenticated);
   const [status, setStatus] = useState("Starting…");
   const abortRef = useRef<AbortController | null>(null);
   const timersRef = useRef<number[]>([]);

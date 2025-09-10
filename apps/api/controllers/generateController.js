@@ -301,16 +301,16 @@ export async function generateEmails(req, res) {
     console.log("[generateController] Forwarding to Generator...");
     
     // Debug the final brand data structure
-    console.log("🔍 [DEBUG] Final brand data structure:", {
-      hasStoreName: !!brandJson.store_name,
-      hasStoreUrl: !!brandJson.store_url,
-      hasLogoUrl: !!brandJson.logo_url,
-      hasProducts: !!brandJson.products,
-      productsLength: brandJson.products?.length || 0,
-      storeName: brandJson.store_name,
-      storeUrl: brandJson.store_url,
-      logoUrl: brandJson.logo_url
-    });
+    console.log("🔍 [DEBUG] Final brand data structure:");
+    console.log("🔍 [DEBUG] hasStoreName:", !!brandJson.store_name);
+    console.log("🔍 [DEBUG] hasStoreUrl:", !!brandJson.store_url);
+    console.log("🔍 [DEBUG] hasLogoUrl:", !!brandJson.logo_url);
+    console.log("🔍 [DEBUG] hasProducts:", !!brandJson.products);
+    console.log("🔍 [DEBUG] productsLength:", brandJson.products?.length || 0);
+    console.log("🔍 [DEBUG] storeName:", brandJson.store_name);
+    console.log("🔍 [DEBUG] storeUrl:", brandJson.store_url);
+    console.log("🔍 [DEBUG] logoUrl:", brandJson.logo_url);
+    console.log("🔍 [DEBUG] products preview:", brandJson.products?.slice(0, 2));
     
     if (!process.env.GENERATOR_URL) {
       console.error("[generateController] GENERATOR_URL not configured");

@@ -96,18 +96,18 @@ export async function generateEmails(req, res) {
     const jobId = `${Date.now()}-${Math.random().toString(36).slice(2)}-${Math.random().toString(36).slice(2)}`;
 
     // Debug the incoming request body structure
-    console.log(`🔍 [DEBUG] Generator ${jobId} received request body:`, {
-      hasBrandData: !!req.body?.brandData,
-      brandDataKeys: req.body?.brandData ? Object.keys(req.body.brandData) : [],
-      hasStoreName: !!req.body?.brandData?.store_name,
-      hasStoreUrl: !!req.body?.brandData?.store_url,
-      hasLogoUrl: !!req.body?.brandData?.logo_url,
-      hasProducts: !!req.body?.brandData?.products,
-      productsLength: req.body?.brandData?.products?.length || 0,
-      storeName: req.body?.brandData?.store_name,
-      storeUrl: req.body?.brandData?.store_url,
-      logoUrl: req.body?.brandData?.logo_url
-    });
+    console.log(`🔍 [DEBUG] Generator ${jobId} received request body:`);
+    console.log("🔍 [DEBUG] hasBrandData:", !!req.body?.brandData);
+    console.log("🔍 [DEBUG] brandDataKeys:", req.body?.brandData ? Object.keys(req.body.brandData) : []);
+    console.log("🔍 [DEBUG] hasStoreName:", !!req.body?.brandData?.store_name);
+    console.log("🔍 [DEBUG] hasStoreUrl:", !!req.body?.brandData?.store_url);
+    console.log("🔍 [DEBUG] hasLogoUrl:", !!req.body?.brandData?.logo_url);
+    console.log("🔍 [DEBUG] hasProducts:", !!req.body?.brandData?.products);
+    console.log("🔍 [DEBUG] productsLength:", req.body?.brandData?.products?.length || 0);
+    console.log("🔍 [DEBUG] storeName:", req.body?.brandData?.store_name);
+    console.log("🔍 [DEBUG] storeUrl:", req.body?.brandData?.store_url);
+    console.log("🔍 [DEBUG] logoUrl:", req.body?.brandData?.logo_url);
+    console.log("🔍 [DEBUG] products preview:", req.body?.brandData?.products?.slice(0, 2));
 
     // Determine which hero mode we're in:
     // 1) Generate a brand-new custom image (existing path)
