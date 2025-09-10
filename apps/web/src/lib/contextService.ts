@@ -1,4 +1,5 @@
 import { apiPath } from './api';
+import { supabase } from './supabaseClient';
 
 export interface ContextGenerationRequest {
   brandData?: any;
@@ -24,10 +25,19 @@ export interface ContextGenerationResponse {
  * Generate AI-powered, digestible user context and image context
  */
 export async function generateAIContext(request: ContextGenerationRequest): Promise<ContextGenerationResponse> {
+  // Get the current session token
+  const { data: { session } } = await supabase.auth.getSession();
+  const token = session?.access_token;
+
+  if (!token) {
+    throw new Error('Authentication required. Please log in.');
+  }
+
   const response = await fetch(apiPath('context/generate'), {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
+      'Authorization': `Bearer ${token}`,
     },
     body: JSON.stringify(request),
   });
