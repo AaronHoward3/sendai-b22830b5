@@ -36,6 +36,9 @@ export async function checkBrand(req, res) {
         primary_color: "#4f46e5",
         link_color: "#22d3ee",
         logo: null,
+        logo_url: null, // Header service looks for this field
+        store_name: normalizedDomain, // Header service looks for this field
+        store_url: `https://${normalizedDomain}`, // Header service looks for this field
         products: [],
         brandData: {
           products: [],

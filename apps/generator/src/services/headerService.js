@@ -39,14 +39,48 @@ function replaceHeaderPlaceholders(headerTemplate, brandData) {
   // Build brand tokens to get proper colors that work with theming
   const tokens = buildBrandTokens(brandData);
   
-  return headerTemplate
-    .replace(/\[\[logo_url\]\]/g, brandData.logo_url || brandData.logo || '')
-    .replace(/\[\[store_name\]\]/g, brandData.store_name || brandData.name || brandData.title || 'Brand')
-    .replace(/\[\[store_url\]\]/g, brandData.store_url || '')
-    .replace(/\[\[body_color\]\]/g, tokens.pageBg)
-    .replace(/\[\[text_color\]\]/g, tokens.text)
-    .replace(/\[\[link_color\]\]/g, tokens.brand)
-    .replace(/\[\[divider_color\]\]/g, tokens.border);
+  // Determine if we should show logo or text
+  const hasLogo = brandData.logo_url || brandData.logo;
+  const logoUrl = brandData.logo_url || brandData.logo || '';
+  const storeName = brandData.store_name || brandData.name || brandData.title || 'Brand';
+  const storeUrl = brandData.store_url || '';
+  
+  let processedTemplate = headerTemplate;
+  
+  if (hasLogo) {
+    // Use logo version
+    processedTemplate = processedTemplate
+      .replace(/\[\[logo_url\]\]/g, logoUrl)
+      .replace(/\[\[store_name\]\]/g, storeName)
+      .replace(/\[\[store_url\]\]/g, storeUrl)
+      .replace(/\[\[body_color\]\]/g, tokens.pageBg)
+      .replace(/\[\[text_color\]\]/g, tokens.text)
+      .replace(/\[\[link_color\]\]/g, tokens.brand)
+      .replace(/\[\[divider_color\]\]/g, tokens.border);
+  } else {
+    // Use text-only version - replace the logo section with text
+    const textOnlyHeader = processedTemplate
+      .replace(/<mj-image[\s\S]*?<\/mj-image>/g, `<mj-text 
+            align="left" 
+            font-size="24px" 
+            font-weight="bold"
+            color="[[link_color]]" 
+            padding="0"
+            line-height="1.2">
+            [[store_name]]
+          </mj-text>`)
+      .replace(/\[\[logo_url\]\]/g, '')
+      .replace(/\[\[store_name\]\]/g, storeName)
+      .replace(/\[\[store_url\]\]/g, storeUrl)
+      .replace(/\[\[body_color\]\]/g, tokens.pageBg)
+      .replace(/\[\[text_color\]\]/g, tokens.text)
+      .replace(/\[\[link_color\]\]/g, tokens.brand)
+      .replace(/\[\[divider_color\]\]/g, tokens.border);
+    
+    processedTemplate = textOnlyHeader;
+  }
+  
+  return processedTemplate;
 }
 
 /**
