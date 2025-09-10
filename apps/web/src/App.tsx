@@ -4,6 +4,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { ThemeProvider } from "@/contexts/ThemeContext";
+import { TrialGuard } from "@/components/TrialGuard";
 import Index from "./pages/Index";
 import Settings from "./pages/Settings";
 import MyEmails from "./pages/MyEmails";
@@ -29,21 +30,24 @@ const App = () => (
           <div className="blob" style={{ top: "30%", left: "80%" }}></div>
         </div>
 
-        {/* Main app wrapper - now uses auto scroll to prevent phantom scrollbar */}
-        <div className="min-h-screen overflow-y-auto overflow-x-hidden">
-          <BrowserRouter>
-            <ScrollToTop />
-            <Routes>
-              <Route path="/" element={<Index />} />
-              <Route path="/settings" element={<Settings />} />
-              <Route path="/my-emails" element={<MyEmails />} />
-              <Route path="/email-editor" element={<EmailEditor />} />
-              {/* 👇 new admin route */}
-              <Route path="/admin" element={<Admin />} />
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-          </BrowserRouter>
-        </div>
+        {/* Trial Guard - blocks site if free trial is used */}
+        <TrialGuard>
+          {/* Main app wrapper - now uses auto scroll to prevent phantom scrollbar */}
+          <div className="min-h-screen overflow-y-auto overflow-x-hidden">
+            <BrowserRouter>
+              <ScrollToTop />
+              <Routes>
+                <Route path="/" element={<Index />} />
+                <Route path="/settings" element={<Settings />} />
+                <Route path="/my-emails" element={<MyEmails />} />
+                <Route path="/email-editor" element={<EmailEditor />} />
+                {/* 👇 new admin route */}
+                <Route path="/admin" element={<Admin />} />
+                <Route path="*" element={<NotFound />} />
+              </Routes>
+            </BrowserRouter>
+          </div>
+        </TrialGuard>
         
       </TooltipProvider>
     </ThemeProvider>

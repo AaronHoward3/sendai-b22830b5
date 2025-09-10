@@ -6,6 +6,7 @@ import { requireEmailCredit } from "../middleware/credits.js";
 import { generateEmails } from "../controllers/generateController.js";
 import { maybeConsumeImageCredit } from "../middleware/credits.js";
 import { validateRequest, generateEmailSchema } from "../middleware/validation.js";
+import { checkTrialUsage, markTrialUsed } from "../middleware/trialTracking.js";
 
 const router = Router();
 
@@ -121,6 +122,7 @@ router.post("/preview",
       next(err);
     }
   },
+  checkTrialUsage, // Check if IP has already used free trial
   generateLimiter, 
   (req, res, next) => {
     try {
@@ -152,7 +154,8 @@ router.post("/preview",
       next(err);
     }
   },
-  generateEmails
+  generateEmails,
+  markTrialUsed // Mark IP as having used free trial after successful generation
 );
 
 export default router;

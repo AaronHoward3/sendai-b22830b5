@@ -145,16 +145,6 @@ export const Step5Results: React.FC<Step5ResultsProps> = ({
 
           {/* Subscription Prompt */}
           <SubscriptionPrompt onSubscribe={handleSubscribe} onSignIn={handleSignIn} />
-
-          {/* Navigation */}
-          <div className="flex justify-center space-x-4">
-            <GradientButton onClick={onPrev} className="!bg-primary !text-primary-foreground hover:!bg-primary/90">
-              Go Back
-            </GradientButton>
-            <GradientButton onClick={onRestart} variant="outline">
-              Start Over
-            </GradientButton>
-          </div>
         </div>
       </div>
     );
