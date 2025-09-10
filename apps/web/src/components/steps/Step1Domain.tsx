@@ -6,6 +6,7 @@ import { useTheme } from '@/hooks/useTheme';
 import { supabase } from '@/lib/supabaseClient';
 import Background from '../Background';
 import { apiPath } from '@/lib/api';
+import { useSupabaseAuth } from '@/hooks/useSupabaseAuth';
 
 // Normalize domains to a comparable canonical form
 function normalizeDomain(dom: string): string {
@@ -24,7 +25,9 @@ export const Step1Domain: React.FC<{
   onNext: () => void;
 }> = ({ formData, updateFormData, onNext }) => {
   const { theme } = useTheme();
+  const { user } = useSupabaseAuth();
   const isDark = theme === 'dark';
+  const isAuthenticated = !!user;
 
   // 🎨 Glow Colors (4-color sweep)
   const glowColor1 = isDark ? '#8affa7ff' : '#00bcd4';
@@ -197,6 +200,14 @@ export const Step1Domain: React.FC<{
     setIsLoading(true);
 
     try {
+      // For anonymous users, skip all brand slot checking and go directly to next step
+      if (!isAuthenticated) {
+        updateFormData({ domain: trimmed });
+        onNext();
+        return;
+      }
+
+      // For authenticated users, do the full brand checking flow
       const alreadyOwned = await domainOwnedByUser(trimmed);
       
       const canProceed = await checkBrandSlotAvailability(alreadyOwned);
