@@ -182,13 +182,39 @@ export async function generateEmails(req, res) {
     const existing = await getStoredBrand(normalizedDomain);
     console.log("🎯 [CONTROLLER] Brand lookup result:", !!existing?.brand);
     
+    let brandJson;
+    
     if (!existing?.brand) {
       console.error("❌ [CONTROLLER] Brand info not found for domain:", normalizedDomain);
-      return res.status(404).json({ error: "Brand info not found for domain", domain: normalizedDomain });
+      
+      // For preview mode, create a fallback brand to allow generation
+      if (isPreviewMode) {
+        console.log("🎯 [CONTROLLER] Creating fallback brand for preview mode");
+        const fallbackBrand = {
+          name: normalizedDomain,
+          domain: normalizedDomain,
+          website: `https://${normalizedDomain}`,
+          description: `Brand for ${normalizedDomain}`,
+          primary_color: "#4f46e5",
+          link_color: "#22d3ee",
+          logo: null,
+          products: [],
+          brandData: {
+            products: [],
+            description: `Brand for ${normalizedDomain}`,
+          }
+        };
+        brandJson = structuredClone(fallbackBrand);
+        console.log("🎯 [CONTROLLER] Using fallback brand for preview generation");
+      } else {
+        return res.status(404).json({ error: "Brand info not found for domain", domain: normalizedDomain });
+      }
+    } else {
+      // Use existing brand data
+      brandJson = structuredClone(existing.brand);
     }
 
-    // Build payload for generator
-    const brandJson = structuredClone(existing.brand);
+    // Build payload for generator (common logic for both cases)
     brandJson.emailType = emailType || "";
     brandJson.userContext = userContext || "";
     brandJson.imageContext = imageContext || "";
