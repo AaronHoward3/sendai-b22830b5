@@ -82,6 +82,8 @@ export interface FormData {
   subjectLine?: string;
   savedHeroImageUrl?: string | null;
   savedHeroImageId?: string | null;
+  isPreviewMode?: boolean;
+  previewMessage?: string | null;
 }
 
 const EmailGenerator: React.FC = () => {

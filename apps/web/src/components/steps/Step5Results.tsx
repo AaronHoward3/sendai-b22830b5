@@ -5,6 +5,7 @@ import { Save, Copy } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/lib/supabaseClient";
 import { useSupabaseAuth } from "@/hooks/useSupabaseAuth";
+import { SubscriptionPrompt } from "@/components/SubscriptionPrompt";
 
 interface Step5ResultsProps {
   formData: FormData;
@@ -19,6 +20,14 @@ export const Step5Results: React.FC<Step5ResultsProps> = ({
 }) => {
   const { toast } = useToast();
   const { user } = useSupabaseAuth();
+
+  const handleSubscribe = () => {
+    window.location.href = "/settings?plan=1";
+  };
+
+  const handleSignIn = () => {
+    window.location.href = "/settings";
+  };
 
   // support either generatedEmails[0] or generatedEmail
   const email = formData.generatedEmails?.[0] ?? (formData as { generatedEmail?: GeneratedEmail })?.generatedEmail;
@@ -97,6 +106,39 @@ export const Step5Results: React.FC<Step5ResultsProps> = ({
         <GradientButton onClick={onPrev} className="!bg-primary !text-primary-foreground hover:!bg-primary/90">
           Go Back
         </GradientButton>
+      </div>
+    );
+  }
+
+  // Show subscription prompt for preview mode users
+  if (formData.isPreviewMode) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center p-4">
+        <div className="w-full max-w-4xl space-y-8">
+          {/* Email Preview */}
+          <div className="bg-white rounded-xl border shadow-lg overflow-hidden">
+            <div className="px-4 py-3 border-b bg-muted/40">
+              <h2 className="text-lg font-semibold truncate" title={computedSubject}>{computedSubject}</h2>
+              <p className="text-sm text-muted-foreground mt-1">Preview - Subscribe to access full features</p>
+            </div>
+            <div className="h-[60vh] overflow-auto">
+              <iframe srcDoc={html} sandbox="" className="w-full h-full border-0" style={{ background: "white" }} title="Email Preview" />
+            </div>
+          </div>
+
+          {/* Subscription Prompt */}
+          <SubscriptionPrompt onSubscribe={handleSubscribe} onSignIn={handleSignIn} />
+
+          {/* Navigation */}
+          <div className="flex justify-center space-x-4">
+            <GradientButton onClick={onPrev} className="!bg-primary !text-primary-foreground hover:!bg-primary/90">
+              Go Back
+            </GradientButton>
+            <GradientButton onClick={onRestart} variant="outline">
+              Start Over
+            </GradientButton>
+          </div>
+        </div>
       </div>
     );
   }

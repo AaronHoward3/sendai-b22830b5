@@ -41,9 +41,13 @@ export const Step4Generation: React.FC<Step4GenerationProps> = ({
       try {
         const { data: { session } } = await supabase.auth.getSession();
         const token = session?.access_token;
+        const isAuthenticated = !!token;
+
+        // Choose endpoint based on authentication status
+        const endpoint = isAuthenticated ? `${API_ROOT}/generate` : `${API_ROOT}/generate/preview`;
 
         // Make the generate request directly
-        const generateResponse = await fetch(`${API_ROOT}/generate`, {
+        const generateResponse = await fetch(endpoint, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
@@ -107,6 +111,9 @@ export const Step4Generation: React.FC<Step4GenerationProps> = ({
               html: first.html || "",
             },
           ],
+          // Store preview mode information
+          isPreviewMode: data.isPreviewMode || false,
+          previewMessage: data.previewMessage || null,
         });
 
         setStatus("Done!");

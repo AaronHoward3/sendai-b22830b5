@@ -141,6 +141,7 @@ function extractHeroUrl({ generated, headerHero, mjml, html }) {
 export async function generateEmails(req, res) {
   console.log("🎯 [CONTROLLER] generateEmails started");
   const startTime = Date.now();
+  const isPreviewMode = req.isPreviewMode || false;
 
   try {
     console.log("🎯 [CONTROLLER] Extracting request body...");
@@ -289,10 +290,11 @@ export async function generateEmails(req, res) {
         foundFrom: urlToStore ? "extracted" : "none",
         selectedSaved: !!selectedUrl,
         urlPreview: urlToStore ? String(urlToStore).slice(0, 80) : null,
+        isPreviewMode,
       });
 
-      // Only proceed if we have a user + domain + a URL to store
-      if (uid && normalizedDomain && urlToStore) {
+      // Only proceed if we have a user + domain + a URL to store AND not in preview mode
+      if (uid && normalizedDomain && urlToStore && !isPreviewMode) {
         // If user picked a saved image and it's the same link, just reuse existing DB row
         if (selectedUrl && selectedUrl === urlToStore) {
           const { data: existing } = await supabase
@@ -368,7 +370,8 @@ export async function generateEmails(req, res) {
     // ================================================================
 
     console.log(`[generateController] Total request time: ${Date.now() - startTime} ms`);
-    return res.json({
+    
+    const response = {
       success: true,
       subjectLine: generated.subjectLine || generated.subject || (htmlEmails[0]?.subject ?? ""),
       totalTokens: generated.totalTokens,
@@ -377,7 +380,15 @@ export async function generateEmails(req, res) {
       heroImageUrlUsed: generated?.heroImageUrlUsed || headerHero || null,
       usedImageSource: generated?.heroImageUrlUsed ? (savedHeroImageUrl ? "saved" : "generated") : null,
       debug: { colorsSent: resolveEffectiveColors(brandJson).resolved },
-    });
+    };
+
+    // Add preview mode indicators
+    if (isPreviewMode) {
+      response.isPreviewMode = true;
+      response.previewMessage = "This is a preview. Subscribe to access the full email and save it to your account.";
+    }
+
+    return res.json(response);
   } catch (err) {
     console.error("🚨 [CONTROLLER] Generate error:", err);
     console.error("🚨 [CONTROLLER] Error stack:", err.stack);
