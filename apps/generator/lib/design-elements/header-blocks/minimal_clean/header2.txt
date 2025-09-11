@@ -1,0 +1,33 @@
+<!-- Header Block 2: Minimal Clean Centered -->
+<mj-section background-color="[[body_color]]" padding="20px">
+  <mj-column>
+    <mj-image 
+      src="[[logo_url]]" 
+      alt="[[store_name]]" 
+      href="[[store_url]]" 
+      width="150px" 
+      padding="0"
+      align="center">
+    </mj-image>
+  </mj-column>
+</mj-section>
+<mj-section background-color="[[body_color]]" padding="0 20px 20px">
+  <mj-column>
+    <mj-text 
+      align="center" 
+      font-size="14px" 
+      color="[[text_color]]" 
+      padding="0"
+      line-height="1.4">
+      <a href="[[store_url]]" style="color: [[link_color]]; text-decoration: none; margin: 0 10px;">Home</a>
+      <a href="[[store_url]]/products" style="color: [[link_color]]; text-decoration: none; margin: 0 10px;">Products</a>
+      <a href="[[store_url]]/about" style="color: [[link_color]]; text-decoration: none; margin: 0 10px;">About</a>
+      <a href="[[store_url]]/contact" style="color: [[link_color]]; text-decoration: none; margin: 0 10px;">Contact</a>
+    </mj-text>
+  </mj-column>
+</mj-section>
+<mj-section background-color="[[body_color]]" padding="0 20px 20px">
+  <mj-column>
+    <mj-divider border-width="1px" border-color="[[divider_color]]" padding="0"></mj-divider>
+  </mj-column>
+</mj-section>

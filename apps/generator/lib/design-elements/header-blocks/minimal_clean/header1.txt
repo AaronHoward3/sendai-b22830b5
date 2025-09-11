@@ -1,0 +1,37 @@
+<!-- Header Block 1: Minimal Clean -->
+<mj-section background-color="[[body_color]]" padding="15px 20px">
+  <mj-column width="100%">
+    <mj-table>
+      <tr>
+        <td align="left" style="vertical-align: middle;">
+          <mj-image 
+            src="[[logo_url]]" 
+            alt="[[store_name]]" 
+            href="[[store_url]]" 
+            width="120px" 
+            padding="0"
+            align="left">
+          </mj-image>
+        </td>
+        <td align="right" style="vertical-align: middle;">
+          <mj-text 
+            align="right" 
+            font-size="14px" 
+            color="[[text_color]]" 
+            padding="0"
+            line-height="1.2">
+            <a href="[[store_url]]" style="color: [[link_color]]; text-decoration: none; margin-left: 15px;">Home</a>
+            <a href="[[store_url]]/products" style="color: [[link_color]]; text-decoration: none; margin-left: 15px;">Products</a>
+            <a href="[[store_url]]/about" style="color: [[link_color]]; text-decoration: none; margin-left: 15px;">About</a>
+            <a href="[[store_url]]/contact" style="color: [[link_color]]; text-decoration: none; margin-left: 15px;">Contact</a>
+          </mj-text>
+        </td>
+      </tr>
+    </mj-table>
+  </mj-column>
+</mj-section>
+<mj-section background-color="[[body_color]]" padding="0 20px 15px">
+  <mj-column>
+    <mj-divider border-width="1px" border-color="[[divider_color]]" padding="0"></mj-divider>
+  </mj-column>
+</mj-section>

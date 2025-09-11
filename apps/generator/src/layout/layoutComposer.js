@@ -4,6 +4,10 @@ import {
   listDividerFiles,
   readDividerFile
 } from "../blocks/blockRegistry.js";
+import {
+  generateHeaderBlock,
+  generateFooterBlock
+} from "../services/headerFooterBlockService.js";
 
 const pick = (arr) => arr[Math.floor(Math.random() * arr.length)];
 
@@ -51,15 +55,22 @@ export async function chooseLayout(emailType, aesthetic = "minimal_clean") {
 
 /**
  * composeBaseMjml will:
+ *  - Generate header and footer blocks with brand data
  *  - Read block1 + block3 as usual
  *  - For product types, **insert [[PRODUCT_SECTION]]** instead of reading block2
  *  - For other types, read block2 from disk normally
  *  - Insert divider elements between blocks when available
  */
-export async function composeBaseMjml(emailType, aesthetic, layout) {
+export async function composeBaseMjml(emailType, aesthetic, layout, brandData = {}) {
   const dividerNames = await listDividerFiles(); // filenames only
   const dividerName1 = dividerNames.length ? pick(dividerNames) : null;
   const dividerName2 = dividerNames.length ? pick(dividerNames) : null;
+
+  // Generate header and footer blocks with brand data
+  const [headerBlock, footerBlock] = await Promise.all([
+    generateHeaderBlock(aesthetic, brandData),
+    generateFooterBlock(aesthetic, brandData)
+  ]);
 
   // Read required blocks
   const [b1, b3, divider1, divider2] = await Promise.all([
@@ -85,11 +96,13 @@ export async function composeBaseMjml(emailType, aesthetic, layout) {
   const mark = (name) => `\n<mj-raw>\n  <!-- Blockfile: ${name} -->\n</mj-raw>\n`;
 
   const pieces = [
+    mark("header-block") + headerBlock.trim(),
     mark(layout.block1) + b1.trim(),
     divider1 ? mark(`divider/${dividerName1}`) + divider1.trim() : "",
     mark(b2Label) + b2Content.trim(),
     divider2 ? mark(`divider/${dividerName2}`) + divider2.trim() : "",
     mark(layout.block3) + b3.trim(),
+    mark("footer-block") + footerBlock.trim(),
   ].filter(Boolean);
 
   return `<mjml>

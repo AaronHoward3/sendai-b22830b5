@@ -30,7 +30,7 @@ TASK:
 
 STRICT RULES:
 - Keep all MJML tags and block structure as-is.
-- Do NOT add header or footer sections.
+- Do NOT modify header or footer sections (marked with <!-- Blockfile: header-block --> and <!-- Blockfile: footer-block -->).
 - Do NOT remove <!-- Blockfile: ... --> markers inside <mj-raw>.
 - Preserve https://CUSTOMHEROIMAGE.COM if present.
 - All <mj-image> must be open+close tags; no self-closing.
@@ -99,7 +99,7 @@ export async function runTwoPassGeneration({
   // 1) Layout selection & base MJML
   m.start("layout");
   const layout = await chooseLayout(emailType, designAesthetic);
-  let baseMjml = await composeBaseMjml(emailType, designAesthetic, layout);
+  let baseMjml = await composeBaseMjml(emailType, designAesthetic, layout, brandData);
   m.end("layout");
 
   onStatus("layout:chosen", { layoutId: layout.layoutId });
