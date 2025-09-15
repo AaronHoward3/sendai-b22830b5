@@ -78,7 +78,7 @@ function replaceHeaderFooterPlaceholders(template, brandData) {
     .replace(/\[\[store_url\]\]/g, storeUrl)
     .replace(/\[\[store_address\]\]/g, storeAddress)
     .replace(/\[\[unsubscribe\]\]/g, unsubscribe)
-    .replace(/\[\[body_color\]\]/g, tokens.pageBg)
+    .replace(/\[\[body_color\]\]/g, tokens.sectionBg)
     .replace(/\[\[text_color\]\]/g, tokens.text)
     .replace(/\[\[link_color\]\]/g, tokens.brand)
     .replace(/\[\[divider_color\]\]/g, tokens.border);

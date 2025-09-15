@@ -53,7 +53,7 @@ function replaceHeaderPlaceholders(headerTemplate, brandData) {
       .replace(/\[\[logo_url\]\]/g, logoUrl)
       .replace(/\[\[store_name\]\]/g, storeName)
       .replace(/\[\[store_url\]\]/g, storeUrl)
-      .replace(/\[\[body_color\]\]/g, tokens.pageBg)
+      .replace(/\[\[body_color\]\]/g, tokens.sectionBg)
       .replace(/\[\[text_color\]\]/g, tokens.text)
       .replace(/\[\[link_color\]\]/g, tokens.brand)
       .replace(/\[\[divider_color\]\]/g, tokens.border);
@@ -72,7 +72,7 @@ function replaceHeaderPlaceholders(headerTemplate, brandData) {
       .replace(/\[\[logo_url\]\]/g, '')
       .replace(/\[\[store_name\]\]/g, storeName)
       .replace(/\[\[store_url\]\]/g, storeUrl)
-      .replace(/\[\[body_color\]\]/g, tokens.pageBg)
+      .replace(/\[\[body_color\]\]/g, tokens.sectionBg)
       .replace(/\[\[text_color\]\]/g, tokens.text)
       .replace(/\[\[link_color\]\]/g, tokens.brand)
       .replace(/\[\[divider_color\]\]/g, tokens.border);
