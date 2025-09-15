@@ -138,8 +138,10 @@ export async function generateEmails(req, res) {
         ? brandData.banner_url
         : brandData.logo_url || "";
 
-    // Generate (or skip) hero
+    // Generate hero and email content in parallel for faster processing
     if (wantsCustomHero) send("hero:start", {});
+    send("refine:start", {});
+    
     const heroPromise = wantsCustomHero
       ? Promise.race([
           generateCustomHeroAndEnrich(brandData, storeId, jobId, { metrics: m }),
@@ -152,12 +154,10 @@ export async function generateEmails(req, res) {
         })
       : Promise.resolve(brandData);
 
-    // Generate (style pass inside)
-    send("refine:start", {});
-    const { layout, refinedMjml, styleUsed } = await runTwoPassGeneration({
+    const emailPromise = runTwoPassGeneration({
       emailType,
-      designAesthetic: resolvedStyleId, // used for layout and as fallback style
-      styleId: resolvedStyleId,         // explicit style (preferred)
+      designAesthetic: resolvedStyleId,
+      styleId: resolvedStyleId,
       brandData,
       userContext,
       wantsMjml,
@@ -170,13 +170,18 @@ export async function generateEmails(req, res) {
       metrics: m
     });
 
+    // Wait for both to complete
+    const [finalBrandData, { layout, refinedMjml, styleUsed }] = await Promise.all([
+      heroPromise,
+      emailPromise
+    ]);
+
     console.log("STYLE PALETTE USED:", styleUsed?.palette);
 
     saveMJML(jobId, 0, refinedMjml);
 
     // Hero replacement / header and footer stitching
     send("finalizing", {});
-    const finalBrandData = await heroPromise;
     const stored = getMJML(jobId) || [];
     
     console.log("🔍 [DEBUG] finalBrandData structure:", {

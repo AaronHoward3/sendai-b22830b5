@@ -142,7 +142,7 @@ export async function runTwoPassGeneration({
   // 2) Refine via model – copy only
   const spinner = ora("Refining MJML...").start();
   try {
-    onStatus("assistant:refine:start", { model: process.env.REFINE_MODEL || "gpt-4o-mini" });
+    onStatus("assistant:refine:start", { model: process.env.REFINE_MODEL || "gpt-3.5-turbo" });
     m.start("emailRefine");
 
     const sys = wantsMjml
@@ -156,14 +156,14 @@ export async function runTwoPassGeneration({
 
     const resp = await retryOpenAI(async () =>
       openai.chat.completions.create({
-        model: process.env.REFINE_MODEL || "gpt-4o-mini",
+        model: process.env.REFINE_MODEL || "gpt-3.5-turbo",
         temperature: 0.3,
         messages: [{ role: "system", content: sys }, { role: "user", content: prompt }]
       })
     );
 
     m.addUsageFromResponse?.(resp);
-    m.recordApiCall?.({ step: "refine", model: resp.model || process.env.REFINE_MODEL || "gpt-4o-mini", usage: resp.usage });
+    m.recordApiCall?.({ step: "refine", model: resp.model || process.env.REFINE_MODEL || "gpt-3.5-turbo", usage: resp.usage });
 
     const raw = resp.choices?.[0]?.message?.content || "";
     const refinedMjml = raw.replace(/^\s*```mjml/i, "").replace(/```[\s\n\r]*$/g, "").trim();

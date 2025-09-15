@@ -8,6 +8,7 @@ import {
   generateHeaderBlock,
   generateFooterBlock
 } from "../services/headerFooterBlockService.js";
+import { getCachedTemplate, setCachedTemplate } from "../utils/templateCache.js";
 
 const pick = (arr) => arr[Math.floor(Math.random() * arr.length)];
 

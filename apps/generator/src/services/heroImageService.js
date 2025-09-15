@@ -148,7 +148,7 @@ export async function generateCustomHeroAndEnrich(brandData, storeId, jobId, { m
   metrics?.log?.(`🖼️ Starting hero image generation for job ${jobId}`);
 
   try {
-    const promptModel = process.env.HERO_PROMPT_MODEL || "gpt-4o-mini";
+    const promptModel = process.env.HERO_PROMPT_MODEL || "gpt-3.5-turbo";
     const size = "1024x1536";
     const quality = "high";
 
