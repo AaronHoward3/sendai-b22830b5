@@ -15,13 +15,13 @@
       align="right" 
       font-size="16px" 
       font-weight="bold"
-      color="[[link_color]]" 
+      color="[[text_color]]" 
       padding="0"
       line-height="1.2">
-      <a href="[[store_url]]" style="color: [[link_color]]; text-decoration: none; margin-left: 20px; font-weight: bold;">HOME</a>
-      <a href="[[store_url]]/products" style="color: [[link_color]]; text-decoration: none; margin-left: 20px; font-weight: bold;">PRODUCTS</a>
-      <a href="[[store_url]]/about" style="color: [[link_color]]; text-decoration: none; margin-left: 20px; font-weight: bold;">ABOUT</a>
-      <a href="[[store_url]]/contact" style="color: [[link_color]]; text-decoration: none; margin-left: 20px; font-weight: bold;">CONTACT</a>
+      <a href="[[store_url]]" style="color: [[text_color]]; text-decoration: none; margin-left: 20px; font-weight: bold;">HOME</a>
+      <a href="[[store_url]]/products" style="color: [[text_color]]; text-decoration: none; margin-left: 20px; font-weight: bold;">PRODUCTS</a>
+      <a href="[[store_url]]/about" style="color: [[text_color]]; text-decoration: none; margin-left: 20px; font-weight: bold;">ABOUT</a>
+      <a href="[[store_url]]/contact" style="color: [[text_color]]; text-decoration: none; margin-left: 20px; font-weight: bold;">CONTACT</a>
     </mj-text>
   </mj-column>
 </mj-section>

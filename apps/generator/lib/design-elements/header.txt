@@ -14,13 +14,13 @@
     <mj-text 
       align="right" 
       font-size="14px" 
-      color="[[link_color]]" 
+      color="[[text_color]]" 
       padding="0"
       line-height="1.2">
-      <a href="[[store_url]]" style="color: [[link_color]]; text-decoration: none; margin-left: 15px;">Home</a>
-      <a href="[[store_url]]/products" style="color: [[link_color]]; text-decoration: none; margin-left: 15px;">Products</a>
-      <a href="[[store_url]]/about" style="color: [[link_color]]; text-decoration: none; margin-left: 15px;">About</a>
-      <a href="[[store_url]]/contact" style="color: [[link_color]]; text-decoration: none; margin-left: 15px;">Contact</a>
+      <a href="[[store_url]]" style="color: [[text_color]]; text-decoration: none; margin-left: 15px;">Home</a>
+      <a href="[[store_url]]/products" style="color: [[text_color]]; text-decoration: none; margin-left: 15px;">Products</a>
+      <a href="[[store_url]]/about" style="color: [[text_color]]; text-decoration: none; margin-left: 15px;">About</a>
+      <a href="[[store_url]]/contact" style="color: [[text_color]]; text-decoration: none; margin-left: 15px;">Contact</a>
     </mj-text>
   </mj-column>
 </mj-section>
