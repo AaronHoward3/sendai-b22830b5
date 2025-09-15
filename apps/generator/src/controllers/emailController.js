@@ -255,6 +255,22 @@ export async function generateEmails(req, res) {
         heroImageUrlUsed = finalBrandData.hero_image_url;
       }
 
+      // Final fallback: If hero generation failed and we still have placeholder, use logo or remove image
+      if (updated.includes("CUSTOMHEROIMAGE.COM")) {
+        console.log("🔍 [DEBUG] Hero generation failed, using fallback image or removing hero section");
+        const fallbackImage = finalBrandData.logo_url || finalBrandData.banner_url || "";
+        if (fallbackImage) {
+          console.log("🔍 [DEBUG] Using logo/banner as fallback:", fallbackImage);
+          updated = updated.replace(/src="https:\/\/CUSTOMHEROIMAGE\.COM"/g, `src="${fallbackImage}"`);
+          updated = updated.replace(/background-url="https:\/\/CUSTOMHEROIMAGE\.COM"/g, `background-url="${fallbackImage}"`);
+          heroImageUrlUsed = fallbackImage;
+        } else {
+          console.log("🔍 [DEBUG] No fallback image available, removing hero section");
+          // Remove the entire hero section if no fallback is available
+          updated = updated.replace(/<!-- Hero Section -->[\s\S]*?<!-- \/Hero Section -->/g, "");
+        }
+      }
+
       if (!updated.includes("<mj-head>")) {
         updated = updated.replace("<mjml>", `<mjml>${fontHead}`);
       }

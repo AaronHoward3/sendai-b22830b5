@@ -10,7 +10,7 @@ export const specializedAssistants = {
 };
 
 export const TIMEOUTS = {
-  HERO_GENERATION: 60000,  // Reduced from 120s to 60s
-  EMAIL_GENERATION: 60000, // Reduced from 120s to 60s
-  ASSISTANT_RUN: 60000     // Reduced from 120s to 60s
+  HERO_GENERATION: 120000,  // Increased back to 120s for image generation
+  EMAIL_GENERATION: 60000, // Keep email generation at 60s
+  ASSISTANT_RUN: 60000     // Keep assistant runs at 60s
 };

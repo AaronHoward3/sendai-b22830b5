@@ -7,7 +7,7 @@
 import { createClient } from "@supabase/supabase-js";
 import crypto from "node:crypto";
 
-const BUCKET = process.env.SUPABASE_IMAGES_BUCKET || "hero_images";
+const BUCKET = process.env.SUPABASE_IMAGES_BUCKET || "image-hosting-braanddev";
 const DEFAULT_SIGN_SECONDS = 60 * 60 * 24 * 365; // 1 year
 
 function getSupabase() {
@@ -127,13 +127,16 @@ export async function uploadImage(imageBuffer, filename = `hero-${Date.now()}.pn
   const publicUrl = pub?.data?.publicUrl;
 
   if (publicUrl && makePublic) {
+    console.log(`[GEN] Using public URL for uploaded image: ${publicUrl}`);
     return publicUrl;
   }
 
   // Otherwise generate a long-lived signed URL for private buckets
+  console.log(`[GEN] Bucket not public, creating signed URL...`);
   const signed = await supabase.storage.from(BUCKET).createSignedUrl(key, signSeconds);
   if (signed.error) {
     throw new Error(`[GEN] Supabase signed URL failed: ${signed.error.message}`);
   }
+  console.log(`[GEN] Created signed URL for uploaded image`);
   return signed.data?.signedUrl;
 }

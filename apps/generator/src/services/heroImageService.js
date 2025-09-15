@@ -189,6 +189,7 @@ export async function generateCustomHeroAndEnrich(brandData, storeId, jobId, { m
 
     // 2) Generate the image
     metrics?.start?.("imageGeneration");
+    console.log(`[GEN] Starting image generation for job ${jobId}...`);
     const imageResponse = await openai.images.generate({
       model: "gpt-image-1",
       prompt: promptText,
@@ -197,6 +198,7 @@ export async function generateCustomHeroAndEnrich(brandData, storeId, jobId, { m
       size,
       quality,
     });
+    console.log(`[GEN] Image generation completed for job ${jobId}`);
     const imageBase64 = imageResponse.data[0].b64_json;
     const imageBuffer = Buffer.from(imageBase64, "base64");
     metrics?.end?.("imageGeneration");
@@ -222,12 +224,20 @@ export async function generateCustomHeroAndEnrich(brandData, storeId, jobId, { m
 
     // 4) Upload and return URLs
     metrics?.start?.("imageUpload");
+    console.log(`[GEN] Starting image upload for job ${jobId}...`);
     const randomHash =
       Math.random().toString(36).substring(2, 15) +
       Math.random().toString(36).substring(2, 15);
     const filename = `hero-${randomHash}.png`;
 
-    const publicUrl = await uploadImage(imageBuffer, filename, storeSlug);
+    // Add timeout to upload process
+    const uploadPromise = uploadImage(imageBuffer, filename, storeSlug);
+    const uploadTimeout = new Promise((_, reject) =>
+      setTimeout(() => reject(new Error("Image upload timeout")), 30000) // 30s timeout for upload
+    );
+    
+    const publicUrl = await Promise.race([uploadPromise, uploadTimeout]);
+    console.log(`[GEN] Image upload completed for job ${jobId}: ${publicUrl}`);
     metrics?.end?.("imageUpload");
 
     return {
@@ -237,6 +247,12 @@ export async function generateCustomHeroAndEnrich(brandData, storeId, jobId, { m
     };
   } catch (error) {
     console.error(`❌ Hero image generation failed for job ${jobId}:`, error.message);
+    
+    // If it's an upload timeout, we still have the generated image, just couldn't upload it
+    if (error.message.includes("upload timeout")) {
+      console.warn(`⚠️ Image generated but upload failed for job ${jobId}. Using fallback.`);
+    }
+    
     return brandData; // keep the pipeline alive
   }
 }
