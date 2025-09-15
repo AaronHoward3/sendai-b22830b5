@@ -390,16 +390,31 @@ export async function generateEmails(req, res) {
 
       console.log("[generateController] hero capture:", {
         hasUser: !!uid,
+        userId: uid,
         domain: normalizedDomain,
         headerHero,
         hadExplicit: !!generated?.heroImageUrlUsed,
+        heroImageUrlUsed: generated?.heroImageUrlUsed,
         foundFrom: urlToStore ? "extracted" : "none",
         selectedSaved: !!selectedUrl,
         urlPreview: urlToStore ? String(urlToStore).slice(0, 80) : null,
         isPreviewMode,
+        willSaveImage: !!(uid && normalizedDomain && urlToStore && !isPreviewMode)
       });
 
       // Only proceed if we have a user + domain + a URL to store AND not in preview mode
+      if (uid && normalizedDomain && urlToStore && !isPreviewMode) {
+        console.log("[generateController] Proceeding with image save - all conditions met");
+      } else {
+        console.log("[generateController] Skipping image save - conditions not met:", {
+          hasUser: !!uid,
+          hasDomain: !!normalizedDomain,
+          hasUrl: !!urlToStore,
+          isPreviewMode: isPreviewMode,
+          reason: !uid ? "No user" : !normalizedDomain ? "No domain" : !urlToStore ? "No URL" : "Preview mode"
+        });
+      }
+      
       if (uid && normalizedDomain && urlToStore && !isPreviewMode) {
         // If user picked a saved image and it's the same link, just reuse existing DB row
         if (selectedUrl && selectedUrl === urlToStore) {
@@ -455,19 +470,31 @@ export async function generateEmails(req, res) {
 
         // Still not found? Only then upload/save.
         if (!savedHero) {
+          console.log("[generateController] Saving new image to user profile:", {
+            userId: uid,
+            domain: normalizedDomain,
+            url: extractedUrl,
+            isDataUrl: extractedUrl.startsWith("data:"),
+            isHttpUrl: /^https?:\/\//i.test(extractedUrl)
+          });
+          
           if (extractedUrl.startsWith("data:")) {
             savedHero = await storeUserImageFromDataUrl({
               userId: uid,
               domain: normalizedDomain,
               dataUrl: extractedUrl,
             });
+            console.log("[generateController] Image saved from data URL:", savedHero?.id);
           } else if (/^https?:\/\//i.test(extractedUrl)) {
             savedHero = await storeUserImageFromUrl({
               userId: uid,
               domain: normalizedDomain,
               url: extractedUrl,
             });
+            console.log("[generateController] Image saved from URL:", savedHero?.id);
           }
+        } else {
+          console.log("[generateController] Reusing existing image:", savedHero?.id);
         }
       }
     } catch (e) {

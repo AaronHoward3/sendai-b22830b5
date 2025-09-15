@@ -103,10 +103,12 @@ export const Step4Generation: React.FC<Step4GenerationProps> = ({
         
         console.log("🔍 [DEBUG] Final endpoint selection:", {
           hasUser: !!user,
+          userId: user?.id,
           isAdmin,
           finalIsAuthenticated,
           endpoint,
-          reason: user ? "User authenticated" : "No user, using preview"
+          reason: user ? "User authenticated" : "No user, using preview",
+          sessionToken: token ? "Present" : "Missing"
         });
 
         // Make the generate request directly
