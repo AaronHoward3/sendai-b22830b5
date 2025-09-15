@@ -97,14 +97,16 @@ export const Step4Generation: React.FC<Step4GenerationProps> = ({
         const token = session?.access_token;
 
         // Choose endpoint based on authentication status (recalculate after waiting)
+        // If user is authenticated, always use authenticated route (admin check is just for additional features)
         const finalIsAuthenticated = !!user || isAdmin;
-        const endpoint = finalIsAuthenticated ? `${API_ROOT}/generate` : `${API_ROOT}/generate/preview`;
+        const endpoint = user ? `${API_ROOT}/generate` : `${API_ROOT}/generate/preview`;
         
         console.log("🔍 [DEBUG] Final endpoint selection:", {
           hasUser: !!user,
           isAdmin,
           finalIsAuthenticated,
-          endpoint
+          endpoint,
+          reason: user ? "User authenticated" : "No user, using preview"
         });
 
         // Make the generate request directly
