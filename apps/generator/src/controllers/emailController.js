@@ -217,15 +217,27 @@ export async function generateEmails(req, res) {
       let updated = mjmlStr;
 
       // EXISTING: replace placeholder with newly generated custom hero
+      console.log("🔍 [DEBUG] Hero image replacement check:", {
+        customHeroImage: finalBrandData.customHeroImage,
+        hasHeroImageUrl: !!finalBrandData.hero_image_url,
+        heroImageUrl: finalBrandData.hero_image_url,
+        containsHttp: finalBrandData.hero_image_url?.includes("http"),
+        containsPlaceholder: finalBrandData.hero_image_url?.includes("CUSTOMHEROIMAGE"),
+        mjmlContainsPlaceholder: updated.includes("CUSTOMHEROIMAGE.COM")
+      });
+      
       if (
         finalBrandData.customHeroImage === true &&
         finalBrandData.hero_image_url &&
         finalBrandData.hero_image_url.includes("http") &&
         !finalBrandData.hero_image_url.includes("CUSTOMHEROIMAGE")
       ) {
+        console.log("🔍 [DEBUG] Replacing CUSTOMHEROIMAGE with:", finalBrandData.hero_image_url);
+        // More flexible regex to handle additional attributes after src
         updated = updated.replace(/src="https:\/\/CUSTOMHEROIMAGE\.COM"/g, `src="${finalBrandData.hero_image_url}"`);
         updated = updated.replace(/background-url="https:\/\/CUSTOMHEROIMAGE\.COM"/g, `background-url="${finalBrandData.hero_image_url}"`);
         heroImageUrlUsed = finalBrandData.hero_image_url; // NEW
+        console.log("🔍 [DEBUG] After replacement, contains placeholder:", updated.includes("CUSTOMHEROIMAGE.COM"));
       }
 
       // NEW: replace placeholder with a previously SAVED image url
@@ -233,6 +245,14 @@ export async function generateEmails(req, res) {
         updated = updated.replace(/src="https:\/\/SAVEDHEROIMAGE\.COM"/g, `src="${savedHeroImageUrl}"`);
         updated = updated.replace(/background-url="https:\/\/SAVEDHEROIMAGE\.COM"/g, `background-url="${savedHeroImageUrl}"`);
         heroImageUrlUsed = savedHeroImageUrl;
+      }
+
+      // Fallback: Always try to replace CUSTOMHEROIMAGE if it exists and we have a hero URL
+      if (updated.includes("CUSTOMHEROIMAGE.COM") && finalBrandData.hero_image_url && finalBrandData.hero_image_url.includes("http")) {
+        console.log("🔍 [DEBUG] Fallback replacement - replacing CUSTOMHEROIMAGE with:", finalBrandData.hero_image_url);
+        updated = updated.replace(/src="https:\/\/CUSTOMHEROIMAGE\.COM"/g, `src="${finalBrandData.hero_image_url}"`);
+        updated = updated.replace(/background-url="https:\/\/CUSTOMHEROIMAGE\.COM"/g, `background-url="${finalBrandData.hero_image_url}"`);
+        heroImageUrlUsed = finalBrandData.hero_image_url;
       }
 
       if (!updated.includes("<mj-head>")) {
