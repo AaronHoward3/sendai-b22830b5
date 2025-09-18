@@ -184,14 +184,23 @@ async function handleSubscriptionChange(sub) {
   const userId = (await stripe.customers.retrieve(sub.customer)).metadata?.user_id;
   if (!userId) return;
   
+  const priceId = sub.items?.data?.[0]?.price?.id;
+  
+  // Update subscription record
   await supabase.from('subscriptions').upsert({
     user_id: userId,
     stripe_customer_id: sub.customer,
     stripe_subscription_id: sub.id,
-    price_id: sub.items?.data?.[0]?.price?.id || null,
+    price_id: priceId || null,
     status: sub.status,
     current_period_end: sub.current_period_end ? new Date(sub.current_period_end * 1000).toISOString() : null
   });
+  
+  // Only reset credits if there's an active subscription with a price
+  if (priceId && sub.status === 'active') {
+    const allowances = await getAllowances(priceId);
+    await setPlanCredits(userId, allowances, 'customer.subscription.updated');
+  }
 }
 
 export async function stripeWebhook(req, res) {
