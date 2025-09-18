@@ -165,6 +165,12 @@ const Settings: React.FC = () => {
 
   // Subscription snapshot
   const [sub, setSub] = useState<{ status?: string; price_id?: string; current_period_end?: string } | null>(null);
+  
+  // Current plan info
+  const currentPlan = useMemo(() => {
+    if (!sub?.price_id) return null;
+    return priceToPlanKey[sub.price_id] || null;
+  }, [sub?.price_id]);
 
   // Credits snapshot
   const [credits, setCredits] = useState<Credits | null>(null);
@@ -395,7 +401,18 @@ const Settings: React.FC = () => {
               <Card>
                 <CardHeader>
                   <CardTitle>Subscription</CardTitle>
-                  <CardDescription>Your current subscription and usage.</CardDescription>
+                  <CardDescription>
+                    Your current subscription and usage.
+                    {currentPlan ? (
+                      <span className="block mt-1 text-sm font-medium text-primary">
+                        Current Plan: {PLANS.find(p => p.key === currentPlan)?.title || 'Unknown'}
+                      </span>
+                    ) : sub?.status === 'active' ? (
+                      <span className="block mt-1 text-sm font-medium text-muted-foreground">
+                        Active subscription (plan details unavailable)
+                      </span>
+                    ) : null}
+                  </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-6">
                   <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
@@ -578,10 +595,18 @@ const Settings: React.FC = () => {
               <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
                 {PLANS.map((p) => {
                   const disabled = !p.priceId;
+                  const isCurrentPlan = currentPlan === p.key;
                   return (
-                    <Card key={p.key} className="flex flex-col">
+                    <Card key={p.key} className={`flex flex-col ${isCurrentPlan ? 'ring-2 ring-primary bg-primary/5' : ''}`}>
                       <CardHeader>
-                        <CardTitle className="text-xl">{p.title}</CardTitle>
+                        <CardTitle className="text-xl flex items-center gap-2">
+                          {p.title}
+                          {isCurrentPlan && (
+                            <span className="text-xs bg-primary text-primary-foreground px-2 py-1 rounded-full">
+                              Current
+                            </span>
+                          )}
+                        </CardTitle>
                         <CardDescription>{p.blurb}</CardDescription>
                       </CardHeader>
                       <CardContent className="flex flex-1 flex-col">
@@ -596,11 +621,11 @@ const Settings: React.FC = () => {
                         </ul>
                         <GradientButton
                           variant="solid"
-                          disabled={disabled}
+                          disabled={disabled || isCurrentPlan}
                           onClick={() => startCheckout(p.priceId || '')}
                           className="mt-auto !bg-primary !text-primary-foreground disabled:opacity-60"
                         >
-                          {disabled ? 'Set Price ID in .env' : 'Select'}
+                          {disabled ? 'Set Price ID in .env' : isCurrentPlan ? 'Current Plan' : 'Select'}
                         </GradientButton>
                       </CardContent>
                     </Card>
