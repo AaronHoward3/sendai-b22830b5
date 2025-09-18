@@ -3,7 +3,7 @@
 ## Current Status
 ✅ Stripe CLI is running and forwarding webhooks  
 ✅ Webhook endpoint is configured at `/webhooks/stripe`  
-✅ Webhook secret is available: `whsec_a83aa0f777760ff194dfcf950fb03d49069c17a84de57439673dd974caa26da9`  
+✅ Webhook secret is available: `whsec_your_webhook_secret_here`  
 ❌ Environment variables are NOT set  
 
 ## What You Need to Fix
@@ -14,7 +14,7 @@ Create `apps/api/.env` with the following content:
 ```bash
 # Stripe Configuration
 STRIPE_SECRET_KEY=sk_test_your_stripe_secret_key_here
-STRIPE_WEBHOOK_SECRET=whsec_a83aa0f777760ff194dfcf950fb03d49069c17a84de57439673dd974caa26da9
+STRIPE_WEBHOOK_SECRET=whsec_your_webhook_secret_here
 
 # Client URL
 CLIENT_URL=http://localhost:3000

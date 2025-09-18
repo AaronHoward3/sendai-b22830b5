@@ -5,6 +5,7 @@ import {
   adminSearchUsers,
   adminGetUserSnapshot,
   adminPatchCredits,
+  adminResetCreditsToPlan,
   adminPatchAccount,
   adminBanUser,
   adminUnbanUser,
@@ -22,6 +23,7 @@ router.get("/users/:userId/snapshot", adminGetUserSnapshot);
 
 // Credits
 router.patch("/users/:userId/credits", adminPatchCredits);
+router.post("/users/:userId/reset-credits", adminResetCreditsToPlan);
 
 // Account (email, display name, is_admin, banned)
 router.patch("/users/:userId/account", adminPatchAccount);

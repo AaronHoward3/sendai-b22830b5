@@ -306,6 +306,76 @@ export async function adminPatchCredits(req, res) {
   }
 }
 
+/** POST /api/admin/users/:userId/reset-credits - Reset credits to match current subscription */
+export async function adminResetCreditsToPlan(req, res) {
+  const { userId } = req.params;
+  
+  try {
+    // Get user's current subscription
+    const { data: subscription, error: subError } = await supabase
+      .from('subscriptions')
+      .select('price_id, status')
+      .eq('user_id', userId)
+      .maybeSingle();
+    
+    if (subError) return res.status(500).json({ error: subError.message });
+    
+    if (!subscription) {
+      return res.status(404).json({ error: 'No subscription found for this user' });
+    }
+    
+    if (subscription.status !== 'active') {
+      return res.status(400).json({ error: `Subscription status is '${subscription.status}', not 'active'` });
+    }
+    
+    if (!subscription.price_id) {
+      return res.status(400).json({ error: 'No price_id found in subscription' });
+    }
+    
+    // Import stripe client
+    const { stripe } = await import('../utils/stripeClient.js');
+    
+    // Get allowances for this price
+    const price = await stripe.prices.retrieve(subscription.price_id);
+    const m = price.metadata || {};
+    const allowances = {
+      emails: parseInt(m.emails || '0', 10),
+      images: parseInt(m.images || '0', 10),
+      revisions: parseInt(m.revisions || '0', 10),
+      brand_limit: parseInt(m.brand_limit || '0', 10)
+    };
+    
+    // Reset credits to match plan
+    const { data: existing } = await supabase.from('credit_balances').select('*').eq('user_id', userId).maybeSingle();
+    const row = existing || { user_id: userId };
+    row.emails_remaining = allowances.emails;
+    row.images_remaining = allowances.images;
+    row.revisions_remaining = allowances.revisions;
+    row.brand_limit = allowances.brand_limit;
+    row.updated_at = new Date().toISOString();
+
+    await supabase.from('credit_balances').upsert(row);
+    await supabase.from('credit_ledger').insert({
+      user_id: userId,
+      delta_emails: allowances.emails,
+      delta_images: allowances.images,
+      delta_revisions: allowances.revisions,
+      reason: 'reset',
+      source: 'admin_reset_to_plan'
+    });
+    
+    return res.json({ 
+      ok: true, 
+      message: 'Credits reset to match current plan',
+      allowances,
+      plan: price.nickname || subscription.price_id
+    });
+    
+  } catch (error) {
+    return res.status(500).json({ error: error.message });
+  }
+}
+
 /** PATCH /api/admin/users/:userId/account  { email?, display_name?, is_admin?, banned? } */
 export async function adminPatchAccount(req, res) {
   const { userId } = req.params;
