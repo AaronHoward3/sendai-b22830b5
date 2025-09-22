@@ -8,6 +8,7 @@ import Background from '../Background';
 import { apiPath } from '@/lib/api';
 import { useSupabaseAuth } from '@/hooks/useSupabaseAuth';
 import { useToast } from '@/hooks/use-toast';
+import { SubscriptionUpgradePrompt } from '@/components/SubscriptionUpgradePrompt';
 
 // Normalize domains to a comparable canonical form
 function normalizeDomain(dom: string): string {
@@ -50,6 +51,8 @@ export const Step1Domain: React.FC<{
 
   // NEW: upgrade modal
   const [noBrandsOpen, setNoBrandsOpen] = useState(false);
+  const [showUpgradePrompt, setShowUpgradePrompt] = useState(false);
+  const [upgradeReason, setUpgradeReason] = useState<'no_credits' | 'no_subscription' | 'trial_expired'>('no_credits');
 
   // -------- Saved brand domains (client-only; user_brands only; safe alphabetical order) --------
   useEffect(() => {
@@ -184,7 +187,8 @@ export const Step1Domain: React.FC<{
       });
 
       if (claimRes.status === 402) {
-        window.location.href = '/settings?plan=1';
+        setUpgradeReason('no_credits');
+        setShowUpgradePrompt(true);
         return false;
       } else if (claimRes.status === 409) {
         setNoBrandsOpen(true);
@@ -194,6 +198,14 @@ export const Step1Domain: React.FC<{
       // Non-fatal
     }
     return true;
+  };
+
+  const handleUpgrade = () => {
+    window.location.href = "/settings?plan=1";
+  };
+
+  const handleBack = () => {
+    setShowUpgradePrompt(false);
   };
 
   const handleContinue = async () => {
@@ -283,7 +295,15 @@ export const Step1Domain: React.FC<{
   }, [domain, savedDomains]);
 
   return (
-    <div className="fixed inset-0 z-0 bg-transparent">
+    <>
+      {showUpgradePrompt ? (
+        <SubscriptionUpgradePrompt
+          onUpgrade={handleUpgrade}
+          onBack={handleBack}
+          reason={upgradeReason}
+        />
+      ) : (
+        <div className="fixed inset-0 z-0 bg-transparent">
       {/* Background blobs */}
       <Background variant="blobs" />
 
@@ -387,6 +407,8 @@ export const Step1Domain: React.FC<{
         .animate-gradient-sweep { animation: gradient-sweep 10s linear infinite; }
       `}</style>
     </div>
+      )}
+    </>
   );
 };
 

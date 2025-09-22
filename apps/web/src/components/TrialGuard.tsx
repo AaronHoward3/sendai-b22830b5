@@ -74,14 +74,9 @@ export const TrialGuard: React.FC<TrialGuardProps> = ({ children }) => {
             setIsTrialBlocked(false);
           } else {
             // User is authenticated but has no active subscription
-            // Check if they've used their trial
-            const freeTrialUsed = localStorage.getItem('freemium_trial_used');
-            if (freeTrialUsed) {
-              setIsTrialBlocked(true);
-              setBlockReason('localStorage');
-            } else {
-              setIsTrialBlocked(false);
-            }
+            // Authenticated users should always have access to the app
+            // They'll be blocked from generation functions instead
+            setIsTrialBlocked(false);
           }
           setIsLoading(false);
         }).catch(() => {
@@ -95,13 +90,10 @@ export const TrialGuard: React.FC<TrialGuardProps> = ({ children }) => {
           if (hasActiveSubscription) {
             setIsTrialBlocked(false);
           } else {
-            const freeTrialUsed = localStorage.getItem('freemium_trial_used');
-            if (freeTrialUsed) {
-              setIsTrialBlocked(true);
-              setBlockReason('localStorage');
-            } else {
-              setIsTrialBlocked(false);
-            }
+            // User is authenticated but has no active subscription
+            // Authenticated users should always have access to the app
+            // They'll be blocked from generation functions instead
+            setIsTrialBlocked(false);
           }
           setIsLoading(false);
         }).catch(() => {

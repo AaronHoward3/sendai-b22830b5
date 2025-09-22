@@ -4,6 +4,7 @@ import { AnimatedBlobLoader } from "@/components/ui/AnimatedBlobLoader";
 import { useSupabaseAuth } from "@/hooks/useSupabaseAuth";
 import { supabase } from "@/lib/supabaseClient";
 import { postJSON } from "@/lib/api";
+import { SubscriptionUpgradePrompt } from "@/components/SubscriptionUpgradePrompt";
 
 const API_ROOT = '/api';
 
@@ -21,6 +22,8 @@ export const Step4Generation: React.FC<Step4GenerationProps> = ({
   const { user } = useSupabaseAuth();
   const [isAdmin, setIsAdmin] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [showUpgradePrompt, setShowUpgradePrompt] = useState(false);
+  const [upgradeReason, setUpgradeReason] = useState<'no_credits' | 'no_subscription' | 'trial_expired'>('no_credits');
   
   // Check admin status
   useEffect(() => {
@@ -67,6 +70,16 @@ export const Step4Generation: React.FC<Step4GenerationProps> = ({
   const abortRef = useRef<AbortController | null>(null);
   const timersRef = useRef<number[]>([]);
   const finishedRef = useRef(false);
+
+  const handleUpgrade = () => {
+    window.location.href = "/settings?plan=1";
+  };
+
+  const handleBack = () => {
+    setShowUpgradePrompt(false);
+    // Go back to previous step or restart the flow
+    // For now, we'll just hide the prompt and let the user try again
+  };
 
   useEffect(() => {
     const controller = new AbortController();
@@ -195,8 +208,14 @@ export const Step4Generation: React.FC<Step4GenerationProps> = ({
         // Handle specific error cases
         if (err instanceof Error) {
           if (err.message.includes("HTTP 402")) {
-            setStatus("No email credits left. Redirecting to Manage Plan…");
-            window.location.href = "/settings?plan=1";
+            setStatus("No email credits left");
+            setUpgradeReason('no_credits');
+            setShowUpgradePrompt(true);
+            return;
+          }
+          if (err.message.includes("subscription") || err.message.includes("Subscription")) {
+            setUpgradeReason('no_subscription');
+            setShowUpgradePrompt(true);
             return;
           }
           setStatus("Error: " + err.message);
@@ -216,13 +235,23 @@ export const Step4Generation: React.FC<Step4GenerationProps> = ({
   }, []);
 
   return (
-    <div className="fixed inset-0 flex flex-col items-center justify-center bg-background overflow-hidden">
-      <h1 className="text-2xl font-normal text-gray-100 z-10 text-center" style={{ textShadow: "0 2px 10px rgba(0, 0, 0, 0.8)" }}>
-        Generating your email...
-      </h1>
-      <p className="text-sm text-gray-400 animate-pulse mt-2 z-10">{status}</p>
-      <AnimatedBlobLoader />
-    </div>
+    <>
+      {showUpgradePrompt ? (
+        <SubscriptionUpgradePrompt
+          onUpgrade={handleUpgrade}
+          onBack={handleBack}
+          reason={upgradeReason}
+        />
+      ) : (
+        <div className="fixed inset-0 flex flex-col items-center justify-center bg-background overflow-hidden">
+          <h1 className="text-2xl font-normal text-gray-100 z-10 text-center" style={{ textShadow: "0 2px 10px rgba(0, 0, 0, 0.8)" }}>
+            Generating your email...
+          </h1>
+          <p className="text-sm text-gray-400 animate-pulse mt-2 z-10">{status}</p>
+          <AnimatedBlobLoader />
+        </div>
+      )}
+    </>
   );
 };
 
