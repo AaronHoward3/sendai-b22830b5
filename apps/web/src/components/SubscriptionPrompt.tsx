@@ -87,6 +87,19 @@ export const SubscriptionPrompt: React.FC<SubscriptionPromptProps> = ({ onSubscr
               </p>
             </div>
             
+            {/* Sign into existing account option */}
+            <div className="mb-4">
+              <p className="text-sm text-muted-foreground mb-2">
+                Already have an account?
+              </p>
+              <button
+                onClick={onSignIn}
+                className="text-primary hover:text-primary/80 underline text-sm font-medium transition-colors"
+              >
+                Sign into existing account
+              </button>
+            </div>
+            
             <div className="max-w-md mx-auto space-y-3">
               <input
                 type="email"
