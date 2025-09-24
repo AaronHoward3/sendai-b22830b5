@@ -213,6 +213,17 @@ export async function stripeWebhook(req, res) {
   console.log('[stripe] Raw body length:', req.rawBody?.length || 0);
   console.log('[stripe] Webhook secret set:', !!process.env.STRIPE_WEBHOOK_SECRET);
   
+  // Additional debugging for signature verification
+  if (sig) {
+    console.log('[stripe] Signature format:', sig.substring(0, 50) + '...');
+    console.log('[stripe] Signature parts:', sig.split(',').length);
+  }
+  
+  // Log first 100 chars of body for debugging
+  if (req.rawBody) {
+    console.log('[stripe] Body preview:', req.rawBody.substring(0, 100) + '...');
+  }
+  
   try {
     event = stripe.webhooks.constructEvent(req.rawBody, sig, process.env.STRIPE_WEBHOOK_SECRET);
     console.log('[stripe] Event verified successfully:', event.type);

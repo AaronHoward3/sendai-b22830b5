@@ -87,7 +87,8 @@ app.post("/webhooks/stripe", express.raw({ type: "application/json" }), (req, re
   } else if (typeof req.body === 'string') {
     req.rawBody = req.body;
   } else {
-    // If it's an object, convert back to JSON string
+    // If it's an object, convert back to JSON string with proper formatting
+    // Use JSON.stringify with no spaces to match Stripe's format
     req.rawBody = JSON.stringify(req.body);
   }
   
