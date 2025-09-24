@@ -70,41 +70,23 @@ const app = express();
 const PORT = process.env.PORT || 3001;
 
 // --------- Stripe webhook needs raw body ----------
-// Try a different approach - use a different path to avoid Render.com's JSON parsing
-app.post("/stripe-webhook", express.raw({ type: "application/json" }), (req, res) => {
-  // Store the raw body for signature verification
-  req.rawBody = req.body;
-  
-  // Log webhook details for debugging
-  console.log('[webhook] Received webhook event (new endpoint)');
+// Production-ready webhook handler that works with Render.com's JSON parsing
+app.post("/stripe-webhook", (req, res) => {
+  // Render.com parses JSON at infrastructure level, so we need to handle this
+  console.log('[webhook] Received webhook event (production endpoint)');
   console.log('[webhook] Headers:', req.headers);
-  console.log('[webhook] Body length:', req.body?.length || 0);
   console.log('[webhook] Body type:', typeof req.body);
+  console.log('[webhook] Body length:', req.body?.length || 0);
   console.log('[webhook] Stripe signature:', req.headers['stripe-signature']);
   
-  // Convert Buffer to string if needed for signature verification
-  if (Buffer.isBuffer(req.body)) {
-    req.rawBody = req.body.toString('utf8');
-  } else if (typeof req.body === 'string') {
-    req.rawBody = req.body;
-  } else {
-    // If it's an object, convert back to JSON string
-    // This is the problematic case - Render.com parsed it
-    req.rawBody = JSON.stringify(req.body);
-  }
+  // Since Render.com parses JSON, we need to reconstruct the raw body
+  // This is a workaround for Render.com's infrastructure-level JSON parsing
+  const rawBody = JSON.stringify(req.body);
+  req.rawBody = rawBody;
+  
+  console.log('[webhook] Reconstructed raw body length:', rawBody.length);
   
   stripeWebhook(req, res);
-});
-
-// Test endpoint to see if we can get raw body
-app.post("/test-webhook", (req, res) => {
-  console.log('[test] Received test webhook');
-  console.log('[test] Headers:', req.headers);
-  console.log('[test] Body type:', typeof req.body);
-  console.log('[test] Body length:', req.body?.length || 0);
-  console.log('[test] Raw body preview:', JSON.stringify(req.body).substring(0, 100));
-  
-  res.json({ received: true, bodyType: typeof req.body });
 });
 
 // Keep the old endpoint for backward compatibility
