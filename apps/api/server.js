@@ -71,7 +71,7 @@ const PORT = process.env.PORT || 3001;
 
 // --------- Stripe webhook needs raw body ----------
 // Production-ready webhook handler that works with Render.com's JSON parsing
-app.post("/stripe-webhook", (req, res) => {
+app.post("/stripe-webhook", express.json(), (req, res) => {
   // Render.com parses JSON at infrastructure level, so we need to handle this
   console.log('[webhook] Received webhook event (production endpoint)');
   console.log('[webhook] Headers:', req.headers);
