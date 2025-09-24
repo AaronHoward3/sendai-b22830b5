@@ -4,6 +4,8 @@ import { requireAuth } from "../middleware/requireAuth.js";
 import {
   createCheckoutSession,
   createPortalSession,
+  upgradeSubscription,
+  cancelSubscription,
 } from "../controllers/billingController.js";
 
 const router = Router();
@@ -26,5 +28,9 @@ router.get("/checkout", requireAuth, normalizeBodyFromQuery, createCheckoutSessi
 router.post("/portal", requireAuth, createPortalSession);
 // Optional GET shim
 router.get("/portal", requireAuth, normalizeBodyFromQuery, createPortalSession);
+
+// --- Subscription Management ---
+router.post("/upgrade", requireAuth, upgradeSubscription);
+router.post("/cancel", requireAuth, cancelSubscription);
 
 export default router;

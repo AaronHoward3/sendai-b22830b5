@@ -94,32 +94,31 @@ export async function createPortalSession(req, res) {
 
       res.json({ url: portal.url });
     } catch (portalError) {
-      console.warn('[billing] Billing portal not configured, falling back to checkout:', portalError.message);
+      console.warn('[billing] Billing portal not configured, providing subscription management options:', portalError.message);
       
-      // Fallback: Create a checkout session for plan management
-      // Get user's current subscription to determine current plan
+      // Get user's current subscription to determine available options
       const { data: subscription } = await supabase
         .from('subscriptions')
-        .select('price_id, status')
+        .select('price_id, status, stripe_subscription_id')
         .eq('user_id', req.user.id)
         .eq('status', 'active')
         .maybeSingle();
       
       if (subscription?.price_id) {
-        // Create checkout session for plan change
-        const checkoutSession = await stripe.checkout.sessions.create({
-          mode: 'subscription',
-          customer: customerId,
-          client_reference_id: req.user.id,
-          line_items: [{ price: subscription.price_id, quantity: 1 }],
-          success_url: `${process.env.CLIENT_URL}/settings?billing=success`,
-          cancel_url: `${process.env.CLIENT_URL}/settings?billing=cancel`,
-          allow_promotion_codes: true,
-          billing_address_collection: 'auto',
-          payment_method_collection: 'if_required'
-        });
+        // User has an active subscription - provide management options
+        const currentPlan = await getPlanInfo(subscription.price_id);
         
-        res.json({ url: checkoutSession.url });
+        // Get available upgrade/downgrade options
+        const availablePlans = await getAvailablePlans(subscription.price_id);
+        
+        res.json({ 
+          error: 'Billing portal not configured',
+          fallback: 'subscription_management',
+          currentPlan: currentPlan,
+          availablePlans: availablePlans,
+          canCancel: !!subscription.stripe_subscription_id,
+          message: 'Please contact support for subscription management or use the options below'
+        });
       } else {
         // No active subscription, redirect to plan selection
         res.status(400).json({ 
@@ -145,6 +144,91 @@ async function getAllowances(priceId) {
     revisions: parseInt(m.revisions || '0', 10),
     brand_limit: parseInt(m.brand_limit || '0', 10)
   };
+}
+
+// Helper: get plan information for a price ID
+async function getPlanInfo(priceId) {
+  if (priceId.startsWith('manual:')) {
+    // Handle manual/managed subscriptions
+    const planName = priceId.replace('manual:', '');
+    return {
+      id: priceId,
+      name: planName.charAt(0).toUpperCase() + planName.slice(1),
+      type: 'manual',
+      amount: null,
+      interval: null,
+      description: `Managed ${planName} plan`
+    };
+  }
+
+  try {
+    const price = await stripe.prices.retrieve(priceId);
+    const product = await stripe.products.retrieve(price.product);
+    
+    return {
+      id: priceId,
+      name: product.name || 'Unknown Plan',
+      type: 'stripe',
+      amount: price.unit_amount,
+      interval: price.recurring?.interval || null,
+      description: product.description || product.name
+    };
+  } catch (error) {
+    console.error('[billing] Error retrieving plan info:', error);
+    return {
+      id: priceId,
+      name: 'Unknown Plan',
+      type: 'unknown',
+      amount: null,
+      interval: null,
+      description: 'Plan information unavailable'
+    };
+  }
+}
+
+// Helper: get available plans for upgrade/downgrade
+async function getAvailablePlans(currentPriceId) {
+  // Define available plans based on what we found in the database
+  const availablePlans = [
+    {
+      id: 'manual:starter',
+      name: 'Starter',
+      type: 'manual',
+      description: 'Basic plan for small businesses',
+      isCurrent: currentPriceId === 'manual:starter'
+    },
+    {
+      id: 'price_1S8NN3EFkIBODi7ixdrgv6zl',
+      name: 'Growth',
+      type: 'stripe',
+      description: 'Advanced plan for growing businesses',
+      isCurrent: currentPriceId === 'price_1S8NN3EFkIBODi7ixdrgv6zl'
+    }
+  ];
+
+  // Filter out current plan and add plan details
+  const otherPlans = availablePlans
+    .filter(plan => plan.id !== currentPriceId)
+    .map(async (plan) => {
+      if (plan.type === 'stripe') {
+        try {
+          const price = await stripe.prices.retrieve(plan.id);
+          const product = await stripe.products.retrieve(price.product);
+          return {
+            ...plan,
+            amount: price.unit_amount,
+            interval: price.recurring?.interval,
+            description: product.description || product.name
+          };
+        } catch (error) {
+          console.error('[billing] Error retrieving plan details:', error);
+          return plan;
+        }
+      }
+      return plan;
+    });
+
+  return Promise.all(otherPlans);
 }
 
 // Grant or reset credits (service role bypasses RLS)
@@ -300,6 +384,96 @@ async function handleSubscriptionChange(sub) {
   } else if (sub.status === 'trialing') {
     // Trial period - handle trial credits if needed
     console.log(`[billing] User ${userId} in trial period for subscription ${sub.id}`);
+  }
+}
+
+// Subscription management endpoints
+export async function upgradeSubscription(req, res) {
+  try {
+    const { new_price_id } = req.body;
+    if (!new_price_id) return res.status(400).json({ error: 'new_price_id required' });
+
+    // Get current subscription
+    const { data: subscription } = await supabase
+      .from('subscriptions')
+      .select('stripe_subscription_id, stripe_customer_id')
+      .eq('user_id', req.user.id)
+      .eq('status', 'active')
+      .maybeSingle();
+
+    if (!subscription?.stripe_subscription_id) {
+      return res.status(400).json({ error: 'No active Stripe subscription found' });
+    }
+
+    // Update subscription in Stripe
+    const updatedSub = await stripe.subscriptions.update(subscription.stripe_subscription_id, {
+      items: [{
+        id: (await stripe.subscriptions.retrieve(subscription.stripe_subscription_id)).items.data[0].id,
+        price: new_price_id,
+      }],
+      proration_behavior: 'create_prorations'
+    });
+
+    // Update local subscription record
+    await supabase.from('subscriptions').upsert({
+      user_id: req.user.id,
+      stripe_customer_id: subscription.stripe_customer_id,
+      stripe_subscription_id: subscription.stripe_subscription_id,
+      price_id: new_price_id,
+      status: updatedSub.status,
+      current_period_end: new Date(updatedSub.current_period_end * 1000).toISOString()
+    });
+
+    // Reset credits based on new plan
+    const allowances = await getAllowances(new_price_id);
+    await setPlanCredits(req.user.id, allowances, 'subscription_upgrade');
+
+    res.json({ 
+      success: true, 
+      message: 'Subscription upgraded successfully',
+      newPlan: await getPlanInfo(new_price_id)
+    });
+  } catch (e) {
+    console.error('[billing] upgradeSubscription', e);
+    res.status(500).json({ error: 'Failed to upgrade subscription' });
+  }
+}
+
+export async function cancelSubscription(req, res) {
+  try {
+    // Get current subscription
+    const { data: subscription } = await supabase
+      .from('subscriptions')
+      .select('stripe_subscription_id')
+      .eq('user_id', req.user.id)
+      .eq('status', 'active')
+      .maybeSingle();
+
+    if (!subscription?.stripe_subscription_id) {
+      return res.status(400).json({ error: 'No active subscription found' });
+    }
+
+    // Cancel subscription in Stripe (at period end)
+    const canceledSub = await stripe.subscriptions.update(subscription.stripe_subscription_id, {
+      cancel_at_period_end: true
+    });
+
+    // Update local subscription record
+    await supabase.from('subscriptions').upsert({
+      user_id: req.user.id,
+      stripe_subscription_id: subscription.stripe_subscription_id,
+      status: canceledSub.status,
+      current_period_end: new Date(canceledSub.current_period_end * 1000).toISOString()
+    });
+
+    res.json({ 
+      success: true, 
+      message: 'Subscription will be canceled at the end of the current period',
+      cancelAt: new Date(canceledSub.current_period_end * 1000).toISOString()
+    });
+  } catch (e) {
+    console.error('[billing] cancelSubscription', e);
+    res.status(500).json({ error: 'Failed to cancel subscription' });
   }
 }
 
