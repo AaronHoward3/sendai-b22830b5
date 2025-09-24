@@ -267,6 +267,18 @@ const Settings: React.FC = () => {
     else toast({ title: 'Checkout error', description: json?.error || 'Unable to start checkout', variant: 'destructive' });
   };
 
+  const openBillingPortal = async () => {
+    const { data: { session } } = await supabase.auth.getSession();
+    const token = session?.access_token;
+    const res = await fetch(`${API_ROOT}/billing/portal`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+    });
+    const json = await res.json();
+    if (json?.url) window.location.href = json.url;
+    else toast({ title: 'Portal error', description: json?.error || 'Unable to open billing portal', variant: 'destructive' });
+  };
+
   // --- Brands list + colors + images ---
   useEffect(() => {
     if (!user) return;
@@ -432,9 +444,15 @@ const Settings: React.FC = () => {
                   </div>
 
                   <div className="flex gap-3">
-                    <GradientButton variant="solid" onClick={() => setShowPlanModal(true)} className="!bg-primary !text-primary-foreground">
-                      Manage Plan
-                    </GradientButton>
+                    {sub?.status === 'active' ? (
+                      <GradientButton variant="solid" onClick={openBillingPortal} className="!bg-primary !text-primary-foreground">
+                        Manage Plan
+                      </GradientButton>
+                    ) : (
+                      <GradientButton variant="solid" onClick={() => setShowPlanModal(true)} className="!bg-primary !text-primary-foreground">
+                        Choose Plan
+                      </GradientButton>
+                    )}
                   </div>
                 </CardContent>
               </Card>
