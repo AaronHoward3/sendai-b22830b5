@@ -76,7 +76,7 @@ app.post("/stripe-webhook", express.raw({ type: "application/json" }), (req, res
   req.rawBody = req.body;
   
   // Log webhook details for debugging
-  console.log('[webhook] Received webhook event');
+  console.log('[webhook] Received webhook event (new endpoint)');
   console.log('[webhook] Headers:', req.headers);
   console.log('[webhook] Body length:', req.body?.length || 0);
   console.log('[webhook] Body type:', typeof req.body);
@@ -94,6 +94,17 @@ app.post("/stripe-webhook", express.raw({ type: "application/json" }), (req, res
   }
   
   stripeWebhook(req, res);
+});
+
+// Test endpoint to see if we can get raw body
+app.post("/test-webhook", (req, res) => {
+  console.log('[test] Received test webhook');
+  console.log('[test] Headers:', req.headers);
+  console.log('[test] Body type:', typeof req.body);
+  console.log('[test] Body length:', req.body?.length || 0);
+  console.log('[test] Raw body preview:', JSON.stringify(req.body).substring(0, 100));
+  
+  res.json({ received: true, bodyType: typeof req.body });
 });
 
 // Keep the old endpoint for backward compatibility
