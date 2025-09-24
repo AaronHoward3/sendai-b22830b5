@@ -208,7 +208,6 @@ export const SubscriptionUpgradePrompt: React.FC<SubscriptionUpgradePromptProps>
                   </GradientButton>
                 </div>
               </div>
-            </div>
           </CardContent>
         </Card>
       </div>
