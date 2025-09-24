@@ -196,10 +196,25 @@ async function handleSubscriptionChange(sub) {
     current_period_end: sub.current_period_end ? new Date(sub.current_period_end * 1000).toISOString() : null
   });
   
-  // Only reset credits if there's an active subscription with a price
+  // Handle different subscription statuses
   if (priceId && sub.status === 'active') {
+    // Active subscription - reset credits to plan allowances
     const allowances = await getAllowances(priceId);
     await setPlanCredits(userId, allowances, 'customer.subscription.updated');
+  } else if (sub.status === 'past_due' || sub.status === 'unpaid') {
+    // Payment failed - don't reset credits, but log the event
+    console.log(`[billing] Payment failed for user ${userId}, subscription ${sub.id}, status: ${sub.status}`);
+    
+    // Optional: Send notification to user about failed payment
+    // You could add email notification here
+    
+  } else if (sub.status === 'canceled' || sub.status === 'incomplete_expired') {
+    // Subscription canceled - user keeps existing credits but won't get new ones
+    console.log(`[billing] Subscription canceled for user ${userId}, subscription ${sub.id}`);
+    
+  } else if (sub.status === 'trialing') {
+    // Trial period - handle trial credits if needed
+    console.log(`[billing] User ${userId} in trial period for subscription ${sub.id}`);
   }
 }
 
