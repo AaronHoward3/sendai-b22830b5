@@ -2,16 +2,34 @@ import { stripe } from '../utils/stripeClient.js';
 import { supabase } from '../utils/supabaseClient.js';
 
 async function getOrCreateCustomer(user) {
-  // store it on profiles to keep it simple
-  const { data: prof } = await supabase.from('profiles').select('stripe_customer_id').eq('user_id', user.id).maybeSingle();
-  if (prof?.stripe_customer_id) return prof.stripe_customer_id;
+  // First try to get from profiles table (if stripe_customer_id column exists)
+  try {
+    const { data: prof } = await supabase.from('profiles').select('stripe_customer_id').eq('user_id', user.id).maybeSingle();
+    if (prof?.stripe_customer_id) return prof.stripe_customer_id;
+  } catch (error) {
+    // If column doesn't exist, fall back to subscriptions table
+    console.log('[billing] stripe_customer_id column not found in profiles, checking subscriptions table');
+  }
 
+  // Fallback: check subscriptions table for existing customer ID
+  const { data: sub } = await supabase.from('subscriptions').select('stripe_customer_id').eq('user_id', user.id).not('stripe_customer_id', 'is', null).maybeSingle();
+  if (sub?.stripe_customer_id) return sub.stripe_customer_id;
+
+  // Create new customer if none exists
   const customer = await stripe.customers.create({
     email: user.email || undefined,
     metadata: { user_id: user.id }
   });
 
-  await supabase.from('profiles').upsert({ user_id: user.id, stripe_customer_id: customer.id, updated_at: new Date().toISOString() }, { onConflict: 'user_id' });
+  // Try to store in profiles table, fall back to subscriptions if that fails
+  try {
+    await supabase.from('profiles').upsert({ user_id: user.id, stripe_customer_id: customer.id, updated_at: new Date().toISOString() }, { onConflict: 'user_id' });
+  } catch (error) {
+    // If profiles table doesn't have stripe_customer_id column, store in subscriptions
+    console.log('[billing] Could not store customer ID in profiles table, storing in subscriptions');
+    await supabase.from('subscriptions').upsert({ user_id: user.id, stripe_customer_id: customer.id, updated_at: new Date().toISOString() }, { onConflict: 'user_id' });
+  }
+  
   return customer.id;
 }
 
@@ -44,13 +62,33 @@ export async function createCheckoutSession(req, res) {
 
 export async function createPortalSession(req, res) {
   try {
-    const { data: prof } = await supabase.from('profiles').select('stripe_customer_id').eq('user_id', req.user.id).maybeSingle();
-    if (!prof?.stripe_customer_id) return res.status(400).json({ error: 'No customer on file' });
+    let customerId = null;
+    
+    // First try to get from profiles table (if stripe_customer_id column exists)
+    try {
+      const { data: prof } = await supabase.from('profiles').select('stripe_customer_id').eq('user_id', req.user.id).maybeSingle();
+      if (prof?.stripe_customer_id) {
+        customerId = prof.stripe_customer_id;
+      }
+    } catch (error) {
+      // If column doesn't exist, fall back to subscriptions table
+      console.log('[billing] stripe_customer_id column not found in profiles, checking subscriptions table');
+    }
+
+    // Fallback: check subscriptions table for existing customer ID
+    if (!customerId) {
+      const { data: sub } = await supabase.from('subscriptions').select('stripe_customer_id').eq('user_id', req.user.id).not('stripe_customer_id', 'is', null).maybeSingle();
+      if (sub?.stripe_customer_id) {
+        customerId = sub.stripe_customer_id;
+      }
+    }
+
+    if (!customerId) return res.status(400).json({ error: 'No customer on file' });
 
     try {
       // Try to create billing portal session
       const portal = await stripe.billingPortal.sessions.create({
-        customer: prof.stripe_customer_id,
+        customer: customerId,
         return_url: `${process.env.CLIENT_URL}/settings`
       });
 
@@ -71,7 +109,7 @@ export async function createPortalSession(req, res) {
         // Create checkout session for plan change
         const checkoutSession = await stripe.checkout.sessions.create({
           mode: 'subscription',
-          customer: prof.stripe_customer_id,
+          customer: customerId,
           client_reference_id: req.user.id,
           line_items: [{ price: subscription.price_id, quantity: 1 }],
           success_url: `${process.env.CLIENT_URL}/settings?billing=success`,
@@ -157,11 +195,21 @@ async function handleCheckoutCompleted(session) {
   const customerId = session.customer;
   
   // Save customer id on profile
-  await supabase.from('profiles').upsert({ 
-    user_id: userId, 
-    stripe_customer_id: customerId, 
-    updated_at: new Date().toISOString() 
-  }, { onConflict: 'user_id' });
+  try {
+    await supabase.from('profiles').upsert({ 
+      user_id: userId, 
+      stripe_customer_id: customerId, 
+      updated_at: new Date().toISOString() 
+    }, { onConflict: 'user_id' });
+  } catch (error) {
+    // If profiles table doesn't have stripe_customer_id column, store in subscriptions
+    console.log('[billing] Could not store customer ID in profiles table, storing in subscriptions');
+    await supabase.from('subscriptions').upsert({ 
+      user_id: userId, 
+      stripe_customer_id: customerId, 
+      updated_at: new Date().toISOString() 
+    }, { onConflict: 'user_id' });
+  }
 
   // Get purchased price
   const line = session.mode === 'subscription'
