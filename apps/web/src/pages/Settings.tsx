@@ -275,8 +275,19 @@ const Settings: React.FC = () => {
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
     });
     const json = await res.json();
-    if (json?.url) window.location.href = json.url;
-    else toast({ title: 'Portal error', description: json?.error || 'Unable to open billing portal', variant: 'destructive' });
+    if (json?.url) {
+      window.location.href = json.url;
+    } else if (json?.fallback === 'plan_selection') {
+      // Fallback to plan selection modal
+      setShowPlanModal(true);
+      toast({ 
+        title: 'Billing Portal Unavailable', 
+        description: 'Please use the plan selection below to manage your subscription.',
+        variant: 'default'
+      });
+    } else {
+      toast({ title: 'Portal error', description: json?.error || 'Unable to open billing portal', variant: 'destructive' });
+    }
   };
 
   // --- Brands list + colors + images ---

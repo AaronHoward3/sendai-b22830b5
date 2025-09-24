@@ -47,12 +47,49 @@ export async function createPortalSession(req, res) {
     const { data: prof } = await supabase.from('profiles').select('stripe_customer_id').eq('user_id', req.user.id).maybeSingle();
     if (!prof?.stripe_customer_id) return res.status(400).json({ error: 'No customer on file' });
 
-    const portal = await stripe.billingPortal.sessions.create({
-      customer: prof.stripe_customer_id,
-      return_url: `${process.env.CLIENT_URL}/settings`
-    });
+    try {
+      // Try to create billing portal session
+      const portal = await stripe.billingPortal.sessions.create({
+        customer: prof.stripe_customer_id,
+        return_url: `${process.env.CLIENT_URL}/settings`
+      });
 
-    res.json({ url: portal.url });
+      res.json({ url: portal.url });
+    } catch (portalError) {
+      console.warn('[billing] Billing portal not configured, falling back to checkout:', portalError.message);
+      
+      // Fallback: Create a checkout session for plan management
+      // Get user's current subscription to determine current plan
+      const { data: subscription } = await supabase
+        .from('subscriptions')
+        .select('price_id, status')
+        .eq('user_id', req.user.id)
+        .eq('status', 'active')
+        .maybeSingle();
+      
+      if (subscription?.price_id) {
+        // Create checkout session for plan change
+        const checkoutSession = await stripe.checkout.sessions.create({
+          mode: 'subscription',
+          customer: prof.stripe_customer_id,
+          client_reference_id: req.user.id,
+          line_items: [{ price: subscription.price_id, quantity: 1 }],
+          success_url: `${process.env.CLIENT_URL}/settings?billing=success`,
+          cancel_url: `${process.env.CLIENT_URL}/settings?billing=cancel`,
+          allow_promotion_codes: true,
+          billing_address_collection: 'auto',
+          payment_method_collection: 'if_required'
+        });
+        
+        res.json({ url: checkoutSession.url });
+      } else {
+        // No active subscription, redirect to plan selection
+        res.status(400).json({ 
+          error: 'Billing portal not configured. Please contact support or use plan selection.',
+          fallback: 'plan_selection'
+        });
+      }
+    }
   } catch (e) {
     console.error('[billing] createPortalSession', e);
     res.status(500).json({ error: 'Failed to create billing portal session' });
