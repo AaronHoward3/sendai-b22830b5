@@ -78,7 +78,18 @@ app.post("/webhooks/stripe", express.raw({ type: "application/json" }), (req, re
   console.log('[webhook] Received webhook event');
   console.log('[webhook] Headers:', req.headers);
   console.log('[webhook] Body length:', req.body?.length || 0);
+  console.log('[webhook] Body type:', typeof req.body);
   console.log('[webhook] Stripe signature:', req.headers['stripe-signature']);
+  
+  // Convert Buffer to string if needed for signature verification
+  if (Buffer.isBuffer(req.body)) {
+    req.rawBody = req.body.toString('utf8');
+  } else if (typeof req.body === 'string') {
+    req.rawBody = req.body;
+  } else {
+    // If it's an object, convert back to JSON string
+    req.rawBody = JSON.stringify(req.body);
+  }
   
   stripeWebhook(req, res);
 });
