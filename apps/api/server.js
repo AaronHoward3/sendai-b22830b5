@@ -70,29 +70,27 @@ const app = express();
 const PORT = process.env.PORT || 3001;
 
 // --------- Stripe webhook needs raw body ----------
-app.post("/webhooks/stripe", express.raw({ type: "application/json" }), (req, res) => {
-  // Store the raw body for signature verification
-  req.rawBody = req.body;
+// Custom middleware to preserve raw body for Stripe webhooks
+app.post("/webhooks/stripe", (req, res) => {
+  let rawBody = '';
   
-  // Log webhook details for debugging
-  console.log('[webhook] Received webhook event');
-  console.log('[webhook] Headers:', req.headers);
-  console.log('[webhook] Body length:', req.body?.length || 0);
-  console.log('[webhook] Body type:', typeof req.body);
-  console.log('[webhook] Stripe signature:', req.headers['stripe-signature']);
+  req.on('data', (chunk) => {
+    rawBody += chunk.toString();
+  });
   
-  // Convert Buffer to string if needed for signature verification
-  if (Buffer.isBuffer(req.body)) {
-    req.rawBody = req.body.toString('utf8');
-  } else if (typeof req.body === 'string') {
-    req.rawBody = req.body;
-  } else {
-    // If it's an object, convert back to JSON string with proper formatting
-    // Use JSON.stringify with no spaces to match Stripe's format
-    req.rawBody = JSON.stringify(req.body);
-  }
-  
-  stripeWebhook(req, res);
+  req.on('end', () => {
+    // Store the raw body for signature verification
+    req.rawBody = rawBody;
+    
+    // Log webhook details for debugging
+    console.log('[webhook] Received webhook event');
+    console.log('[webhook] Headers:', req.headers);
+    console.log('[webhook] Raw body length:', rawBody.length);
+    console.log('[webhook] Raw body type:', typeof rawBody);
+    console.log('[webhook] Stripe signature:', req.headers['stripe-signature']);
+    
+    stripeWebhook(req, res);
+  });
 });
 
 // --------- Normal middleware ----------
