@@ -71,7 +71,15 @@ const PORT = process.env.PORT || 3001;
 
 // --------- Stripe webhook needs raw body ----------
 app.post("/webhooks/stripe", express.raw({ type: "application/json" }), (req, res) => {
+  // Store the raw body for signature verification
   req.rawBody = req.body;
+  
+  // Log webhook details for debugging
+  console.log('[webhook] Received webhook event');
+  console.log('[webhook] Headers:', req.headers);
+  console.log('[webhook] Body length:', req.body?.length || 0);
+  console.log('[webhook] Stripe signature:', req.headers['stripe-signature']);
+  
   stripeWebhook(req, res);
 });
 

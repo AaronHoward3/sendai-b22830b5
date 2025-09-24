@@ -207,11 +207,24 @@ export async function stripeWebhook(req, res) {
   const sig = req.headers['stripe-signature'];
   let event;
   
+  console.log('[stripe] Processing webhook event');
+  console.log('[stripe] Signature present:', !!sig);
+  console.log('[stripe] Raw body type:', typeof req.rawBody);
+  console.log('[stripe] Raw body length:', req.rawBody?.length || 0);
+  console.log('[stripe] Webhook secret set:', !!process.env.STRIPE_WEBHOOK_SECRET);
+  
   try {
     event = stripe.webhooks.constructEvent(req.rawBody, sig, process.env.STRIPE_WEBHOOK_SECRET);
+    console.log('[stripe] Event verified successfully:', event.type);
   } catch (err) {
     // Avoid reflecting exception text as HTML; return a generic JSON error
     console.warn('[stripe] webhook verify failed', err?.message || err);
+    console.warn('[stripe] Error details:', {
+      signature: sig,
+      bodyType: typeof req.rawBody,
+      bodyLength: req.rawBody?.length || 0,
+      secretSet: !!process.env.STRIPE_WEBHOOK_SECRET
+    });
     return res.status(400).json({ error: 'Webhook signature verification failed' });
   }
 
