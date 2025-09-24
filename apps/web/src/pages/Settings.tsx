@@ -277,6 +277,17 @@ const Settings: React.FC = () => {
     const json = await res.json();
     if (json?.url) {
       window.location.href = json.url;
+    } else if (json?.fallback === 'subscription_management') {
+      // Show subscription management options
+      toast({ 
+        title: 'Subscription Management', 
+        description: `Current plan: ${json.currentPlan?.name || 'Unknown'}. ${json.message || 'Please contact support for subscription management.'}`,
+        variant: 'default'
+      });
+      
+      // TODO: Show subscription management modal with upgrade/downgrade/cancel options
+      // For now, show the plan selection modal as a fallback
+      setShowPlanModal(true);
     } else if (json?.fallback === 'plan_selection') {
       // Fallback to plan selection modal
       setShowPlanModal(true);
