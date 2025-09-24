@@ -38,6 +38,39 @@ export async function createCheckoutSession(req, res) {
     const { price_id } = req.body;
     if (!price_id) return res.status(400).json({ error: 'price_id required' });
 
+    // Check if user already has an active subscription
+    const { data: existingSubscription } = await supabase
+      .from('subscriptions')
+      .select('price_id, status, stripe_subscription_id')
+      .eq('user_id', req.user.id)
+      .eq('status', 'active')
+      .maybeSingle();
+
+    if (existingSubscription) {
+      // User already has an active subscription
+      const currentPlan = await getPlanInfo(existingSubscription.price_id);
+      const requestedPlan = await getPlanInfo(price_id);
+      
+      if (existingSubscription.price_id === price_id) {
+        // User is trying to purchase the same plan they already have
+        return res.status(400).json({ 
+          error: 'You already have an active subscription for this plan',
+          currentPlan: currentPlan,
+          message: 'Please use the billing portal to manage your existing subscription',
+          fallback: 'billing_portal'
+        });
+      } else {
+        // User is trying to purchase a different plan - redirect to upgrade
+        return res.status(400).json({ 
+          error: 'You already have an active subscription',
+          currentPlan: currentPlan,
+          requestedPlan: requestedPlan,
+          message: 'Please use the upgrade option to change your plan',
+          fallback: 'subscription_upgrade'
+        });
+      }
+    }
+
     const customerId = await getOrCreateCustomer(req.user);
     // Look up the price to choose mode and let metadata drive allowances
     const price = await stripe.prices.retrieve(price_id);

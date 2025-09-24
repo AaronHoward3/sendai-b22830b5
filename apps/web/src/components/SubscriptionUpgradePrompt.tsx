@@ -99,56 +99,83 @@ export const SubscriptionUpgradePrompt: React.FC<SubscriptionUpgradePromptProps>
           </CardHeader>
           
           <CardContent>
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4 mb-8">
-              {PLANS.map((p) => (
-                <Card key={p.key} className="flex flex-col bg-card border-border hover:border-primary/50 transition-colors cursor-pointer" onClick={onUpgrade}>
-                  <CardHeader>
-                    <CardTitle className="text-xl text-foreground">{p.title}</CardTitle>
-                    <CardDescription className="text-muted-foreground">{p.blurb}</CardDescription>
-                  </CardHeader>
-                  <CardContent className="flex flex-1 flex-col">
-                    <div className="mb-3 text-2xl font-semibold text-foreground">{p.priceLabel}</div>
-                    <ul className="mb-4 space-y-2 text-sm">
-                      {p.bullets.map((b) => (
-                        <li key={b} className="flex items-center gap-2 text-muted-foreground">
-                          <Check className="h-4 w-4 text-green-500" />
-                          <span>{b}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-            
-            {/* Action Buttons */}
-            <div className="text-center space-y-4">
-              <div className="flex flex-col sm:flex-row gap-3 justify-center">
-                <GradientButton
-                  variant="solid"
-                  onClick={onUpgrade}
-                  className="!bg-primary !text-primary-foreground hover:!bg-primary/90"
-                >
-                  <CreditCard className="h-4 w-4 mr-2" />
-                  Choose Plan & Upgrade
-                </GradientButton>
+            {/* Show plan cards only for non-trial-expired reasons */}
+            {reason !== 'trial_expired' && (
+              <>
+                <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4 mb-8">
+                  {PLANS.map((p) => (
+                    <Card key={p.key} className="flex flex-col bg-card border-border hover:border-primary/50 transition-colors cursor-pointer" onClick={onUpgrade}>
+                      <CardHeader>
+                        <CardTitle className="text-xl text-foreground">{p.title}</CardTitle>
+                        <CardDescription className="text-muted-foreground">{p.blurb}</CardDescription>
+                      </CardHeader>
+                      <CardContent className="flex flex-1 flex-col">
+                        <div className="mb-3 text-2xl font-semibold text-foreground">{p.priceLabel}</div>
+                        <ul className="mb-4 space-y-2 text-sm">
+                          {p.bullets.map((b) => (
+                            <li key={b} className="flex items-center gap-2 text-muted-foreground">
+                              <Check className="h-4 w-4 text-green-500" />
+                              <span>{b}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
                 
-                <GradientButton
-                  variant="outline"
-                  onClick={onBack}
-                  className="!bg-background !text-foreground !border !border-border hover:!bg-muted"
-                >
-                  <ArrowLeft className="h-4 w-4 mr-2" />
-                  Go Back
-                </GradientButton>
+                {/* Action Buttons */}
+                <div className="text-center space-y-4">
+                  <div className="flex flex-col sm:flex-row gap-3 justify-center">
+                    <GradientButton
+                      variant="solid"
+                      onClick={onUpgrade}
+                      className="!bg-primary !text-primary-foreground hover:!bg-primary/90"
+                    >
+                      <CreditCard className="h-4 w-4 mr-2" />
+                      Choose Plan & Upgrade
+                    </GradientButton>
+                    
+                    <GradientButton
+                      variant="outline"
+                      onClick={onBack}
+                      className="!bg-background !text-foreground !border !border-border hover:!bg-muted"
+                    >
+                      <ArrowLeft className="h-4 w-4 mr-2" />
+                      Go Back
+                    </GradientButton>
+                  </div>
+                </div>
+              </>
+            )}
+            
+            {/* For trial_expired, show simplified sign-up only */}
+            {reason === 'trial_expired' && (
+              <div className="text-center space-y-4">
+                <div className="flex flex-col sm:flex-row gap-3 justify-center">
+                  <GradientButton
+                    variant="outline"
+                    onClick={onBack}
+                    className="!bg-background !text-foreground !border !border-border hover:!bg-muted"
+                  >
+                    <ArrowLeft className="h-4 w-4 mr-2" />
+                    Go Back
+                  </GradientButton>
+                </div>
               </div>
+            )}
               
-              {/* Sign Up Section */}
-              <div className="mt-8 pt-6 border-t border-border">
+            {/* Sign Up Section */}
+            <div className={`${reason === 'trial_expired' ? 'mt-4' : 'mt-8 pt-6 border-t border-border'}`}>
                 <div className="space-y-2">
-                  <h3 className="text-lg font-semibold text-foreground">Don't have an account yet?</h3>
+                  <h3 className="text-lg font-semibold text-foreground">
+                    {reason === 'trial_expired' ? 'Sign up to continue' : "Don't have an account yet?"}
+                  </h3>
                   <p className="text-sm text-muted-foreground">
-                    Enter your email to receive a magic link and create your account
+                    {reason === 'trial_expired' 
+                      ? 'Enter your email to receive a magic link and create your account'
+                      : 'Enter your email to receive a magic link and create your account'
+                    }
                   </p>
                 </div>
                 

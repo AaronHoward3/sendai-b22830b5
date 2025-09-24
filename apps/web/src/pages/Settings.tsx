@@ -263,8 +263,29 @@ const Settings: React.FC = () => {
       body: JSON.stringify({ price_id: priceId }),
     });
     const json = await res.json();
-    if (json?.url) window.location.href = json.url;
-    else toast({ title: 'Checkout error', description: json?.error || 'Unable to start checkout', variant: 'destructive' });
+    if (json?.url) {
+      window.location.href = json.url;
+    } else if (json?.fallback === 'billing_portal') {
+      // User already has this plan - redirect to billing portal
+      toast({ 
+        title: 'Already Subscribed', 
+        description: `You already have the ${json.currentPlan?.name || 'current'} plan. Redirecting to billing portal...`,
+        variant: 'default'
+      });
+      // Open billing portal instead
+      setTimeout(() => openBillingPortal(), 2000);
+    } else if (json?.fallback === 'subscription_upgrade') {
+      // User has a different plan - show upgrade options
+      toast({ 
+        title: 'Upgrade Required', 
+        description: `You have the ${json.currentPlan?.name || 'current'} plan. Please use the upgrade option to change to ${json.requestedPlan?.name || 'the requested plan'}.`,
+        variant: 'default'
+      });
+      // Show plan selection modal for upgrade
+      setShowPlanModal(true);
+    } else {
+      toast({ title: 'Checkout error', description: json?.error || 'Unable to start checkout', variant: 'destructive' });
+    }
   };
 
   const openBillingPortal = async () => {

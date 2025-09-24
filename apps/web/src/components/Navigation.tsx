@@ -10,6 +10,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useSupabaseAuth } from "@/hooks/useSupabaseAuth";
 import { supabase } from "@/lib/supabaseClient";
+import AuthModal from "./auth/AuthModal";
 
 interface NavigationProps {
   onHomeClick?: () => void;
@@ -20,6 +21,7 @@ const Navigation: React.FC<NavigationProps> = ({ onHomeClick }) => {
   const navigate = useNavigate();
   const { user } = useSupabaseAuth();
   const [isAdmin, setIsAdmin] = useState(false);
+  const [showAuthModal, setShowAuthModal] = useState(false);
 
   const isOnGenerator = location.pathname.startsWith("/generator");
   const isSettings = location.pathname === "/settings";
@@ -53,59 +55,89 @@ const Navigation: React.FC<NavigationProps> = ({ onHomeClick }) => {
   };
 
   return (
-    <nav className="fixed top-0 left-0 right-0 z-50 border-b border-border bg-background">
-      <div className="flex items-center justify-between px-4 py-3">
-        {/* Home Button */}
-        <Button
-          onClick={handleHomeClick}
-          variant={isOnGenerator ? "secondary" : "ghost"}
-          size="sm"
-          className="flex items-center gap-2"
-        >
-          <Home className="h-4 w-4" />
-          Home
-        </Button>
+    <>
+      <nav className="fixed top-0 left-0 right-0 z-50 border-b border-border bg-background">
+        <div className="flex items-center justify-between px-4 py-3">
+          {/* Home Button */}
+          <Button
+            onClick={handleHomeClick}
+            variant={isOnGenerator ? "secondary" : "ghost"}
+            size="sm"
+            className="flex items-center gap-2"
+          >
+            <Home className="h-4 w-4" />
+            Home
+          </Button>
 
-        {/* Center Title */}
-        <div className="text-lg font-zen text-foreground">IRIOS A.I.</div>
+          {/* Center Title */}
+          <div className="text-lg font-zen text-foreground">IRIOS A.I.</div>
 
-        {/* Profile Dropdown (click to open) */}
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
+          {/* Profile Dropdown (click to open) */}
+          {user ? (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant={isSettings || isMyEmails || isAdminPage ? "secondary" : "ghost"}
+                  size="sm"
+                  className="flex items-center gap-2"
+                >
+                  <User className="h-4 w-4" />
+                  My Profile
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent
+                align="end"
+                className="w-48 bg-background border border-border shadow-lg"
+              >
+                <DropdownMenuItem asChild>
+                  <Link to="/settings" className="w-full cursor-pointer">
+                    My Profile
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link to="/my-emails" className="w-full cursor-pointer">
+                    My Emails
+                  </Link>
+                </DropdownMenuItem>
+                {isAdmin && (
+                  <DropdownMenuItem asChild>
+                    <Link to="/admin" className="w-full cursor-pointer">
+                      Admin
+                    </Link>
+                  </DropdownMenuItem>
+                )}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          ) : (
             <Button
-              variant={isSettings || isMyEmails || isAdminPage ? "secondary" : "ghost"}
+              variant="default"
               size="sm"
-              className="flex items-center gap-2"
+              className="flex items-center gap-2 bg-primary text-primary-foreground hover:bg-primary/90"
+              onClick={() => setShowAuthModal(true)}
             >
               <User className="h-4 w-4" />
-              Dashboard
+              Sign Up
             </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent
-            align="end"
-            className="w-48 bg-background border border-border shadow-lg"
-          >
-            <DropdownMenuItem asChild>
-              <Link to="/settings" className="w-full cursor-pointer">
-                User Dashboard
-              </Link>
-            </DropdownMenuItem>
-            <DropdownMenuItem asChild>
-              <Link to="/my-emails" className="w-full cursor-pointer">
-                My Emails
-              </Link>
-            </DropdownMenuItem>
-            {isAdmin && (
-              <DropdownMenuItem asChild>
-                <Link to="/admin" className="w-full cursor-pointer">
-                  Admin
-                </Link>
-              </DropdownMenuItem>
-            )}
-          </DropdownMenuContent>
-        </DropdownMenu>
-      </div>
-    </nav>
+          )}
+        </div>
+      </nav>
+
+      {/* Auth Modal */}
+      {showAuthModal && (
+        <div className="fixed inset-0 z-50 bg-background/80 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="relative">
+            <button
+              onClick={() => setShowAuthModal(false)}
+              className="absolute -top-2 -right-2 w-8 h-8 bg-background border border-border rounded-full flex items-center justify-center hover:bg-muted transition-colors"
+              aria-label="Close modal"
+            >
+              ×
+            </button>
+            <AuthModal />
+          </div>
+        </div>
+      )}
+    </>
   );
 };
 
