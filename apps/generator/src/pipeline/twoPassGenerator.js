@@ -164,6 +164,7 @@ function buildRefinerPrompt({ baseMjml, emailType, designAesthetic, brandData, u
 TASK:
 - You are given a complete MJML skeleton built from fixed template blocks.
 - Your job is to only refine content: replace text copy, set hrefs, set image src values.
+- REPLACE ALL PLACEHOLDERS: Any text in {{placeholder}} format must be replaced with appropriate content.
 - Do not change structure or add/remove blocks.
 - Do NOT attempt to change colors or add new styles. Styling is handled later.
 
@@ -174,6 +175,19 @@ STRICT RULES:
 - Preserve https://CUSTOMHEROIMAGE.COM if present.
 - All <mj-image> must be open+close tags; no self-closing.
 - No font-family on MJML tags. Keep valid MJML.
+
+PLACEHOLDER REPLACEMENT RULES:
+- {{hero_title}}: Replace with compelling headline (3-8 words for promotions, 5-12 words for newsletters)
+- {{hero_subtitle}}: Replace with descriptive subheading (5-15 words for promotions, 10-25 words for newsletters)
+- {{cta_url}}: Replace with appropriate brand URL (homepage, products, or specific collection)
+- {{cta_button_label}}: Replace with action-oriented button text (Shop Now, Learn More, View Collection, etc.)
+- {{social_proof_title}}: Replace with testimonial headline (e.g., "What Our Customers Say", "Join Thousands of Happy Customers")
+- {{testimonial_text}}: Replace with realistic customer testimonial or social proof
+- {{customer_name}}: Replace with realistic customer name
+- {{story_title}}: Replace with engaging story headline
+- {{story_content}}: Replace with detailed story content (for newsletters)
+- {{story_conclusion}}: Replace with story conclusion (for newsletters)
+- {{P1_TITLE}}, {{P1_SUBTITLE}}, {{P1_IMAGE_URL}}: Replace with actual product data from brandData.products
 
 ${contentGuidelines}
 
