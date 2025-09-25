@@ -54,28 +54,8 @@ export const TrialBlockedOverlay: React.FC<TrialBlockedOverlayProps> = ({ onSubs
           
           <CardContent>
             {/* Sign Up Section */}
-            <div className="text-center space-y-4">
-              <div className="space-y-2">
-                <h3 className="text-lg font-semibold text-foreground">Sign up to get started</h3>
-                <p className="text-sm text-muted-foreground">
-                  Enter your email to receive a magic link and create your account
-                </p>
-              </div>
-              
-              {/* Sign into existing account option */}
-              <div className="mb-4">
-                <p className="text-sm text-muted-foreground mb-2">
-                  Already have an account?
-                </p>
-                <button
-                  onClick={onSignIn}
-                  className="text-primary hover:text-primary/80 underline text-sm font-medium transition-colors"
-                >
-                  Sign into existing account
-                </button>
-              </div>
-              
-              <div className="max-w-md mx-auto space-y-3">
+            <div className="text-center space-y-6">
+              <div className="max-w-md mx-auto space-y-4">
                 <input
                   type="email"
                   placeholder="you@example.com"
@@ -87,7 +67,7 @@ export const TrialBlockedOverlay: React.FC<TrialBlockedOverlayProps> = ({ onSubs
                       sendMagicLink();
                     }
                   }}
-                  className="w-full px-3 py-2 border border-border rounded-md bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                  className="w-full px-4 py-3 border border-border rounded-md bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent text-center"
                   autoFocus
                 />
                 
@@ -98,7 +78,7 @@ export const TrialBlockedOverlay: React.FC<TrialBlockedOverlayProps> = ({ onSubs
                   variant="solid"
                   onClick={sendMagicLink}
                   disabled={loading || !email.trim()}
-                  className="w-full !bg-primary !text-primary-foreground"
+                  className="w-full !bg-primary !text-primary-foreground py-3"
                 >
                   {loading ? "Sending…" : "Send magic link"}
                 </GradientButton>
