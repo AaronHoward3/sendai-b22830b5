@@ -18,8 +18,69 @@ import { buildBrandTokens } from "../theme/tokens.js";
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
+/**
+ * Process user context to extract key concepts for concise email content
+ */
+function processUserContext(userContext, brandData) {
+  if (!userContext || typeof userContext !== 'string') {
+    return "General promotion";
+  }
+  
+  const context = userContext.toLowerCase().trim();
+  const brandName = (brandData?.name || brandData?.brandData?.name || "").toLowerCase();
+  
+  // Extract key concepts
+  const concepts = [];
+  
+  // Urgency indicators
+  if (/urgent|limited|expires|deadline|flash|quick|now|today|tomorrow|hurry/i.test(context)) {
+    concepts.push("urgent");
+  }
+  
+  // Sale/discount indicators
+  if (/sale|discount|off|save|deal|special|promo|clearance/i.test(context)) {
+    concepts.push("sale");
+  }
+  
+  // Product categories
+  if (/new|launch|arrival|collection|seasonal/i.test(context)) {
+    concepts.push("new products");
+  }
+  
+  // Brand personality
+  if (/luxury|premium|exclusive|elite|high-end/i.test(brandName + " " + context)) {
+    concepts.push("luxury");
+  }
+  
+  if (/tech|digital|app|software|innovation/i.test(brandName + " " + context)) {
+    concepts.push("tech");
+  }
+  
+  if (/fashion|style|trend|design|aesthetic/i.test(brandName + " " + context)) {
+    concepts.push("fashion");
+  }
+  
+  // Content type
+  if (/story|journey|behind|process|how|why|experience/i.test(context)) {
+    concepts.push("storytelling");
+  }
+  
+  if (/testimonial|review|customer|love|recommend|trust/i.test(context)) {
+    concepts.push("social proof");
+  }
+  
+  // Fallback
+  if (concepts.length === 0) {
+    concepts.push("general promotion");
+  }
+  
+  return concepts.join(", ");
+}
+
 function buildRefinerPrompt({ baseMjml, emailType, designAesthetic, brandData, userContext }) {
-  const safeCtx = (userContext || "").toString().trim().slice(0, 600);
+  // Process user context to extract key concepts instead of using verbatim
+  const processedContext = processUserContext(userContext, brandData);
+  
   return String.raw`You are an expert email designer and copywriter.
 
 TASK:
@@ -36,10 +97,17 @@ STRICT RULES:
 - All <mj-image> must be open+close tags; no self-closing.
 - No font-family on MJML tags. Keep valid MJML.
 
+CONTENT GUIDELINES:
+- Write CONCISE, IMPACTFUL headlines (3-8 words max)
+- Use SHORT, CLEAR subheadings (5-15 words max)
+- Focus on BENEFITS, not features
+- Use ACTION-ORIENTED language
+- Avoid lengthy explanations in headers
+
 INPUTS:
 Email Type: ${emailType}
 Design Aesthetic: ${designAesthetic || "minimal_clean"}
-User Context: ${safeCtx || "None"}
+Content Focus: ${processedContext}
 Brand Data JSON:
 ${JSON.stringify(brandData || {}, null, 2)}
 
