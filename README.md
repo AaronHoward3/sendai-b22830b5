@@ -1,4 +1,4 @@
-# IRIOS A.I. - AI-Powered Email Marketing Platform
+# IRIOS AI - AI-Powered Email Marketing Platform
 
 A comprehensive monorepo for generating professional email marketing campaigns using AI. This platform combines brand data scraping, AI-powered content generation, and email template creation into a seamless workflow.
 
@@ -103,6 +103,12 @@ STRIPE_SECRET_KEY=your_stripe_secret_key
 
 # Brand Data API (optional)
 BRANDDEV_API_KEY=your_branddev_api_key
+
+# ScrapingBee API (for web scraping)
+SCRAPINGBEE_API_KEY=your_scrapingbee_api_key
+
+# Client URL for CORS
+CLIENT_URL=http://localhost:5173
 ```
 
 **`apps/generator/.env`**:
@@ -110,9 +116,16 @@ BRANDDEV_API_KEY=your_branddev_api_key
 OPENAI_API_KEY=your_openai_api_key
 ```
 
+**`apps/web/.env`**:
+```env
+VITE_SUPABASE_URL=your_supabase_url
+VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
+VITE_API_URL=http://localhost:3001
+```
+
 ### 3. Database Setup
 1. Create a Supabase project
-2. Run the SQL schema (see `apps/api/docs/` for database setup)
+2. Run the SQL schema (see `apps/api/migrations/` for database setup)
 3. Configure RLS policies for security
 
 ### 4. Start Development
@@ -363,7 +376,7 @@ npm run test
 
 ### Documentation
 - **API Docs**: `apps/api/docs/`
-- **Scraper Guide**: `apps/api/SCRAPER_QUICKSTART.md`
+- **Scraper Guide**: `apps/api/docs/PRODUCT_SCRAPER.md`
 - **Generator README**: `apps/generator/README.md`
 
 ### Key Files to Understand
