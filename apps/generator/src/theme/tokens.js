@@ -96,10 +96,10 @@ export function buildBrandTokens(payloadBrand = {}) {
     return isDark(brand) ? mix(brand, "#ffffff", 0.35) : mix(brand, "#000000", 0.35);
   })();
 
-  // Neutral scaffold defaults (dark-on-dark base; skins can override usage)
-  const pageBg = "#0f1014";
-  const sectionBg = "#111319";
-  const cardBg = "#151824";
+  // Neutral scaffold defaults (light backgrounds by default; dark skins override)
+  const pageBg = "#ffffff";
+  const sectionBg = "#ffffff";
+  const cardBg = "#ffffff";
   const border = isDark(pageBg) ? mix(pageBg, "#ffffff", 0.12) : mix(pageBg, "#000000", 0.12);
   const text = bestTextOn(pageBg);
   const muted = isDark(pageBg) ? mix(text, "#808080", 0.5) : mix(text, "#808080", 0.5);

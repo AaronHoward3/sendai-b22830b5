@@ -111,14 +111,14 @@ export function makeSkin(tokens, skinIdRaw) {
       
       // Override palette to pure black and white
       base.palette = {
-        pageBg: "#ffffff",      // White background
-        sectionBg: "#ffffff",   // White sections
-        text: "#000000",        // Black text
-        muted: "#666666",       // Gray muted text
-        brand: "#000000",       // Black brand color
-        brandAlt: "#000000",    // Black brand alt
-        border: "#000000",      // Black borders
-        cardBg: "#ffffff"       // White cards
+        pageBg: "#000000",      // Black background
+        sectionBg: "#000000",   // Black sections
+        text: "#ffffff",        // White text
+        muted: "#cccccc",       // Light gray muted text
+        brand: "#ffffff",       // White brand color
+        brandAlt: "#ffffff",    // White brand alt
+        border: "#ffffff",      // White borders
+        cardBg: "#000000"       // Black cards
       };
       
       base.radii = { card: 0, img: 0, btn: 0 };
@@ -166,6 +166,18 @@ export function makeSkin(tokens, skinIdRaw) {
       // Cards a bit tighter so big images feel flush
       base.space = { cardPad: 20 };
       base.shadow = { card: "0 12px 36px rgba(0,0,0,.24)" };
+
+      // Dark backgrounds for bold contrasting
+      base.palette = {
+        pageBg: "#0f1014",      // Dark background
+        sectionBg: "#111319",    // Dark sections
+        text: "#ffffff",         // White text
+        muted: "#cccccc",        // Light gray muted text
+        brand: tokens.brand,     // Keep brand color
+        brandAlt: tokens.brandAlt || tokens.brand,
+        border: "#2c2d30",       // Dark gray borders
+        cardBg: "#151824"        // Dark cards
+      };
 
       // Keep the dark slab look for sections
       base.extras.slabMode = "dark";
