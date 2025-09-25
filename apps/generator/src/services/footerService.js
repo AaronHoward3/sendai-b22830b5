@@ -1,6 +1,5 @@
-import fs from "fs/promises";
-import path from "path";
-import { fileURLToPath } from "url";
+import { buildBrandTokens } from "../theme/tokens.js";
+import { makeSkin } from "../theme/skins.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -80,12 +79,16 @@ function buildSocialElements(brandData) {
   return socialElements.trim();
 }
 
-function replaceBasicPlaceholders(footerTemplate, brandData) {
+function replaceBasicPlaceholders(footerTemplate, brandData, aesthetic = "minimal_clean") {
+  // Build brand tokens and skin for full theming
+  const tokens = buildBrandTokens(brandData);
+  const skin = makeSkin(tokens, aesthetic);
+  
   return footerTemplate
     .replace(/\[\[logo_url\]\]/g, brandData.logo_url || '')
-    .replace(/\[\[body_color\]\]/g, brandData.body_color || '#FFFFFF')
-    .replace(/\[\[text_color\]\]/g, brandData.text_color || '#4A4A4A')
-    .replace(/\[\[store_url\]\]/g, brandData.store_url || '')
+    .replace(/\[\[body_color\]\]/g, skin.palette.sectionBg)
+    .replace(/\[\[text_color\]\]/g, skin.palette.text)
+    .replace(/\[\[store_url\]\]/g, brandData.store_url || '');
 }
 
 function injectSocialElements(processedFooter, socialElements) {

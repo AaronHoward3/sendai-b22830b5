@@ -267,8 +267,26 @@ export function makeSkin(tokens, skinIdRaw) {
       break;
     }
 
+    case "minimal_clean": {
+      // Override palette to white background for minimal_clean
+      base.palette = {
+        pageBg: "#ffffff",      // White background
+        sectionBg: "#ffffff",   // White sections
+        text: "#000000",        // Black text
+        muted: "#666666",       // Gray muted text
+        brand: tokens.brand,    // Keep brand color
+        brandAlt: tokens.brandAlt || tokens.brand,
+        border: "#e0e0e0",      // Light gray borders
+        cardBg: "#ffffff"       // White cards
+      };
+      base.radii = { card: 0, img: 0, btn: 0 };
+      base.buttons.variant = "filled";
+      base.extras.colorOverrides = true; // Enable color overrides for better contrast
+      break;
+    }
+
     default: {
-      // minimal_clean & unknown → gentle defaults
+      // unknown → gentle defaults
       base.radii = { card: 0, img: 0, btn: 0 };
       base.buttons.variant = "filled";
     }

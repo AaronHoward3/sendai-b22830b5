@@ -2,6 +2,7 @@ import fs from "fs/promises";
 import path from "path";
 import { fileURLToPath } from "url";
 import { buildBrandTokens } from "../theme/tokens.js";
+import { makeSkin } from "../theme/skins.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -35,9 +36,10 @@ function cleanBrandUrls(brandData) {
  * Replace placeholder values in the header template with brand data
  * Uses theming system tokens for proper color integration
  */
-function replaceHeaderPlaceholders(headerTemplate, brandData) {
-  // Build brand tokens to get proper colors that work with theming
+function replaceHeaderPlaceholders(headerTemplate, brandData, aesthetic = "minimal_clean") {
+  // Build brand tokens and skin for full theming
   const tokens = buildBrandTokens(brandData);
+  const skin = makeSkin(tokens, aesthetic);
   
   // Determine if we should show logo or text
   const hasLogo = brandData.logo_url || brandData.logo;
@@ -53,10 +55,10 @@ function replaceHeaderPlaceholders(headerTemplate, brandData) {
       .replace(/\[\[logo_url\]\]/g, logoUrl)
       .replace(/\[\[store_name\]\]/g, storeName)
       .replace(/\[\[store_url\]\]/g, storeUrl)
-      .replace(/\[\[body_color\]\]/g, tokens.sectionBg)
-      .replace(/\[\[text_color\]\]/g, tokens.text)
-      .replace(/\[\[link_color\]\]/g, tokens.brand)
-      .replace(/\[\[divider_color\]\]/g, tokens.border);
+      .replace(/\[\[body_color\]\]/g, skin.palette.sectionBg)
+      .replace(/\[\[text_color\]\]/g, skin.palette.text)
+      .replace(/\[\[link_color\]\]/g, skin.palette.brand)
+      .replace(/\[\[divider_color\]\]/g, skin.palette.border);
   } else {
     // Use text-only version - replace the logo section with text
     const textOnlyHeader = processedTemplate
@@ -72,10 +74,10 @@ function replaceHeaderPlaceholders(headerTemplate, brandData) {
       .replace(/\[\[logo_url\]\]/g, '')
       .replace(/\[\[store_name\]\]/g, storeName)
       .replace(/\[\[store_url\]\]/g, storeUrl)
-      .replace(/\[\[body_color\]\]/g, tokens.sectionBg)
-      .replace(/\[\[text_color\]\]/g, tokens.text)
-      .replace(/\[\[link_color\]\]/g, tokens.brand)
-      .replace(/\[\[divider_color\]\]/g, tokens.border);
+      .replace(/\[\[body_color\]\]/g, skin.palette.sectionBg)
+      .replace(/\[\[text_color\]\]/g, skin.palette.text)
+      .replace(/\[\[link_color\]\]/g, skin.palette.brand)
+      .replace(/\[\[divider_color\]\]/g, skin.palette.border);
     
     processedTemplate = textOnlyHeader;
   }

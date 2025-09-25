@@ -27,8 +27,21 @@ export function contrastRatio(a, b) {
   const [hi, lo] = L1 > L2 ? [L1, L2] : [L2, L1];
   return (hi + 0.05) / (lo + 0.05);
 }
-function bestTextOn(bg) {
-  return contrastRatio(bg, "#ffffff") >= contrastRatio(bg, "#111111") ? "#ffffff" : "#111111";
+export function bestTextOn(bg) {
+  const whiteContrast = contrastRatio(bg, "#ffffff");
+  const blackContrast = contrastRatio(bg, "#111111");
+  
+  // Ensure minimum contrast ratio of 4.5 for accessibility
+  if (whiteContrast >= 4.5 && blackContrast >= 4.5) {
+    return whiteContrast >= blackContrast ? "#ffffff" : "#111111";
+  } else if (whiteContrast >= 4.5) {
+    return "#ffffff";
+  } else if (blackContrast >= 4.5) {
+    return "#111111";
+  } else {
+    // If neither meets minimum contrast, choose the better one
+    return whiteContrast >= blackContrast ? "#ffffff" : "#111111";
+  }
 }
 function clamp01(x) { return Math.max(0, Math.min(1, x)); }
 function mix(a, b, t = 0.5) {

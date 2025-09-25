@@ -36,7 +36,22 @@ function hexToRgb(hex) {
 function _lin(v) { v /= 255; return v <= 0.04045 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4); }
 function _L(hex) { const { r, g, b } = hexToRgb(hex); return 0.2126 * _lin(r) + 0.7152 * _lin(g) + 0.0722 * _lin(b); }
 function contrast(bg, fg) { const a = _L(bg), b = _L(fg); const [hi, lo] = a > b ? [a, b] : [b, a]; return (hi + 0.05) / (lo + 0.05); }
-function bestTextOn(bg) { return contrast(bg, "#ffffff") >= contrast(bg, "#111111") ? "#ffffff" : "#111111"; }
+function bestTextOn(bg) { 
+  const whiteContrast = contrast(bg, "#ffffff");
+  const blackContrast = contrast(bg, "#111111");
+  
+  // Ensure minimum contrast ratio of 4.5 for accessibility
+  if (whiteContrast >= 4.5 && blackContrast >= 4.5) {
+    return whiteContrast >= blackContrast ? "#ffffff" : "#111111";
+  } else if (whiteContrast >= 4.5) {
+    return "#ffffff";
+  } else if (blackContrast >= 4.5) {
+    return "#111111";
+  } else {
+    // If neither meets minimum contrast, choose the better one
+    return whiteContrast >= blackContrast ? "#ffffff" : "#111111";
+  }
+}
 
 // SVG data-URI gradient (NO url(...) wrapper). MJML expects raw string in background-url.
 function svgGradientDataUri(angleDeg, c1, c2) {
@@ -242,7 +257,11 @@ export function applyTheme(mjml, payloadBrand, skinIdRaw) {
       s = s.replace(/<mj-text\b([^>]*)>/gi, (m, attrsStr) => {
         const hasColorMatch = /\scolor="/i.test(attrsStr);
         const cur = (attrsStr.match(/\scolor="([^"]*)"/i) || [])[1] || skin.palette.text;
-        const desired = (cur && contrast(bg, cur) >= 4.5) ? cur : bestTextOn(bg);
+        
+        // Check if current color has sufficient contrast
+        const currentContrast = contrast(bg, cur);
+        const desired = currentContrast >= 4.5 ? cur : bestTextOn(bg);
+        
         let t = m;
         if (hasColorMatch) t = t.replace(/\scolor="[^"]*"/i, ` color="${desired}"`);
         else t = `<mj-text${attrsStr} color="${desired}">`;
@@ -255,20 +274,32 @@ export function applyTheme(mjml, payloadBrand, skinIdRaw) {
       let t = tag;
       if (!/mj-class=/i.test(t)) t = t.replace(/<mj-button/i, `<mj-button mj-class="btn"`);
       if (skin.extras.colorOverrides) {
-        const txt = bestTextOn(bg);
         if (skin.buttons.variant === "filled" || skin.buttons.variant === "gradient") {
-          // choose the stronger of brand/brandAlt vs current section bg
-          const bgBtn = contrast(bg, skin.palette.brand) >= contrast(bg, skin.palette.brandAlt) ? skin.palette.brand : skin.palette.brandAlt;
+          // Choose button background color based on contrast with section background
+          const brandContrast = contrast(bg, skin.palette.brand);
+          const brandAltContrast = contrast(bg, skin.palette.brandAlt);
+          
+          // Use the color that provides better contrast with the section background
+          const bgBtn = brandContrast >= brandAltContrast ? skin.palette.brand : skin.palette.brandAlt;
+          
+          // Ensure text color contrasts well with button background
+          const txt = bestTextOn(bgBtn);
+          
           t = addOrReplaceAttr(t, "background-color", bgBtn);
           t = addOrReplaceAttr(t, "color", txt);
           t = addOrReplaceAttr(t, "border", "0");
         } else if (skin.buttons.variant === "outline") {
+          // For outline buttons, use text color that contrasts with section background
+          const txt = bestTextOn(bg);
           t = addOrReplaceAttr(t, "background-color", "transparent");
           t = addOrReplaceAttr(t, "color", txt);
           t = addOrReplaceAttr(t, "border", `1px solid ${txt}`);
         } else {
+          // Ghost buttons - use brand color but ensure it contrasts with background
+          const brandContrast = contrast(bg, skin.palette.brand);
+          const txt = brandContrast >= 4.5 ? skin.palette.brand : bestTextOn(bg);
           t = addOrReplaceAttr(t, "background-color", "transparent");
-          t = addOrReplaceAttr(t, "color", skin.palette.brand);
+          t = addOrReplaceAttr(t, "color", txt);
           t = addOrReplaceAttr(t, "border", "0");
         }
       }

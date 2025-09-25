@@ -3,6 +3,8 @@ import fs from "fs/promises";
 import path from "path";
 import { fileURLToPath } from "url";
 import { buildBrandTokens } from "../theme/tokens.js";
+import { makeSkin } from "../theme/skins.js";
+import { applyTheme } from "../theme/applyTheme.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -56,10 +58,12 @@ function cleanBrandUrls(brandData) {
 
 /**
  * Replace placeholder values in header/footer templates with brand data
+ * Now includes full skin theming for consistent styling
  */
-function replaceHeaderFooterPlaceholders(template, brandData) {
-  // Build brand tokens to get proper colors that work with theming
+function replaceHeaderFooterPlaceholders(template, brandData, aesthetic = "minimal_clean") {
+  // Build brand tokens and skin for full theming
   const tokens = buildBrandTokens(brandData);
+  const skin = makeSkin(tokens, aesthetic);
   
   // Determine brand information
   const hasLogo = brandData.logo_url || brandData.logo;
@@ -71,17 +75,17 @@ function replaceHeaderFooterPlaceholders(template, brandData) {
   
   let processedTemplate = template;
   
-  // Replace all placeholders
+  // Replace all placeholders with skin-aware colors
   processedTemplate = processedTemplate
     .replace(/\[\[logo_url\]\]/g, logoUrl)
     .replace(/\[\[store_name\]\]/g, storeName)
     .replace(/\[\[store_url\]\]/g, storeUrl)
     .replace(/\[\[store_address\]\]/g, storeAddress)
     .replace(/\[\[unsubscribe\]\]/g, unsubscribe)
-    .replace(/\[\[body_color\]\]/g, tokens.sectionBg)
-    .replace(/\[\[text_color\]\]/g, tokens.text)
-    .replace(/\[\[link_color\]\]/g, tokens.brand)
-    .replace(/\[\[divider_color\]\]/g, tokens.border);
+    .replace(/\[\[body_color\]\]/g, skin.palette.sectionBg)
+    .replace(/\[\[text_color\]\]/g, skin.palette.text)
+    .replace(/\[\[link_color\]\]/g, skin.palette.brand)
+    .replace(/\[\[divider_color\]\]/g, skin.palette.border);
   
   return processedTemplate;
 }
@@ -149,7 +153,7 @@ export async function readHeaderBlockFile(aesthetic, filename, brandData) {
     if (await fileExists(filePath)) {
       const template = await fs.readFile(filePath, "utf8");
       const cleanedBrandData = cleanBrandUrls({ ...brandData });
-      const processedTemplate = replaceHeaderFooterPlaceholders(template, cleanedBrandData);
+      const processedTemplate = replaceHeaderFooterPlaceholders(template, cleanedBrandData, aesthetic);
       return processedTemplate;
     }
   }
@@ -168,7 +172,7 @@ export async function readFooterBlockFile(aesthetic, filename, brandData) {
     if (await fileExists(filePath)) {
       const template = await fs.readFile(filePath, "utf8");
       const cleanedBrandData = cleanBrandUrls({ ...brandData });
-      const processedTemplate = replaceHeaderFooterPlaceholders(template, cleanedBrandData);
+      const processedTemplate = replaceHeaderFooterPlaceholders(template, cleanedBrandData, aesthetic);
       return processedTemplate;
     }
   }
