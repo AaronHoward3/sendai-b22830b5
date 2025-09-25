@@ -4,7 +4,9 @@
     <mj-column>
       <mj-text align="center" font-size="42px" font-weight="700" color="#000000" padding-bottom="15px" line-height="1.2">{{hero_title}}</mj-text>
       <mj-text align="center" font-size="18px" color="#666666" padding-bottom="30px" line-height="1.5">{{hero_subtitle}}</mj-text>
-      <mj-button href="{{store_url}}" background-color="#000000" color="#ffffff" border-radius="0px" padding="15px 30px" font-weight="600">{{cta_text}}</mj-button>
+      <mj-button href="{{cta_url}}" background-color="#000000" color="#ffffff" border-radius="0px" padding="15px 30px" font-weight="600">
+        {{cta_button_label}}
+      </mj-button>
     </mj-column>
   </mj-section>
 </mj-wrapper>

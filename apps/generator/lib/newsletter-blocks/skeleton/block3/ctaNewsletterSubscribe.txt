@@ -1,9 +1,13 @@
 <!-- Blockfile: ctaNewsletterSubscribe.txt -->
-<mj-section padding="50px 20px" background-color="#f8f9fa">
-  <mj-column>
-    <mj-text align="center" font-size="28px" font-weight="600" padding-bottom="15px" color="#000000">{{cta_title}}</mj-text>
-    <mj-text align="center" font-size="16px" color="#666666" padding-bottom="30px" line-height="1.5">{{cta_subtitle}}</mj-text>
-    <mj-button href="{{subscribe_url}}" background-color="#007bff" color="#ffffff" border-radius="8px" padding="12px 24px" font-weight="600">{{cta_text}}</mj-button>
-    <mj-text align="center" font-size="14px" color="#999999" padding-top="20px">{{privacy_note}}</mj-text>
-  </mj-column>
-</mj-section>
+<mj-wrapper padding="0px" css-class="cta-section">
+  <mj-section padding="50px 20px" background-color="#f8f9fa">
+    <mj-column>
+      <mj-text align="center" font-size="28px" font-weight="600" padding-bottom="15px" color="#000000">{{cta_title}}</mj-text>
+      <mj-text align="center" font-size="16px" color="#666666" padding-bottom="30px" line-height="1.5">{{cta_subtitle}}</mj-text>
+      <mj-button href="{{cta_url}}" background-color="#007bff" color="#ffffff" border-radius="8px" padding="12px 24px" font-weight="600">
+        {{cta_button_label}}
+      </mj-button>
+      <mj-text align="center" font-size="14px" color="#999999" padding-top="20px">{{privacy_note}}</mj-text>
+    </mj-column>
+  </mj-section>
+</mj-wrapper>

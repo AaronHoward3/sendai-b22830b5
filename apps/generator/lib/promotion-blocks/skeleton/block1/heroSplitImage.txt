@@ -7,7 +7,9 @@
     <mj-column width="40%" vertical-align="middle" padding="40px 20px">
       <mj-text font-size="36px" font-weight="bold" padding-bottom="10px">{{hero_title}}</mj-text>
       <mj-text font-size="18px" padding-bottom="20px">{{hero_subtitle}}</mj-text>
-      <mj-button href="{{store_url}}" background-color="{{brand_color}}" color="#ffffff" border-radius="8px" padding="12px 24px">{{cta_text}}</mj-button>
+      <mj-button href="{{cta_url}}" background-color="{{brand_color}}" color="#ffffff" border-radius="8px" padding="12px 24px">
+        {{cta_button_label}}
+      </mj-button>
     </mj-column>
   </mj-section>
 </mj-wrapper>
