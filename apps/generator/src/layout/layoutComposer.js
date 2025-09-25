@@ -13,10 +13,99 @@ import { getCachedTemplate, setCachedTemplate } from "../utils/templateCache.js"
 const pick = (arr) => arr[Math.floor(Math.random() * arr.length)];
 
 /**
+ * Smart block selection based on content type and context
+ */
+function analyzeContentContext(brandData, userContext) {
+  const context = (userContext || "").toLowerCase();
+  const brandName = (brandData?.name || brandData?.brandData?.name || "").toLowerCase();
+  
+  // Analyze content type
+  const isUrgent = /urgent|limited|expires|deadline|flash|quick|now|today|tomorrow/i.test(context);
+  const isStory = /story|journey|behind|process|how|why|experience/i.test(context);
+  const isFeature = /feature|benefit|advantage|why|because|reason/i.test(context);
+  const isSocial = /testimonial|review|customer|love|recommend|trust/i.test(context);
+  const isMinimal = /clean|simple|minimal|elegant/i.test(context);
+  const isBold = /bold|dramatic|powerful|strong|impact/i.test(context);
+  
+  // Analyze brand personality
+  const isLuxury = /luxury|premium|exclusive|elite|high-end/i.test(brandName + " " + context);
+  const isTech = /tech|digital|app|software|innovation/i.test(brandName + " " + context);
+  const isFashion = /fashion|style|trend|design|aesthetic/i.test(brandName + " " + context);
+  
+  return {
+    isUrgent,
+    isStory,
+    isFeature,
+    isSocial,
+    isMinimal,
+    isBold,
+    isLuxury,
+    isTech,
+    isFashion
+  };
+}
+
+/**
+ * Smart block selection based on content analysis
+ */
+function selectSmartBlocks(availableBlocks, analysis, blockType) {
+  if (!availableBlocks.length) return pick(availableBlocks);
+  
+  // Define block preferences based on analysis
+  const preferences = {
+    block1: {
+      urgent: ["heroOverlayText", "heroBoldStacked"],
+      story: ["heroMinimalCentered", "heroNewsletterMinimal"],
+      minimal: ["heroMinimalCentered", "heroMinimal1", "heroMinimal2"],
+      bold: ["heroBoldStacked", "heroBold1", "heroBold2"],
+      luxury: ["heroMinimalCentered", "heroNewsletterMinimal"],
+      tech: ["heroSplitImage", "heroOverlayText"],
+      fashion: ["heroOverlayText", "heroSplitImage"]
+    },
+    block2: {
+      story: ["contentStoryNarrative", "contentNewsletterStory"],
+      feature: ["contentFeatureGrid", "contentBenefitsList"],
+      social: ["contentBenefitsList"],
+      minimal: ["contentMinimal1", "contentMinimal2"],
+      bold: ["contentBold1", "contentBold2"]
+    },
+    block3: {
+      urgent: ["ctaUrgencyTimer", "ctaBold1", "ctaBold2"],
+      social: ["ctaSocialProof", "ctaNewsletterSubscribe"],
+      minimal: ["ctaMinimal1", "ctaMinimal2"],
+      bold: ["ctaBold1", "ctaBold2"],
+      dual: ["ctaDualButton"]
+    }
+  };
+  
+  const blockPrefs = preferences[blockType] || {};
+  
+  // Find preferred blocks that exist
+  const preferredBlocks = [];
+  for (const [key, blocks] of Object.entries(blockPrefs)) {
+    if (analysis[key]) {
+      preferredBlocks.push(...blocks);
+    }
+  }
+  
+  // Filter to only blocks that actually exist
+  const availablePreferred = preferredBlocks.filter(block => 
+    availableBlocks.some(available => available.includes(block))
+  );
+  
+  // Return preferred block if available, otherwise random
+  if (availablePreferred.length > 0) {
+    return pick(availablePreferred);
+  }
+  
+  return pick(availableBlocks);
+}
+
+/**
  * chooseLayout now **does not require block2** for Promotion.
  * Instead, it flags that we'll inject the [[PRODUCT_SECTION]] token in composeBaseMjml.
  */
-export async function chooseLayout(emailType, aesthetic = "minimal_clean") {
+export async function chooseLayout(emailType, aesthetic = "minimal_clean", brandData = {}, userContext = "") {
   const isProductType = emailType === "Promotion";
 
   // Always need block1 & block3
@@ -42,16 +131,61 @@ export async function chooseLayout(emailType, aesthetic = "minimal_clean") {
     }
   }
 
+  // Smart block selection based on content analysis
+  const analysis = analyzeContentContext(brandData, userContext);
+  
+  const selectedBlock1 = selectSmartBlocks(b1, analysis, "block1");
+  const selectedBlock2 = isProductType ? null : selectSmartBlocks(b2, analysis, "block2");
+  const selectedBlock3 = selectSmartBlocks(b3, analysis, "block3");
+
   return {
     layoutId: `${emailType}-${aesthetic}-${Date.now()}`,
-    block1: pick(b1),
+    block1: selectedBlock1,
     // if product type, we won't use a physical block2 file
-    block2: isProductType ? null : pick(b2),
-    block3: pick(b3),
+    block2: selectedBlock2,
+    block3: selectedBlock3,
     useProductSectionToken: isProductType, // <- important flag
     emailType,
     aesthetic,
+    analysis, // Include analysis for debugging
   };
+}
+
+/**
+ * Dynamic block ordering based on content analysis
+ */
+function determineBlockOrder(analysis, emailType) {
+  // Define different ordering strategies
+  const strategies = {
+    // For urgent/promotional content: Hero -> Products -> Urgency CTA
+    urgent: ["block1", "block2", "block3"],
+    
+    // For story-driven content: Hero -> Story -> Soft CTA
+    story: ["block1", "block2", "block3"],
+    
+    // For feature-focused content: Hero -> Features -> Benefits CTA
+    feature: ["block1", "block2", "block3"],
+    
+    // For social proof content: Hero -> Social Proof -> Testimonial CTA
+    social: ["block1", "block2", "block3"],
+    
+    // For minimal content: Clean hero -> Simple content -> Subtle CTA
+    minimal: ["block1", "block2", "block3"],
+    
+    // For bold content: Impact hero -> Bold content -> Strong CTA
+    bold: ["block1", "block2", "block3"]
+  };
+  
+  // Determine strategy based on analysis
+  if (analysis.isUrgent) return strategies.urgent;
+  if (analysis.isStory) return strategies.story;
+  if (analysis.isFeature) return strategies.feature;
+  if (analysis.isSocial) return strategies.social;
+  if (analysis.isMinimal) return strategies.minimal;
+  if (analysis.isBold) return strategies.bold;
+  
+  // Default ordering
+  return strategies.story;
 }
 
 /**
@@ -61,6 +195,7 @@ export async function chooseLayout(emailType, aesthetic = "minimal_clean") {
  *  - For product types, **insert [[PRODUCT_SECTION]]** instead of reading block2
  *  - For other types, read block2 from disk normally
  *  - Insert divider elements between blocks when available
+ *  - Use dynamic block ordering based on content analysis
  */
 export async function composeBaseMjml(emailType, aesthetic, layout, brandData = {}) {
   const dividerNames = await listDividerFiles(); // filenames only
@@ -96,15 +231,35 @@ export async function composeBaseMjml(emailType, aesthetic, layout, brandData = 
 
   const mark = (name) => `\n<mj-raw>\n  <!-- Blockfile: ${name} -->\n</mj-raw>\n`;
 
-  const pieces = [
-    mark("header-block") + headerBlock.trim(),
-    mark(layout.block1) + b1.trim(),
-    divider1 ? mark(`divider/${dividerName1}`) + divider1.trim() : "",
-    mark(b2Label) + b2Content.trim(),
-    divider2 ? mark(`divider/${dividerName2}`) + divider2.trim() : "",
-    mark(layout.block3) + b3.trim(),
-    mark("footer-block") + footerBlock.trim(),
-  ].filter(Boolean);
+  // Dynamic block ordering based on analysis
+  const blockOrder = determineBlockOrder(layout.analysis || {}, emailType);
+  
+  // Create block content map
+  const blockContents = {
+    block1: { content: b1.trim(), label: layout.block1 },
+    block2: { content: b2Content.trim(), label: b2Label },
+    block3: { content: b3.trim(), label: layout.block3 }
+  };
+
+  // Build pieces array based on dynamic ordering
+  const pieces = [mark("header-block") + headerBlock.trim()];
+  
+  blockOrder.forEach((blockType, index) => {
+    const blockData = blockContents[blockType];
+    if (blockData && blockData.content) {
+      pieces.push(mark(blockData.label) + blockData.content);
+      
+      // Add divider between blocks (but not after the last block)
+      if (index < blockOrder.length - 1) {
+        const divider = index === 0 ? divider1 : divider2;
+        if (divider) {
+          pieces.push(mark(`divider/${dividerName1 || dividerName2}`) + divider.trim());
+        }
+      }
+    }
+  });
+  
+  pieces.push(mark("footer-block") + footerBlock.trim());
 
   return `<mjml>
   <mj-body>

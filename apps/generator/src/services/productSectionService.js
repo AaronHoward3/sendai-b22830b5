@@ -104,14 +104,63 @@ function fillTemplate(tpl, prods) {
 }
 
 /**
- * Render a product section MJML fragment.
+ * Smart product section selection based on content analysis
+ */
+function selectSmartProductLayout(availableLayouts, analysis, productCount) {
+  if (!availableLayouts.length) return availableLayouts[0];
+  
+  // Define layout preferences based on analysis
+  const preferences = {
+    // For minimal/clean content: prefer stacked layouts
+    minimal: ["stacked_centered", "Stack", "single"],
+    
+    // For bold content: prefer grid layouts
+    bold: ["grid_2x2", "grid_4x1", "altgrid", "zigzag_rows"],
+    
+    // For urgent content: prefer compact layouts
+    urgent: ["grid_4x1", "grid_2x2"],
+    
+    // For story content: prefer single/stacked layouts
+    story: ["stacked_centered", "single", "Stack"],
+    
+    // For feature content: prefer grid layouts
+    feature: ["grid_2x2", "altgrid", "zigzag_rows"],
+    
+    // For social content: prefer centered layouts
+    social: ["stacked_centered", "single"]
+  };
+  
+  // Find preferred layouts that exist
+  const preferredLayouts = [];
+  for (const [key, layouts] of Object.entries(preferences)) {
+    if (analysis[key]) {
+      preferredLayouts.push(...layouts);
+    }
+  }
+  
+  // Filter to only layouts that actually exist
+  const availablePreferred = preferredLayouts.filter(layout => 
+    availableLayouts.some(available => available.includes(layout))
+  );
+  
+  // Return preferred layout if available, otherwise random
+  if (availablePreferred.length > 0) {
+    return availablePreferred[Math.floor(Math.random() * availablePreferred.length)];
+  }
+  
+  return availableLayouts[Math.floor(Math.random() * availableLayouts.length)];
+}
+
+/**
+ * Render a product section MJML fragment with smart layout selection.
  * @param {("Promotion"|"Newsletter")} emailType
  * @param {string} aesthetic  // kept for backward-compatibility; used only for fallback
  * @param {Array} products    // [{title, subtitle, price, imageUrl, buttonText, buttonUrl}]
  * @param {string|number} seed
  * @param {number|null} desiredCount
+ * @param {Object} analysis   // Content analysis for smart selection
  */
-export function renderProductSection(emailType, aesthetic, products, seed = "default", desiredCount = null) {
+export function renderProductSection(emailType, aesthetic, products, seed = "default", desiredCount = null, analysis = {}) {
   const want = desiredCount ?? (products?.length || 0);
 
   // 1) Try skeleton location first
@@ -140,9 +189,19 @@ export function renderProductSection(emailType, aesthetic, products, seed = "def
   if (!variants.length) return "";
 
   const rng = seededRng(seed);
-  const pickIdx = Math.floor(rng() * variants.length);
-  const tplPath = variants[pickIdx];
-  const tpl = fs.readFileSync(tplPath, "utf8");
+  
+  // Use smart layout selection if analysis is provided
+  let selectedVariant;
+  if (analysis && Object.keys(analysis).length > 0) {
+    const variantNames = variants.map(v => path.basename(v, path.extname(v)));
+    const smartLayout = selectSmartProductLayout(variantNames, analysis, pickCount);
+    const smartVariant = variants.find(v => path.basename(v, path.extname(v)) === smartLayout);
+    selectedVariant = smartVariant || variants[Math.floor(rng() * variants.length)];
+  } else {
+    selectedVariant = variants[Math.floor(rng() * variants.length)];
+  }
+  
+  const tpl = fs.readFileSync(selectedVariant, "utf8");
 
   const slice = products.slice(0, pickCount);
   return fillTemplate(tpl, slice);

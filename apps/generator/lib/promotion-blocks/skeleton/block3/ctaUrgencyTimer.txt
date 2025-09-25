@@ -1,0 +1,9 @@
+<!-- Blockfile: ctaUrgencyTimer.txt -->
+<mj-section padding="60px 20px" background-color="#ff4444">
+  <mj-column>
+    <mj-text align="center" font-size="36px" font-weight="900" color="#ffffff" padding-bottom="10px" text-transform="uppercase">Limited Time Offer</mj-text>
+    <mj-text align="center" font-size="24px" color="#ffffff" padding-bottom="30px">{{urgency_message}}</mj-text>
+    <mj-button href="{{store_url}}" background-color="#ffffff" color="#ff4444" border-radius="8px" padding="18px 40px" font-weight="900" font-size="18px">{{cta_text}}</mj-button>
+    <mj-text align="center" font-size="14px" color="#ffffff" padding-top="20px" opacity="0.8">{{fine_print}}</mj-text>
+  </mj-column>
+</mj-section>

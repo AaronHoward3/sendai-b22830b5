@@ -1,0 +1,23 @@
+<!-- Blockfile: contentFeatureGrid.txt -->
+<mj-section padding="60px 20px" background-color="#ffffff">
+  <mj-column>
+    <mj-text align="center" font-size="32px" font-weight="700" padding-bottom="40px">{{section_title}}</mj-text>
+  </mj-column>
+</mj-section>
+<mj-section padding="0px 20px 60px" background-color="#ffffff">
+  <mj-column width="33.33%" padding="0px 10px">
+    <mj-image src="{{feature1_image}}" alt="Feature 1" padding="0" border-radius="8px"></mj-image>
+    <mj-text font-size="20px" font-weight="600" padding="15px 0px 5px" align="center">{{feature1_title}}</mj-text>
+    <mj-text font-size="16px" color="#666666" padding="0px" align="center" line-height="1.4">{{feature1_desc}}</mj-text>
+  </mj-column>
+  <mj-column width="33.33%" padding="0px 10px">
+    <mj-image src="{{feature2_image}}" alt="Feature 2" padding="0" border-radius="8px"></mj-image>
+    <mj-text font-size="20px" font-weight="600" padding="15px 0px 5px" align="center">{{feature2_title}}</mj-text>
+    <mj-text font-size="16px" color="#666666" padding="0px" align="center" line-height="1.4">{{feature2_desc}}</mj-text>
+  </mj-column>
+  <mj-column width="33.33%" padding="0px 10px">
+    <mj-image src="{{feature3_image}}" alt="Feature 3" padding="0" border-radius="8px"></mj-image>
+    <mj-text font-size="20px" font-weight="600" padding="15px 0px 5px" align="center">{{feature3_title}}</mj-text>
+    <mj-text font-size="16px" color="#666666" padding="0px" align="center" line-height="1.4">{{feature3_desc}}</mj-text>
+  </mj-column>
+</mj-section>

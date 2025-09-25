@@ -50,14 +50,14 @@ ${baseMjml}
 `;
 }
 
-async function buildProductSectionWithFallbacks({ emailType, products, designAesthetic, seed }) {
+async function buildProductSectionWithFallbacks({ emailType, products, designAesthetic, seed, analysis = {} }) {
   if (!Array.isArray(products) || products.length === 0) return "";
 
   const attempts = [ designAesthetic, "skeleton", "minimal_clean", "bold_contrasting" ].filter(Boolean);
 
   for (const aesthetic of attempts) {
     try {
-      const html = await renderProductSection( emailType, aesthetic, products, seed );
+      const html = await renderProductSection( emailType, aesthetic, products, seed, null, analysis );
       if (html && typeof html === "string" && html.trim().length > 0) return html;
     } catch {}
   }
@@ -98,7 +98,7 @@ export async function runTwoPassGeneration({
 
   // 1) Layout selection & base MJML
   m.start("layout");
-  const layout = await chooseLayout(emailType, designAesthetic);
+  const layout = await chooseLayout(emailType, designAesthetic, brandData, userContext);
   let baseMjml = await composeBaseMjml(emailType, designAesthetic, layout, brandData);
   m.end("layout");
 
@@ -117,7 +117,7 @@ export async function runTwoPassGeneration({
   if ((emailType === "Promotion") && Array.isArray(brandData?.products)) {
     m.start("productSection");
     const productHtml = await buildProductSectionWithFallbacks({
-      emailType, products: brandData.products, designAesthetic, seed: layout.layoutId
+      emailType, products: brandData.products, designAesthetic, seed: layout.layoutId, analysis: layout.analysis
     });
     console.log("🔍 [DEBUG] Product HTML generated:", {
       hasProductHtml: !!productHtml,

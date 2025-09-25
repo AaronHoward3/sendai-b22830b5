@@ -1,0 +1,8 @@
+<!-- Blockfile: contentNewsletterStory.txt -->
+<mj-section padding="50px 20px" background-color="#ffffff">
+  <mj-column>
+    <mj-text font-size="24px" font-weight="600" padding-bottom="20px" color="#000000">{{story_title}}</mj-text>
+    <mj-text font-size="16px" color="#555555" padding-bottom="25px" line-height="1.6">{{story_content}}</mj-text>
+    <mj-text font-size="16px" color="#555555" padding-bottom="0px" line-height="1.6">{{story_conclusion}}</mj-text>
+  </mj-column>
+</mj-section>

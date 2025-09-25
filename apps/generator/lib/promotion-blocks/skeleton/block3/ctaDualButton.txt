@@ -1,0 +1,10 @@
+<!-- Blockfile: ctaDualButton.txt -->
+<mj-section padding="60px 20px" background-color="#f8f9fa">
+  <mj-column>
+    <mj-text align="center" font-size="32px" font-weight="700" padding-bottom="20px">{{cta_title}}</mj-text>
+    <mj-text align="center" font-size="18px" color="#666666" padding-bottom="40px" line-height="1.5">{{cta_subtitle}}</mj-text>
+    <mj-button href="{{primary_url}}" background-color="#007bff" color="#ffffff" border-radius="8px" padding="15px 30px" font-weight="600" font-size="16px">{{primary_cta}}</mj-button>
+    <mj-text align="center" font-size="14px" color="#999999" padding="15px 0px">or</mj-text>
+    <mj-button href="{{secondary_url}}" background-color="transparent" color="#007bff" border="2px solid #007bff" border-radius="8px" padding="13px 28px" font-weight="600" font-size="16px">{{secondary_cta}}</mj-button>
+  </mj-column>
+</mj-section>
