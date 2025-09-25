@@ -21,15 +21,60 @@ const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 /**
  * Process user context to extract key concepts for concise email content
  */
-function processUserContext(userContext, brandData) {
+function processUserContext(userContext, brandData, emailType) {
   if (!userContext || typeof userContext !== 'string') {
-    return "General promotion";
+    return emailType?.toLowerCase() === "newsletter" ? "General newsletter content" : "General promotion";
   }
   
   const context = userContext.toLowerCase().trim();
   const brandName = (brandData?.name || brandData?.brandData?.name || "").toLowerCase();
   
-  // Extract key concepts
+  // For newsletters, preserve more context for richer content
+  if (emailType?.toLowerCase() === "newsletter") {
+    // Extract key concepts but keep more detail
+    const concepts = [];
+    
+    // Content type indicators
+    if (/story|journey|behind|process|how|why|experience|insight|lesson/i.test(context)) {
+      concepts.push("storytelling");
+    }
+    
+    if (/update|news|announcement|launch|release|feature/i.test(context)) {
+      concepts.push("company updates");
+    }
+    
+    if (/tip|advice|guide|tutorial|how-to|educational/i.test(context)) {
+      concepts.push("educational content");
+    }
+    
+    if (/behind|process|making|creation|development/i.test(context)) {
+      concepts.push("behind-the-scenes");
+    }
+    
+    // Brand personality
+    if (/luxury|premium|exclusive|elite|high-end/i.test(brandName + " " + context)) {
+      concepts.push("luxury brand");
+    }
+    
+    if (/tech|digital|app|software|innovation/i.test(brandName + " " + context)) {
+      concepts.push("tech company");
+    }
+    
+    if (/fashion|style|trend|design|aesthetic/i.test(brandName + " " + context)) {
+      concepts.push("fashion brand");
+    }
+    
+    // Fallback with more context
+    if (concepts.length === 0) {
+      // For newsletters, provide a bit more context
+      const shortContext = context.length > 100 ? context.substring(0, 100) + "..." : context;
+      return `Newsletter content: ${shortContext}`;
+    }
+    
+    return concepts.join(", ");
+  }
+  
+  // For promotions, use the existing concise processing
   const concepts = [];
   
   // Urgency indicators
@@ -77,9 +122,42 @@ function processUserContext(userContext, brandData) {
   return concepts.join(", ");
 }
 
+/**
+ * Get content guidelines based on email type
+ */
+function getContentGuidelines(emailType) {
+  const emailTypeLower = (emailType || "").toLowerCase();
+  
+  if (emailTypeLower === "newsletter") {
+    return `CONTENT GUIDELINES FOR NEWSLETTER:
+- Write ENGAGING, DESCRIPTIVE headlines (5-12 words)
+- Use DETAILED, INFORMATIVE subheadings (10-25 words)
+- Create ELABORATE paragraphs with rich storytelling
+- Focus on VALUE, INSIGHTS, and EDUCATIONAL content
+- Use CONVERSATIONAL, PERSONAL tone
+- Include DETAILED explanations and context
+- Write COMPREHENSIVE content that informs and engages
+- Use STORYTELLING techniques to build connection
+- Include BACKGROUND information and behind-the-scenes content`;
+  } else {
+    return `CONTENT GUIDELINES FOR PROMOTION:
+- Write CONCISE, IMPACTFUL headlines (3-8 words max)
+- Use SHORT, CLEAR subheadings (5-15 words max)
+- Focus on BENEFITS, not features
+- Use ACTION-ORIENTED language
+- Avoid lengthy explanations in headers
+- Create SCANNABLE, QUICK-READ content
+- Use URGENT, COMPELLING language
+- Focus on CONVERSION and SALES`;
+  }
+}
+
 function buildRefinerPrompt({ baseMjml, emailType, designAesthetic, brandData, userContext }) {
   // Process user context to extract key concepts instead of using verbatim
-  const processedContext = processUserContext(userContext, brandData);
+  const processedContext = processUserContext(userContext, brandData, emailType);
+  
+  // Different content guidelines based on email type
+  const contentGuidelines = getContentGuidelines(emailType);
   
   return String.raw`You are an expert email designer and copywriter.
 
@@ -97,12 +175,7 @@ STRICT RULES:
 - All <mj-image> must be open+close tags; no self-closing.
 - No font-family on MJML tags. Keep valid MJML.
 
-CONTENT GUIDELINES:
-- Write CONCISE, IMPACTFUL headlines (3-8 words max)
-- Use SHORT, CLEAR subheadings (5-15 words max)
-- Focus on BENEFITS, not features
-- Use ACTION-ORIENTED language
-- Avoid lengthy explanations in headers
+${contentGuidelines}
 
 INPUTS:
 Email Type: ${emailType}
