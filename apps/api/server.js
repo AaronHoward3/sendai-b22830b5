@@ -49,6 +49,8 @@ const getAllowedOrigins = () => {
     "http://localhost:8080", // Common dev port
     "https://localhost:5173", // HTTPS dev
     "https://localhost:3000", // HTTPS dev
+    "https://irios-a-i-web.vercel.app", // Vercel deployment
+    "https://irios.ai", // New domain
   ];
   
   // Add production URLs if they exist
