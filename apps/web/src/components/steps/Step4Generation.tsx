@@ -82,6 +82,12 @@ export const Step4Generation: React.FC<Step4GenerationProps> = ({
   };
 
   useEffect(() => {
+    // Don't run generation until user is available
+    if (!user) {
+      console.log("🔍 [DEBUG] No user available, skipping generation");
+      return;
+    }
+
     const controller = new AbortController();
     abortRef.current = controller;
 
@@ -98,11 +104,11 @@ export const Step4Generation: React.FC<Step4GenerationProps> = ({
     const run = async () => {
       setStatus("Generating email…");
       try {
-        // Wait for admin check to complete if user is authenticated
-        if (user && isLoading) {
+        // Wait for admin check to complete if needed
+        if (isLoading) {
           console.log("🔍 [DEBUG] Waiting for admin check to complete...");
           // Wait a bit for admin check to complete
-          await new Promise(resolve => setTimeout(resolve, 100));
+          await new Promise(resolve => setTimeout(resolve, 200));
         }
 
         // Get the current session token for authenticated requests
@@ -112,6 +118,7 @@ export const Step4Generation: React.FC<Step4GenerationProps> = ({
         // Check if user has an active subscription
         let hasActiveSubscription = false;
         console.log("🔍 [DEBUG] About to check subscription, user exists:", !!user);
+        console.log("🔍 [DEBUG] Current user object:", user);
         
         if (user) {
           console.log("🔍 [DEBUG] User exists, starting subscription check...");
@@ -289,7 +296,7 @@ export const Step4Generation: React.FC<Step4GenerationProps> = ({
       stopFake();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [user]);
 
   return (
     <>
