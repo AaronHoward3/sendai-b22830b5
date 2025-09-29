@@ -111,21 +111,27 @@ export const Step4Generation: React.FC<Step4GenerationProps> = ({
 
         // Check if user has an active subscription
         let hasActiveSubscription = false;
+        console.log("🔍 [DEBUG] About to check subscription, user exists:", !!user);
+        
         if (user) {
+          console.log("🔍 [DEBUG] User exists, starting subscription check...");
           try {
             console.log("🔍 [DEBUG] Checking subscription for user:", user.id);
             console.log("🔍 [DEBUG] Supabase client:", !!supabase);
             console.log("🔍 [DEBUG] User object:", user);
             
-            // First, let's check if we can query the subscriptions table at all
-            const { data: allSubs, error: allSubsError } = await supabase
+            // Simple test query first
+            console.log("🔍 [DEBUG] Testing simple query...");
+            const { data: testData, error: testError } = await supabase
               .from('subscriptions')
-              .select('*')
-              .limit(5);
+              .select('user_id, status')
+              .eq('user_id', user.id)
+              .limit(1);
             
-            console.log("🔍 [DEBUG] All subscriptions query (first 5):", { allSubs, allSubsError });
+            console.log("🔍 [DEBUG] Simple test query result:", { testData, testError });
             
-            // Now query for this specific user
+            // Now query for this specific user with all fields
+            console.log("🔍 [DEBUG] Querying user-specific subscription...");
             const { data: subscription, error: subError } = await supabase
               .from('subscriptions')
               .select('*')
@@ -137,11 +143,12 @@ export const Step4Generation: React.FC<Step4GenerationProps> = ({
             console.log("🔍 [DEBUG] Subscription price_id:", subscription?.price_id);
             console.log("🔍 [DEBUG] Subscription current_period_end:", subscription?.current_period_end);
             
-            // Check if subscription exists and is active
+            // Check if subscription exists and is active (NULL current_period_end is OK)
             hasActiveSubscription = !!(subscription && subscription.status === 'active');
             console.log("🔍 [DEBUG] hasActiveSubscription:", hasActiveSubscription);
             
             // Also check if user has any credits
+            console.log("🔍 [DEBUG] Querying user credits...");
             const { data: credits, error: creditsError } = await supabase
               .from('credit_balances')
               .select('*')
@@ -154,6 +161,8 @@ export const Step4Generation: React.FC<Step4GenerationProps> = ({
             console.error('Failed to check subscription status:', error);
             console.error('Error details:', error.message, error.stack);
           }
+        } else {
+          console.log("🔍 [DEBUG] No user, skipping subscription check");
         }
 
         // Choose endpoint based on authentication AND subscription status
