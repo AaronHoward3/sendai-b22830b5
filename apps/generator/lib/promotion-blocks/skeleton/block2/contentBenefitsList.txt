@@ -1,0 +1,20 @@
+<!-- Blockfile: contentBenefitsList.txt -->
+<mj-wrapper padding="0px" css-class="content-section">
+  <mj-section padding="60px 20px" background-color="#ffffff">
+    <mj-column>
+      <mj-text align="center" font-size="32px" font-weight="700" padding-bottom="40px">{{benefits_title}}</mj-text>
+    </mj-column>
+  </mj-section>
+  <mj-section padding="0px 20px 60px" background-color="#ffffff">
+    <mj-column width="50%" padding="0px 15px">
+      <mj-text font-size="18px" font-weight="600" padding="10px 0px" color="#2c3e50">✓ {{benefit1}}</mj-text>
+      <mj-text font-size="18px" font-weight="600" padding="10px 0px" color="#2c3e50">✓ {{benefit2}}</mj-text>
+      <mj-text font-size="18px" font-weight="600" padding="10px 0px" color="#2c3e50">✓ {{benefit3}}</mj-text>
+    </mj-column>
+    <mj-column width="50%" padding="0px 15px">
+      <mj-text font-size="18px" font-weight="600" padding="10px 0px" color="#2c3e50">✓ {{benefit4}}</mj-text>
+      <mj-text font-size="18px" font-weight="600" padding="10px 0px" color="#2c3e50">✓ {{benefit5}}</mj-text>
+      <mj-text font-size="18px" font-weight="600" padding="10px 0px" color="#2c3e50">✓ {{benefit6}}</mj-text>
+    </mj-column>
+  </mj-section>
+</mj-wrapper>

@@ -1,0 +1,13 @@
+<mj-section padding="40px 20px">
+  <mj-group>
+    <!-- Left: Text -->
+    <mj-column width="60%">
+      <mj-text font-size="16px" padding-bottom="6px">{{title}}</mj-text>
+      <mj-text line-height="1.6">{{paragraph}}</mj-text>
+    </mj-column>
+    <!-- Right: Stat Visual -->
+    <mj-column width="40%">
+      <mj-image mj-class="img" src="{{ image_url }}" alt="{{ image_alt }}" padding="10px"></mj-image>
+    </mj-column>
+  </mj-group>
+</mj-section>

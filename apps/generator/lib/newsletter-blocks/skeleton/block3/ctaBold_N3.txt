@@ -1,0 +1,8 @@
+<mj-section padding="40px 20px">
+  <mj-column>
+    <mj-text align="center" font-size="18px" padding-bottom="10px">{{cta_prompt_text}}</mj-text>
+    <mj-button mj-class="btn" href="{{ cta_url }}">
+      {{cta_button_label}}
+    </mj-button>
+  </mj-column>
+</mj-section>

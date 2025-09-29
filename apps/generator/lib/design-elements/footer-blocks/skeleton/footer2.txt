@@ -1,0 +1,29 @@
+<!-- Footer Block 2: Skeleton Minimal -->
+<mj-section background-color="[[body_color]]" padding="35px 20px" text-align="center">
+  <mj-column>
+    <mj-image align="center" padding-bottom="15px" width="140px" src="[[logo_url]]" alt="[[store_name]]" href="[[store_url]]"></mj-image>
+    <mj-text color="[[text_color]]" padding-top="15px" line-height="1.5" css-class="mj-text-break">
+      <p style="line-height: 1.5; text-align: center;">
+        <span style="font-size:16px;">[[store_name]]</span>
+      </p>
+      <p style="line-height: 1.5; text-align: center;">
+        <span style="font-size:14px;">[[store_address]]</span>
+      </p>
+    </mj-text>
+    <mj-social icon-size="35px" padding-top="20px" padding-left="15px" padding-right="15px" padding-bottom="15px" border-radius="8px" mode="horizontal">
+      <!-- Social elements will be injected here dynamically -->
+    </mj-social>
+  </mj-column>
+</mj-section>
+<mj-section background-color="[[body_color]]" padding-bottom="0" padding-top="15px" text-align="center">
+  <mj-column>
+    <mj-text color="[[text_color]]" padding-bottom="2px" padding-left="0px" padding-right="0px" line-height="1.4" css-class="mj-text-break">
+      <p style="line-height: 1.4; text-align: center;">
+        <span style="font-size:12px;">To unsubscribe from all future communications, click&nbsp;[[unsubscribe]]</span>
+      </p>
+      <p style="line-height: 1.4; text-align: center;">
+        <span style="font-size:12px;">To ensure delivery to your inbox (not bulk or junk folders), please add us to your address book.</span>
+      </p>
+    </mj-text>
+  </mj-column>
+</mj-section>

@@ -1,0 +1,193 @@
+name: Deploy to AWS App Runner
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+env:
+  AWS_REGION: us-east-1
+  ECR_REPOSITORY: sbemailgenerator
+  APP_RUNNER_SERVICE: sb-email-generator
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    
+    # Only deploy on push to main, not on PRs
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build, tag, and push image to Amazon ECR
+        id: build-image
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          IMAGE_TAG: ${{ github.sha }}
+        run: |
+          # Build a docker container and push it to ECR
+          docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
+          docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:latest .
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:latest
+          echo "image=$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG" >> $GITHUB_OUTPUT
+
+      - name: Verify ECR image exists
+        run: |
+          echo "Verifying Docker image exists in ECR..."
+          IMAGE_URI="${{ steps.build-image.outputs.image }}"
+          
+          # Check if the image exists in ECR
+          if ! aws ecr describe-images --repository-name $ECR_REPOSITORY --image-ids imageTag=${{ github.sha }} 2>/dev/null; then
+            echo "❌ Image with tag ${{ github.sha }} not found in ECR repository $ECR_REPOSITORY"
+            exit 1
+          fi
+          
+          if ! aws ecr describe-images --repository-name $ECR_REPOSITORY --image-ids imageTag=latest 2>/dev/null; then
+            echo "❌ Image with tag 'latest' not found in ECR repository $ECR_REPOSITORY"
+            exit 1
+          fi
+          
+          echo "✅ Docker images verified in ECR"
+          
+          # Verify IAM role exists and has correct permissions
+          echo "Verifying IAM role configuration..."
+          ROLE_ARN="${{ secrets.APP_RUNNER_ACCESS_ROLE_ARN }}"
+          
+          if ! aws iam get-role --role-name $(echo $ROLE_ARN | cut -d'/' -f2) 2>/dev/null; then
+            echo "❌ IAM role not found: $ROLE_ARN"
+            exit 1
+          fi
+          
+          echo "✅ IAM role verified"
+          
+          # Check if App Runner service name is available
+          echo "Checking if service name is available..."
+          if aws apprunner list-services --query "ServiceSummaryList[?ServiceName=='${{ env.APP_RUNNER_SERVICE }}'].ServiceArn" --output text | grep -q .; then
+            echo "⚠️ Service name '${{ env.APP_RUNNER_SERVICE }}' already exists"
+          else
+            echo "✅ Service name '${{ env.APP_RUNNER_SERVICE }}' is available"
+          fi
+
+      - name: Deploy to App Runner
+        run: |
+          # Use the existing service ARN
+          SERVICE_ARN="arn:aws:apprunner:us-east-1:328280503559:service/sb-email-generator/49409e4dcefb4f80b35b6f86f8d01006"
+          
+          echo "Updating existing App Runner service: $SERVICE_ARN"
+          
+          # Update the service with the new image and environment variables
+          aws apprunner update-service \
+            --service-arn "$SERVICE_ARN" \
+            --source-configuration '{
+              "ImageRepository": {
+                "ImageIdentifier": "${{ steps.build-image.outputs.image }}",
+                "ImageConfiguration": {
+                  "Port": "3000",
+                  "RuntimeEnvironmentVariables": {
+                    "NODE_ENV": "production",
+                    "OPENAI_API_KEY": "${{ secrets.OPENAI_API_KEY }}",
+                    "S3_REGION": "us-east-1",
+                    "S3_ACCESS_KEY_ID": "${{ secrets.AWS_ACCESS_KEY_ID }}",
+                    "S3_SECRET_ACCESS_KEY": "${{ secrets.AWS_SECRET_ACCESS_KEY }}",
+                    "S3_BUCKET_NAME": "sb-hero-images",
+                    "SB_BRANDDEV_API_KEY": "${{ secrets.BRANDDEV_API_KEY }}"
+                  }
+                },
+                "ImageRepositoryType": "ECR"
+              },
+              "AuthenticationConfiguration": {
+                "AccessRoleArn": "${{ secrets.APP_RUNNER_ACCESS_ROLE_ARN }}"
+              }
+            }' \
+            --instance-configuration '{
+              "Cpu": "2048",
+              "Memory": "4096"
+            }' \
+
+          
+          # Save the service ARN for future deployments
+          echo "$SERVICE_ARN" > service-output.json
+
+      - name: Wait for deployment to complete
+        run: |
+          SERVICE_ARN="arn:aws:apprunner:us-east-1:328280503559:service/sb-email-generator/49409e4dcefb4f80b35b6f86f8d01006"
+          
+          echo "Waiting for deployment to complete..."
+          
+          # Poll the service status until it's running
+          while true; do
+            STATUS=$(aws apprunner describe-service --service-arn $SERVICE_ARN --query 'Service.Status' --output text)
+            echo "Service status: $STATUS"
+            
+            if [ "$STATUS" = "RUNNING" ]; then
+              echo "Service is now running!"
+              break
+            elif [ "$STATUS" = "FAILED" ]; then
+              echo "❌ Service deployment failed!"
+              exit 1
+            else
+              echo "Waiting for service to be ready..."
+              sleep 30
+            fi
+          done
+          
+          # Get service URL
+          SERVICE_URL=$(aws apprunner describe-service --service-arn $SERVICE_ARN --query 'Service.ServiceUrl' --output text)
+          echo "Service URL: $SERVICE_URL"
+
+      - name: Test deployment
+        run: |
+          SERVICE_ARN="arn:aws:apprunner:us-east-1:328280503559:service/sb-email-generator/49409e4dcefb4f80b35b6f86f8d01006"
+          
+          SERVICE_URL=$(aws apprunner describe-service --service-arn $SERVICE_ARN --query 'Service.ServiceUrl' --output text)
+          echo "Testing service at: $SERVICE_URL"
+          
+          # Wait a bit for the service to be fully ready
+          sleep 30
+          
+          # Test the health endpoint
+          curl -f "$SERVICE_URL/" || exit 1
+          echo "✅ Service is responding!"
+
+  test-deployment:
+    runs-on: ubuntu-latest
+    needs: deploy
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    
+    steps:
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Get service URL and test
+        run: |
+          SERVICE_ARN="arn:aws:apprunner:us-east-1:328280503559:service/sb-email-generator/49409e4dcefb4f80b35b6f86f8d01006"
+          SERVICE_URL=$(aws apprunner describe-service --service-arn $SERVICE_ARN --query 'Service.ServiceUrl' --output text)
+          echo "Service URL: $SERVICE_URL"
+          
+          # Test the API endpoint
+          echo "Testing API endpoint..."
+          curl -f "$SERVICE_URL/api/generate-emails" -X POST -H "Content-Type: application/json" -d '{"test": true}' || echo "API endpoint test completed"
+          
+          echo "✅ App Runner deployment successful!"
+          echo "🌐 Service URL: $SERVICE_URL" 

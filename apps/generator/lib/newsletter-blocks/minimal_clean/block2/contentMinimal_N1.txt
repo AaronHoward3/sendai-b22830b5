@@ -1,0 +1,30 @@
+<mj-section background-color="#fafafa" padding="30px 20px">
+  <mj-column>
+
+    <mj-text font-size="16px" font-weight="bold" padding-bottom="6px">
+      {{section_title_1}}
+    </mj-text>
+    <mj-text color="#555555" padding-bottom="18px" line-height="1.6">
+      {{section_body_1}}
+    </mj-text>
+
+    <mj-divider border-width="1px" border-color="#e6e6e6" padding="10px 0"></mj-divider>
+
+    <mj-text font-size="16px" font-weight="bold" padding-top="10px" padding-bottom="6px">
+      {{section_title_2}}
+    </mj-text>
+    <mj-text color="#555555" padding-bottom="18px" line-height="1.6">
+      {{section_body_2}}
+    </mj-text>
+
+    <mj-divider border-width="1px" border-color="#e6e6e6" padding="10px 0"></mj-divider>
+
+    <mj-text font-size="16px" font-weight="bold" padding-top="10px" padding-bottom="6px">
+      {{section_title_3}}
+    </mj-text>
+    <mj-text color="#555555" padding-bottom="0px" line-height="1.6">
+      {{section_body_3}}
+    </mj-text>
+
+  </mj-column>
+</mj-section>

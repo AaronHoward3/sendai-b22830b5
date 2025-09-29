@@ -1,0 +1,21 @@
+<mj-section background-color="#ffffff" padding="20px">
+  <mj-group>
+    <mj-column width="50%" class="split-col">
+      <mj-text font-size="16px" font-weight="bold" padding-bottom="6px">
+        {{section_title_1}}
+      </mj-text>
+      <mj-text color="#555555" padding-bottom="20px" line-height="1.6">
+        {{section_body_1}}
+      </mj-text>
+    </mj-column>
+
+    <mj-column width="50%" class="split-col">
+      <mj-text font-size="16px" font-weight="bold" padding-bottom="6px">
+        {{section_title_2}}
+      </mj-text>
+      <mj-text color="#555555" padding-bottom="20px" line-height="1.6">
+        {{section_body_2}}
+      </mj-text>
+    </mj-column>
+  </mj-group>
+</mj-section>

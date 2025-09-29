@@ -1,0 +1,1294 @@
+{
+  "springbot.com": {
+    "userId": null,
+    "brand": {
+      "storeId": "springbotcom",
+      "brandData": {
+        "store_name": "Springbot",
+        "customHeroImage": true,
+        "store_url": "https://springbot.com",
+        "logo_url": "https://media.brand.dev/385bfe23-4214-400e-9c5f-3198f70cbd5a.jpg",
+        "banner_url": "https://media.brand.dev/9db58570-ffb1-4ff3-8932-0d9ac9538ffc.jpg",
+        "backdrops": [
+          {
+            "url": "https://media.brand.dev/9db58570-ffb1-4ff3-8932-0d9ac9538ffc.jpg",
+            "colors": [
+              "Majorelle Gardens",
+              "Sea Elephant",
+              "Porcelain"
+            ],
+            "desc": "brand backdrop"
+          },
+          {
+            "url": "https://media.brand.dev/621d836f-46f8-48d8-a732-6be9096ddefd.jpg",
+            "colors": [
+              "Pinehurst",
+              "Bannister Brown",
+              "City Brume"
+            ],
+            "desc": "brand backdrop"
+          }
+        ],
+        "fonts": {
+          "title": "dashicons",
+          "body": "ETmodules!important",
+          "button": "ETmodules!important"
+        },
+        "stock_info": null,
+        "address": null,
+        "social_links": {
+          "x": "https://x.com/springbot",
+          "facebook": "https://facebook.com/sprbot",
+          "linkedin": "https://linkedin.com/company/springbot"
+        },
+        "button_border_style": "Rounded",
+        "header_color": "#686867",
+        "body_color": "#ffffff",
+        "link_color": "#3d3d3d",
+        "text_color": "#141414",
+        "primary_color": "#686867",
+        "button_color": "#686867",
+        "button_text_color": "#ffffff",
+        "button_border_color": "#3d3d3d",
+        "description": "Springbot is a comprehensive platform that empowers eCommerce businesses to efficiently manage their email marketing and paid advertising efforts in one convenient location. With a focus on affordability, effectiveness, and user-friendliness, Springbot caters to the needs of small businesses looking to improve their online presence. By offering a seamless experience, businesses can enhance their email marketing strategies and optimize paid advertising campaigns with ease. Join Springbot today for a free trial and take your eCommerce business to the next level.",
+        "slogan": "Grow with ease through integrated marketing solutions with Springbot",
+        "products": []
+      },
+      "emailType": "",
+      "userContext": "",
+      "tone": ""
+    },
+    "updatedAt": "2025-07-04T18:42:38.489Z"
+  },
+  "nike.com": {
+    "userId": null,
+    "brand": {
+      "storeId": "nikecom",
+      "brandData": {
+        "store_name": "Nike",
+        "customHeroImage": true,
+        "store_url": "https://nike.com",
+        "logo_url": "https://media.brand.dev/168e1f77-5f01-4ad8-a3ef-baefa5918212.png",
+        "banner_url": "https://media.brand.dev/4f984ec7-bf7d-47c4-95a3-634b32a6b60e.jpg",
+        "backdrops": [
+          {
+            "url": "https://media.brand.dev/4f984ec7-bf7d-47c4-95a3-634b32a6b60e.jpg",
+            "colors": [
+              "Dover Grey",
+              "Sooty",
+              "Leadbelcher"
+            ],
+            "desc": "brand backdrop"
+          }
+        ],
+        "fonts": {
+          "title": "VideoJS",
+          "body": "Neue Frutiger Arabic",
+          "button": "Neue Frutiger Arabic"
+        },
+        "stock_info": null,
+        "address": null,
+        "social_links": {
+          "x": "https://x.com/nike",
+          "facebook": "https://facebook.com/nike",
+          "linkedin": "https://linkedin.com/company/nike",
+          "crunchbase": "https://crunchbase.com/organization/nike"
+        },
+        "button_border_style": "Rounded",
+        "header_color": "#141414",
+        "body_color": "#ffffff",
+        "link_color": "#7c7c7c",
+        "text_color": "#141414",
+        "primary_color": "#141414",
+        "button_color": "#141414",
+        "button_text_color": "#ffffff",
+        "button_border_color": "#7c7c7c",
+        "description": "NIKE, Inc. is a global leader in athletic footwear, apparel, and equipment, dedicated to inspiring athletes of all ages with innovative products and services. Established in 1964 and headquartered in Beaverton, Oregon, the company originally operated as Blue Ribbon Sports before rebranding as NIKE, Inc. in 1971. NIKE's extensive portfolio includes popular brands such as Jumpman, Converse, and Chuck Taylor, offering a wide range of athletic and casual footwear, as well as performance equipment and accessories for various sports. The company also markets apparel featuring licensed logos from college and professional sports teams. NIKE products are sold through a variety of channels, including retail stores, digital platforms, and independent distributors. Committed to sustainability and community engagement, NIKE aims to deliver exceptional experiences to its customers with services like free delivery and returns through its membership program, emphasizing that winning isn't just for everyone—it's for those who are willing to do whatever it takes.",
+        "slogan": "Winning is for those who do whatever it takes.",
+        "products": []
+      },
+      "emailType": "",
+      "userContext": "",
+      "tone": ""
+    },
+    "updatedAt": "2025-07-06T16:12:03.718Z"
+  },
+  "puma.com": {
+    "userId": null,
+    "brand": {
+      "storeId": "pumacom",
+      "brandData": {
+        "store_name": "PUMA",
+        "customHeroImage": true,
+        "store_url": "https://puma.com",
+        "logo_url": "https://media.brand.dev/77ce5b6d-496c-4f23-9646-62b42df91ccd.png",
+        "banner_url": "https://media.brand.dev/f6af5040-517b-4d59-be0c-6083d94429c0.jpg",
+        "backdrops": [
+          {
+            "url": "https://media.brand.dev/f6af5040-517b-4d59-be0c-6083d94429c0.jpg",
+            "colors": [
+              "Gallant Green",
+              "Vulcanized",
+              "Hush"
+            ],
+            "desc": "brand backdrop"
+          }
+        ],
+        "fonts": {
+          "title": "Helvetica",
+          "body": "Helvetica",
+          "button": "Helvetica"
+        },
+        "stock_info": null,
+        "address": null,
+        "social_links": {
+          "youtube": "https://youtube.com/puma",
+          "x": "https://x.com/puma",
+          "instagram": "https://instagram.com/puma",
+          "facebook": "https://facebook.com/puma"
+        },
+        "button_border_style": "Rounded",
+        "header_color": "#ef6228",
+        "body_color": "#ffffff",
+        "link_color": "#845414",
+        "text_color": "#141414",
+        "primary_color": "#ef6228",
+        "button_color": "#ef6228",
+        "button_text_color": "#ffffff",
+        "button_border_color": "#845414",
+        "description": "Established in 1948, this company has built a legacy centered around speed and innovation. With a commitment to excellence, they have consistently delivered high-performance products that push the boundaries of technology. Their mantra, 'Forever. Faster. Since 1948,' reflects their dedication to providing customers with the latest advancements in efficiency and effectiveness. The company's long-standing history positions it as a trusted leader in its industry, continuously evolving to meet the needs of modern consumers while staying true to its core values of reliability and performance.",
+        "slogan": "Forever. Faster. Since 1948.",
+        "products": []
+      },
+      "emailType": "",
+      "userContext": "",
+      "tone": ""
+    },
+    "updatedAt": "2025-07-06T18:48:39.065Z"
+  },
+  "gfuel.com": {
+    "userId": null,
+    "brand": {
+      "storeId": "gfuelcom",
+      "brandData": {
+        "store_name": "G FUEL®",
+        "customHeroImage": true,
+        "store_url": "https://gfuel.com",
+        "logo_url": "https://media.brand.dev/38fd6f74-2e2d-4041-9207-dee02ed6e95b.png",
+        "banner_url": "https://media.brand.dev/47e1e144-609c-4826-96d7-34a36e06879e.png",
+        "backdrops": [
+          {
+            "url": "https://media.brand.dev/47e1e144-609c-4826-96d7-34a36e06879e.png",
+            "colors": [
+              "Megaman",
+              "Eine kleine Nachtmusik",
+              "Foggy Love"
+            ],
+            "desc": "brand backdrop"
+          },
+          {
+            "url": "https://media.brand.dev/5ca87058-fb56-490e-b18d-013a42613d03.png",
+            "colors": [
+              "Megaman",
+              "Galactic Purple",
+              "Light Vision"
+            ],
+            "desc": "brand backdrop"
+          },
+          {
+            "url": "https://media.brand.dev/8c8b2558-f2d7-4f5d-a5d0-d7f39b093e1a.jpg",
+            "colors": [
+              "Hot Hibiscus",
+              "Mulled Spice",
+              "Melanzane"
+            ],
+            "desc": "brand backdrop"
+          },
+          {
+            "url": "https://media.brand.dev/fa8e59a5-2143-4e1c-9818-4a3c37b0ca09.jpg",
+            "colors": [
+              "Timeless Beauty",
+              "City Sunrise",
+              "Melanzane"
+            ],
+            "desc": "brand backdrop"
+          }
+        ],
+        "fonts": {
+          "title": "Blunt Wide",
+          "body": "Acumin VF",
+          "button": "Acumin VF"
+        },
+        "stock_info": null,
+        "address": null,
+        "social_links": {
+          "facebook": "https://facebook.com/gfuelenergy",
+          "instagram": "https://instagram.com/gfuelenergy",
+          "linkedin": "https://linkedin.com/company/gamma-labs",
+          "x": "https://x.com/gfuelenergy",
+          "youtube": "https://youtube.com/c/gfuelenergy/featured"
+        },
+        "button_border_style": "Rounded",
+        "header_color": "#3cbaf2",
+        "body_color": "#ffffff",
+        "link_color": "#4622a4",
+        "text_color": "#141414",
+        "primary_color": "#3cbaf2",
+        "button_color": "#3cbaf2",
+        "button_text_color": "#ffffff",
+        "button_border_color": "#4622a4",
+        "description": "G FUEL is a company that produces a range of supplements including energy drinks, hydration, and protein blends. Their products are designed to fuel active lifestyles, particularly among gamers and creators, with a focus on zero sugar and diverse flavors. As the Official Energy Drink of Esports, G FUEL aims to power high-performance missions and has gained a following among enthusiasts and collectors.",
+        "slogan": "Fuel Your World",
+        "products": []
+      },
+      "emailType": "",
+      "userContext": "",
+      "tone": ""
+    },
+    "updatedAt": "2025-07-06T20:39:43.974Z"
+  },
+  "lacucina.com": {
+    "userId": null,
+    "brand": {
+      "storeId": "lacucinacom",
+      "brandData": {
+        "store_name": "Desktop search software - Kuriuz File Finder -",
+        "customHeroImage": true,
+        "store_url": "https://lacucina.com",
+        "logo_url": "https://media.brand.dev/1e7dc4e0-0d62-4bd8-9a60-afe225a20ebe.png",
+        "banner_url": "",
+        "backdrops": [],
+        "fonts": {
+          "title": "Helvetica",
+          "body": "Helvetica",
+          "button": "Helvetica"
+        },
+        "stock_info": null,
+        "address": null,
+        "social_links": {
+          "x": "https://x.com/lci_usa",
+          "linkedin": "https://linkedin.com/company/lacucina-space"
+        },
+        "button_border_style": "Rounded",
+        "header_color": "#545455",
+        "body_color": "#ffffff",
+        "link_color": "#1a1c1f",
+        "text_color": "#141414",
+        "primary_color": "#545455",
+        "button_color": "#545455",
+        "button_text_color": "#ffffff",
+        "button_border_color": "#1a1c1f",
+        "description": "Kuriuz is a software company that develops tools for efficient desktop management. Their flagship product, Kuriuz File Finder, is a search utility that enables users to quickly locate files on their computer. This free tool simplifies the process of finding files, making it easier for users to access the information they need. With Kuriuz File Finder, users can search their desktop with ease, streamlining their workflow and increasing productivity.",
+        "slogan": "Find files easily and quickly with Kuriuz File Finder",
+        "products": []
+      },
+      "emailType": "",
+      "userContext": "",
+      "tone": ""
+    },
+    "updatedAt": "2025-07-06T21:44:03.795Z"
+  },
+  "lacucinacommissary.com": {
+    "userId": null,
+    "brand": {
+      "storeId": "lacucinacommissarycom",
+      "brandData": {
+        "store_name": "LaCucina Commissary – Shared-use commercial kitchen in Lake Charles, LA",
+        "customHeroImage": true,
+        "store_url": "https://lacucinacommissary.com",
+        "logo_url": "https://media.brand.dev/dca69806-9e85-4ea2-87b4-e45aaf6ce1a0.png",
+        "banner_url": "",
+        "backdrops": [],
+        "fonts": {
+          "title": "Poppins",
+          "body": "BlinkMacSystemFont",
+          "button": "BlinkMacSystemFont"
+        },
+        "stock_info": null,
+        "address": null,
+        "social_links": {
+          "facebook": "https://facebook.com/lacucinalite",
+          "linkedin": "https://linkedin.com/in/leesa-howard-48b8641a0"
+        },
+        "button_border_style": "Rounded",
+        "header_color": "#040404",
+        "body_color": "#ffffff",
+        "link_color": "#26a445",
+        "text_color": "#141414",
+        "primary_color": "#040404",
+        "button_color": "#040404",
+        "button_text_color": "#ffffff",
+        "button_border_color": "#26a445",
+        "description": "",
+        "slogan": "",
+        "products": []
+      },
+      "emailType": "",
+      "userContext": "",
+      "tone": ""
+    },
+    "updatedAt": "2025-07-06T21:44:20.828Z"
+  },
+  "heydude.com": {
+    "userId": null,
+    "brand": {
+      "storeId": "heydudecom",
+      "brandData": {
+        "store_name": "Hey Dude Shoes",
+        "customHeroImage": true,
+        "store_url": "https://heydude.com",
+        "logo_url": "https://media.brand.dev/a8207dd2-8519-40e7-b7c2-2531d8b2a8e6.png",
+        "banner_url": "https://media.brand.dev/3f11138b-0ef3-4c59-b324-8c1173e4f95d.jpg",
+        "backdrops": [
+          {
+            "url": "https://media.brand.dev/3f11138b-0ef3-4c59-b324-8c1173e4f95d.jpg",
+            "colors": [
+              "Charter",
+              "Pale Sage",
+              "Mandu Dumpling"
+            ],
+            "desc": "brand backdrop"
+          },
+          {
+            "url": "https://media.brand.dev/bcf9466e-ea37-429d-8de8-bc1954f14b46.jpg",
+            "colors": [
+              "Sedona Pink",
+              "Silent Sands",
+              "Acajou"
+            ],
+            "desc": "brand backdrop"
+          }
+        ],
+        "fonts": {
+          "title": "Helvetica",
+          "body": "Helvetica",
+          "button": "Helvetica"
+        },
+        "stock_info": null,
+        "address": null,
+        "social_links": {
+          "instagram": "https://instagram.com/heydude",
+          "facebook": "https://facebook.com/heydudeshoesusa",
+          "x": "https://x.com/heydudeshoesusa",
+          "linkedin": "https://linkedin.com/company/heydude",
+          "crunchbase": "https://crunchbase.com/organization/hey-dude-shoes",
+          "youtube": "https://youtube.com/channel/ucbldddwfm57cczgq5pxphbg"
+        },
+        "button_border_style": "Rounded",
+        "header_color": "#a5a5a5",
+        "body_color": "#ffffff",
+        "link_color": "#412A2A",
+        "text_color": "#141414",
+        "primary_color": "#808080",
+        "button_color": "#a5a5a5",
+        "button_text_color": "#ffffff",
+        "button_border_color": "#323232",
+        "description": "Hey Dude Shoes is a dynamic fashion retail brand specializing in a diverse range of lightweight, comfortable, and stylish footwear for men, women, and children. With a focus on creating 'go-to' shoes that elevate your everyday experience, Hey Dude Shoes combines quality and affordability to deliver footwear that feels supportive and uplifting. Their innovative designs ensure that every pair embodies comfort, with materials so airy and soft, they are described as the lightest shoes on Earth. The brand aims to provide essential footwear that not only enhances your personal style but also promotes a sense of ease and happiness. Whether you’re looking for something casual or chic, Hey Dude Shoes invites you to discover the perfect fit for your lifestyle, making every step feel just right.",
+        "slogan": "Lightweight comfort, style, and support for every step of life.",
+        "products": []
+      },
+      "emailType": "",
+      "userContext": "",
+      "tone": "",
+      "primary_color": "#808080",
+      "link_color": "#412A2A"
+    },
+    "updatedAt": "2025-08-15T21:40:33.874Z"
+  },
+  "www.adoredvintage.com": {
+    "userId": null,
+    "brand": {
+      "storeId": "adoredvintagecom",
+      "brandData": {
+        "store_name": "Adored Vintage",
+        "customHeroImage": true,
+        "store_url": "https://adoredvintage.com",
+        "logo_url": "https://media.brand.dev/c99ef90a-e8eb-4e87-a9bb-1220cd484338.jpg",
+        "banner_url": "https://media.brand.dev/c056396f-6bdc-49d0-b0cb-aed8e5e7ca04.png",
+        "backdrops": [
+          {
+            "url": "https://media.brand.dev/c056396f-6bdc-49d0-b0cb-aed8e5e7ca04.png",
+            "colors": [
+              "Dotted Dove",
+              "Wood Bark"
+            ],
+            "desc": "brand backdrop"
+          },
+          {
+            "url": "https://media.brand.dev/dc6e92d8-b8ff-423a-96ef-8cb2c0ff90c3.png",
+            "colors": [
+              "Clove Yellow Brown",
+              "Grey By Me",
+              "Down-to-Earth"
+            ],
+            "desc": "brand backdrop"
+          },
+          {
+            "url": "https://media.brand.dev/d412ce2f-3366-4e9a-b49b-ba814881642a.png",
+            "colors": [
+              "Baby Blossom",
+              "Soft Fur",
+              "Carbon Fiber"
+            ],
+            "desc": "brand backdrop"
+          },
+          {
+            "url": "https://media.brand.dev/891c848b-b08c-4f88-9798-24243aaf8539.jpg",
+            "colors": [
+              "Shea",
+              "Soft Fur",
+              "Carbon Fiber"
+            ],
+            "desc": "brand backdrop"
+          }
+        ],
+        "fonts": {
+          "title": "Helvetica",
+          "body": "Helvetica",
+          "button": "Helvetica"
+        },
+        "stock_info": null,
+        "address": null,
+        "social_links": {
+          "instagram": "https://instagram.com/adoredvintage",
+          "facebook": "https://facebook.com/adoredvintage",
+          "linkedin": "https://linkedin.com/company/adoredvintagellc",
+          "x": "https://x.com/maripet9",
+          "youtube": "https://youtube.com/channel/ucvjfusqmvr-wcjel4m6-qrg"
+        },
+        "button_border_style": "Rounded",
+        "header_color": "#f6efe0",
+        "body_color": "#ffffff",
+        "link_color": "#8c8474",
+        "text_color": "#141414",
+        "primary_color": "#f6efe0",
+        "button_color": "#f6efe0",
+        "button_text_color": "#ffffff",
+        "button_border_color": "#8c8474",
+        "description": "Adored Vintage is a Portland-based e-commerce company offering a curated selection of timeless, feminine apparel and home goods. With a blend of vintage and modern styles, they cater to modern romantics. They also operate a clothing label, Atèlëtte, launched in 2022, focusing on effortlessly feminine clothing for women who appreciate the simple joys in life.",
+        "slogan": "Timeless, Feminine Apparel for Modern Romantics",
+        "products": []
+      },
+      "emailType": "",
+      "userContext": "",
+      "tone": ""
+    },
+    "updatedAt": "2025-08-06T19:34:31.616Z"
+  },
+  "bruvi.com": {
+    "userId": null,
+    "brand": {
+      "storeId": "bruvicom",
+      "brandData": {
+        "store_name": "Bruvi",
+        "customHeroImage": true,
+        "store_url": "https://bruvi.com",
+        "logo_url": "https://media.brand.dev/8ff36bdd-f666-489b-8328-5017887145db.jpg",
+        "banner_url": "https://media.brand.dev/6599938e-56b5-4a84-bbb2-417bd2fe2387.png",
+        "backdrops": [
+          {
+            "url": "https://media.brand.dev/6599938e-56b5-4a84-bbb2-417bd2fe2387.png",
+            "colors": [
+              "Frisky Blue",
+              "China Seas",
+              "Sidewalk Chalk Blue"
+            ],
+            "desc": "brand backdrop"
+          },
+          {
+            "url": "https://media.brand.dev/31785131-d374-4a7b-b9bd-9db2bf1653c5.png",
+            "colors": [
+              "Midnight Brown",
+              "Sea Deep",
+              "Santo"
+            ],
+            "desc": "brand backdrop"
+          }
+        ],
+        "fonts": {
+          "title": "Helvetica",
+          "body": "Helvetica",
+          "button": "Helvetica"
+        },
+        "stock_info": null,
+        "address": null,
+        "social_links": {
+          "x": "https://x.com/colombianllc",
+          "instagram": "https://instagram.com/ilovebruvi",
+          "linkedin": "https://linkedin.com/company/bruvibeverage",
+          "youtube": "https://youtube.com/channel/ucwyr-0bglnhpqk4ncntlb_g/featured"
+        },
+        "button_border_style": "Rounded",
+        "header_color": "#064d7c",
+        "body_color": "#ffffff",
+        "link_color": "#7aa4b4",
+        "text_color": "#141414",
+        "primary_color": "#064d7c",
+        "button_color": "#064d7c",
+        "button_text_color": "#ffffff",
+        "button_border_color": "#7aa4b4",
+        "description": "Bruvi is a Los Angeles-based coffee brand that has developed a revolutionary single-serve coffee brewer. It delivers high-quality, tastier brewed coffee with its innovative brewing technology and premium coffee pods. The company aims to provide a convenient and guilt-free coffee experience with its Guilt Free Toss capsules, offering a range of coffee options including coffee, espresso, and cold brew.",
+        "slogan": "Exceptional coffee, made easy.",
+        "products": []
+      },
+      "emailType": "",
+      "userContext": "",
+      "tone": ""
+    },
+    "updatedAt": "2025-08-06T20:09:21.056Z"
+  },
+  "terrebleu.ca": {
+    "userId": null,
+    "brand": {
+      "storeId": "terrebleuca",
+      "brandData": {
+        "store_name": "Terre Bleu",
+        "customHeroImage": true,
+        "store_url": "https://terrebleu.ca",
+        "logo_url": "https://media.brand.dev/cb09f6d0-586b-49c0-941b-453305227b27.jpg",
+        "banner_url": "https://media.brand.dev/c65fcc18-e8d1-43f6-ad64-47ebf9458ee5.png",
+        "backdrops": [
+          {
+            "url": "https://media.brand.dev/c65fcc18-e8d1-43f6-ad64-47ebf9458ee5.png",
+            "colors": [
+              "Fresh Eggplant",
+              "Bloomsberry"
+            ],
+            "desc": "brand backdrop"
+          }
+        ],
+        "fonts": {
+          "title": "Helvetica",
+          "body": "Helvetica",
+          "button": "Helvetica"
+        },
+        "stock_info": null,
+        "address": null,
+        "social_links": {
+          "instagram": "https://instagram.com/terrebleu",
+          "tiktok": "https://tiktok.com/@terre.bleu",
+          "facebook": "https://facebook.com/terrebleulavender",
+          "linkedin": "https://linkedin.com/company/3262947",
+          "x": "https://x.com/terrebleulav",
+          "youtube": "https://youtube.com/channel/ucswrkniso8qxjxkng5jggaq"
+        },
+        "button_border_style": "Rounded",
+        "header_color": "#24447c",
+        "body_color": "#ffffff",
+        "link_color": "#8b9cb7",
+        "text_color": "#141414",
+        "primary_color": "#24447c",
+        "button_color": "#24447c",
+        "button_text_color": "#ffffff",
+        "button_border_color": "#8b9cb7",
+        "description": "Fennario Meadows is a Canadian lavender boutique offering a range of natural, locally produced wellness products. Based in Ontario, they cultivate lavender on their farm to create organic products including pure essential oil, culinary, and skin care items. With a focus on quality and sustainability, they opened a boutique and experience centre in July 2022, showcasing their lavender-based products and providing a unique experience for customers.",
+        "slogan": "Stimulating the senses, inspiring the mind, body & soul",
+        "products": []
+      },
+      "emailType": "",
+      "userContext": "",
+      "tone": ""
+    },
+    "updatedAt": "2025-08-08T20:20:48.128Z"
+  },
+  "www.troubadourgoods.com": {
+    "userId": null,
+    "brand": {
+      "storeId": "troubadourgoodscom",
+      "brandData": {
+        "store_name": "Troubadour Goods",
+        "customHeroImage": true,
+        "store_url": "https://troubadourgoods.com",
+        "logo_url": "https://media.brand.dev/2099a21d-8bc7-4cee-b8dd-db9ca86ece80.jpg",
+        "banner_url": "https://media.brand.dev/babfbe9a-f5c5-4b23-8bed-2a833862b695.png",
+        "backdrops": [
+          {
+            "url": "https://media.brand.dev/babfbe9a-f5c5-4b23-8bed-2a833862b695.png",
+            "colors": [
+              "Terrace Brown",
+              "Deep Daichi Black",
+              "Twilight Beige"
+            ],
+            "desc": "brand backdrop"
+          },
+          {
+            "url": "https://media.brand.dev/9cc97f9f-5299-4c56-a785-b155a28c3e79.jpg",
+            "colors": [
+              "Tank Grey",
+              "Gentle Rain"
+            ],
+            "desc": "brand backdrop"
+          }
+        ],
+        "fonts": {
+          "title": "Helvetica",
+          "body": "Helvetica",
+          "button": "Helvetica"
+        },
+        "stock_info": null,
+        "address": null,
+        "social_links": {
+          "x": "https://x.com/troubadourgoods",
+          "facebook": "https://facebook.com/troubadourgoods",
+          "instagram": "https://instagram.com/troubadourgoods",
+          "linkedin": "https://linkedin.com/company/2909690"
+        },
+        "button_border_style": "Rounded",
+        "header_color": "#7c7c7c",
+        "body_color": "#ffffff",
+        "link_color": "#040404",
+        "text_color": "#141414",
+        "primary_color": "#7c7c7c",
+        "button_color": "#7c7c7c",
+        "button_text_color": "#ffffff",
+        "button_border_color": "#040404",
+        "description": "Troubadour is a London-based brand that crafts minimalist bags and accessories with a focus on performance and timeless design. Since 2012, they've been perfecting the art of carrying essentials with purpose and innovative design, earning them a Certified B-Corp status. With a commitment to doing things with intention, Troubadour creates modern, functional pieces that make a statement through simplicity.",
+        "slogan": "Doing things. With Purpose.",
+        "products": []
+      },
+      "emailType": "",
+      "userContext": "",
+      "tone": ""
+    },
+    "updatedAt": "2025-08-11T22:08:14.149Z"
+  },
+  "allbirds.com": {
+    "userId": null,
+    "brand": {
+      "storeId": "allbirdscom",
+      "brandData": {
+        "store_name": "Allbirds",
+        "customHeroImage": true,
+        "store_url": "https://allbirds.com",
+        "logo_url": "https://media.brand.dev/593e9b79-c603-4ab1-ad78-44578cf548f4.png",
+        "banner_url": "https://media.brand.dev/28450a4a-4a1a-45f6-944e-c4bca0fe244b.jpg",
+        "backdrops": [
+          {
+            "url": "https://media.brand.dev/28450a4a-4a1a-45f6-944e-c4bca0fe244b.jpg",
+            "colors": [
+              "Beige Intenso",
+              "Taupe Brown",
+              "Citadel Blue"
+            ],
+            "desc": "brand backdrop"
+          },
+          {
+            "url": "https://media.brand.dev/ed36d0f1-5dc3-4d86-a514-64a15105d81c.jpg",
+            "colors": [
+              "Coffee Clay",
+              "Sambuca"
+            ],
+            "desc": "brand backdrop"
+          }
+        ],
+        "fonts": {
+          "title": "Helvetica",
+          "body": "Helvetica",
+          "button": "Helvetica"
+        },
+        "stock_info": null,
+        "address": null,
+        "social_links": {
+          "instagram": "https://instagram.com/allbirds",
+          "x": "https://x.com/allbirds",
+          "facebook": "https://facebook.com/weareallbirds",
+          "linkedin": "https://linkedin.com/company/allbirds",
+          "crunchbase": "https://crunchbase.com/organization/allbirds",
+          "youtube": "https://youtube.com/channel/ucngerlcau5qnj0xwe6ueytw"
+        },
+        "button_border_style": "Rounded",
+        "header_color": "#241c24",
+        "body_color": "#ffffff",
+        "link_color": "#8c9494",
+        "text_color": "#141414",
+        "primary_color": "#241c24",
+        "button_color": "#241c24",
+        "button_text_color": "#ffffff",
+        "button_border_color": "#8c9494",
+        "description": "Allbirds is a pioneering apparel and fashion company dedicated to creating sustainable footwear and clothing, particularly known for their eco-friendly wool shoes. Established in 2016 and headquartered in San Francisco, the brand has New Zealand roots and champions a vision where comfort, design, and sustainability coexist harmoniously. Allbirds uses premium natural materials such as merino wool and eucalyptus, reflecting their commitment to thoughtful and eco-conscious practices in the fashion industry. As a certified B Corp, Allbirds strives to leverage business as a force for good, focusing on producing high-quality products designed for everyday adventures, while offering a customer-centric experience with free shipping and returns. Their mission is to redefine style by prioritizing sustainability over flash, creating the world's most comfortable shoes, flats, and apparel.",
+        "slogan": "Better things in a better way with sustainable natural materials.",
+        "products": []
+      },
+      "emailType": "",
+      "userContext": "",
+      "tone": ""
+    },
+    "updatedAt": "2025-08-13T17:56:10.282Z"
+  },
+  "jeffreestarcosmetics.com": {
+    "userId": null,
+    "brand": {
+      "storeId": "jeffreestarcosmeticscom",
+      "brandData": {
+        "store_name": "Jeffree Star Cosmetics",
+        "customHeroImage": true,
+        "store_url": "https://jeffreestarcosmetics.com",
+        "logo_url": "https://media.brand.dev/4f878443-f20f-467e-8f23-d7c30e620d00.jpg",
+        "banner_url": "https://media.brand.dev/c542eaee-4392-41ef-9767-389bb8de4ac5.png",
+        "backdrops": [
+          {
+            "url": "https://media.brand.dev/c542eaee-4392-41ef-9767-389bb8de4ac5.png",
+            "colors": [
+              "Bondi Blue",
+              "Water Flow"
+            ],
+            "desc": "brand backdrop"
+          }
+        ],
+        "fonts": {
+          "title": "Helvetica",
+          "body": "Helvetica",
+          "button": "Helvetica"
+        },
+        "stock_info": null,
+        "address": null,
+        "social_links": {
+          "instagram": "https://instagram.com/jeffreestarcosmetics",
+          "tiktok": "https://tiktok.com/@jeffreestarcosmetics",
+          "facebook": "https://facebook.com/jeffreestar",
+          "linkedin": "https://linkedin.com/company/jeffree-star-cosmetics",
+          "x": "https://x.com/jeffreestar",
+          "youtube": "https://youtube.com/jeffreestar"
+        },
+        "button_border_style": "Rounded",
+        "header_color": "#040404",
+        "body_color": "#ffffff",
+        "link_color": "#d6478a",
+        "text_color": "#141414",
+        "primary_color": "#040404",
+        "button_color": "#040404",
+        "button_text_color": "#ffffff",
+        "button_border_color": "#d6478a",
+        "description": "Jeffree Star Cosmetics is a beauty company founded by Jeffree Star, offering a range of highly pigmented makeup products and high-performance skincare solutions. Their products feature powerful ingredients and cater to the latest beauty trends. The company provides a variety of bestsellers, limited edition items, and popular viral beauty favorites.",
+        "slogan": "Highly Pigmented Makeup and High-Performance Skincare with Powerful Ingredients",
+        "products": []
+      },
+      "emailType": "",
+      "userContext": "",
+      "tone": ""
+    },
+    "updatedAt": "2025-08-13T18:32:59.655Z"
+  },
+  "sokoglam.com": {
+    "userId": null,
+    "brand": {
+      "storeId": "sokoglamcom",
+      "brandData": {
+        "store_name": "Soko Glam",
+        "customHeroImage": true,
+        "store_url": "https://sokoglam.com",
+        "logo_url": "https://media.brand.dev/8450a3cb-a966-42a8-8cf2-c8fd4db9ed53.jpg",
+        "banner_url": "https://media.brand.dev/5b75aa9e-4230-4b5b-81bf-237b3c95d5c9.png",
+        "backdrops": [
+          {
+            "url": "https://media.brand.dev/5b75aa9e-4230-4b5b-81bf-237b3c95d5c9.png",
+            "colors": [
+              "University of California Gold",
+              "Light Frost",
+              "Douglas Fir Green"
+            ],
+            "desc": "brand backdrop"
+          }
+        ],
+        "fonts": {
+          "title": "Helvetica",
+          "body": "Helvetica",
+          "button": "Helvetica"
+        },
+        "stock_info": null,
+        "address": null,
+        "social_links": {
+          "facebook": "https://facebook.com/sokoglam",
+          "x": "https://x.com/sokoglam",
+          "instagram": "https://instagram.com/sokoglam",
+          "linkedin": "https://linkedin.com/company/9343179"
+        },
+        "button_border_style": "Rounded",
+        "header_color": "#213f74",
+        "body_color": "#ffffff",
+        "link_color": "#9eadc0",
+        "text_color": "#141414",
+        "primary_color": "#213f74",
+        "button_color": "#213f74",
+        "button_text_color": "#ffffff",
+        "button_border_color": "#9eadc0",
+        "description": "Soko Glam is a trusted lifestyle brand in Korean Beauty, founded and curated by Esthetician Charlotte Cho. They offer a wide range of Korean skin care and beauty products, ensuring only good skin days ahead. Soko Glam is dedicated to providing customers with top-quality Korean beauty products, including skincare, cosmetics, and makeup brands. With a focus on curated products, Soko Glam is your go-to source for the latest trends and innovations in Korean beauty.",
+        "slogan": "ONLY GOOD (SKIN) DAYS AHEAD®",
+        "products": []
+      },
+      "emailType": "",
+      "userContext": "",
+      "tone": ""
+    },
+    "updatedAt": "2025-08-13T18:40:43.192Z"
+  },
+  "thrivecausemetics.com": {
+    "userId": null,
+    "brand": {
+      "storeId": "thrivecausemeticscom",
+      "brandData": {
+        "store_name": "Thrive Causemetics",
+        "customHeroImage": true,
+        "store_url": "https://thrivecausemetics.com",
+        "logo_url": "https://media.brand.dev/4a3e4347-bdd7-4cf9-96b7-c2fded0e203f.png",
+        "banner_url": "https://media.brand.dev/4385eada-8c0b-44d9-b78d-6b67734cff92.png",
+        "backdrops": [
+          {
+            "url": "https://media.brand.dev/4385eada-8c0b-44d9-b78d-6b67734cff92.png",
+            "colors": [
+              "Tealish",
+              "Sōdenkaracha Brown",
+              "Frosted Tulip"
+            ],
+            "desc": "brand backdrop"
+          },
+          {
+            "url": "https://media.brand.dev/49ab9097-f7fe-4932-a533-085beb699f0e.png",
+            "colors": [
+              "Mermaid Net",
+              "Valentine",
+              "Berry Good"
+            ],
+            "desc": "brand backdrop"
+          },
+          {
+            "url": "https://media.brand.dev/bac900bd-971b-417f-92d2-282f481ddd48.png",
+            "colors": [
+              "Ocean Liner",
+              "Roof Tile Green",
+              "Blue Agave"
+            ],
+            "desc": "brand backdrop"
+          },
+          {
+            "url": "https://media.brand.dev/cf5f7beb-33e6-4980-a0ad-221d68810bb1.png",
+            "colors": [
+              "Aqua Velvet",
+              "Fiji"
+            ],
+            "desc": "brand backdrop"
+          }
+        ],
+        "fonts": {
+          "title": "Helvetica",
+          "body": "Helvetica",
+          "button": "Helvetica"
+        },
+        "stock_info": null,
+        "address": null,
+        "social_links": {
+          "facebook": "https://facebook.com/thrivecausemetics",
+          "instagram": "https://instagram.com/thrivecausemetics",
+          "tiktok": "https://tiktok.com/@thrivecausemetics",
+          "x": "https://x.com/thrivecause",
+          "linkedin": "https://linkedin.com/company/thrive-causemetics",
+          "youtube": "https://youtube.com/user/thrivecausemetics"
+        },
+        "button_border_style": "Rounded",
+        "header_color": "#04ab9c",
+        "body_color": "#ffffff",
+        "link_color": "#67ccc6",
+        "text_color": "#141414",
+        "primary_color": "#04ab9c",
+        "button_color": "#04ab9c",
+        "button_text_color": "#ffffff",
+        "button_border_color": "#67ccc6",
+        "description": "Thrive Causemetics is a luxury vegan cosmetics brand that creates high-performance, cruelty-free beauty products. Founded by Karissa Bodnar, the brand is committed to empowering women and giving back to communities. For every product purchased, they donate to help communities thrive. Their products are formulated with safe, proven ingredients and are free from parabens and sulfates. Thrive Causemetics is a movement that aims to change the beauty industry for good, one product at a time.",
+        "slogan": "Bigger Than Beauty",
+        "products": []
+      },
+      "emailType": "",
+      "userContext": "",
+      "tone": ""
+    },
+    "updatedAt": "2025-08-13T19:10:31.258Z"
+  },
+  "kulalaland.com": {
+    "userId": null,
+    "brand": {
+      "storeId": "kulalalandcom",
+      "brandData": {
+        "store_name": "Kulala",
+        "customHeroImage": true,
+        "store_url": "https://kulalaland.com",
+        "logo_url": "https://media.brand.dev/12169c4e-a511-4603-84d6-cacf37556882.jpg",
+        "banner_url": "https://media.brand.dev/212e1015-dbc4-4aad-9ab0-3c71f0243278.jpg",
+        "backdrops": [
+          {
+            "url": "https://media.brand.dev/212e1015-dbc4-4aad-9ab0-3c71f0243278.jpg",
+            "colors": [
+              "Official Violet",
+              "Beacon Yellow",
+              "Honed Steel"
+            ],
+            "desc": "brand backdrop"
+          }
+        ],
+        "fonts": {
+          "title": "Helvetica",
+          "body": "Helvetica",
+          "button": "Helvetica"
+        },
+        "stock_info": null,
+        "address": null,
+        "social_links": {
+          "facebook": "https://facebook.com/kulalaland",
+          "instagram": "https://instagram.com/kulalaland",
+          "x": "https://x.com/baby__sleep"
+        },
+        "button_border_style": "Rounded",
+        "header_color": "#040404",
+        "body_color": "#ffffff",
+        "link_color": "#2a3c83",
+        "text_color": "#141414",
+        "primary_color": "#040404",
+        "button_color": "#040404",
+        "button_text_color": "#ffffff",
+        "button_border_color": "#2a3c83",
+        "description": "This company specializes in developing sleep solutions for infants based on scientific research, catering to the needs of contemporary parents seeking effective and reliable methods to help their babies sleep well.",
+        "slogan": "Science-based baby sleep solutions for modern parents",
+        "products": []
+      },
+      "emailType": "",
+      "userContext": "",
+      "tone": ""
+    },
+    "updatedAt": "2025-08-13T23:22:11.927Z"
+  },
+  "thehoneypot.co": {
+    "userId": null,
+    "brand": {
+      "storeId": "thehoneypotco",
+      "brandData": {
+        "store_name": "The Honey Pot",
+        "customHeroImage": true,
+        "store_url": "https://thehoneypot.co",
+        "logo_url": "https://media.brand.dev/ae2c0b7e-ad83-43d4-b1cf-9007802dcacf.png",
+        "banner_url": "",
+        "backdrops": [],
+        "fonts": {
+          "title": "Helvetica",
+          "body": "Helvetica",
+          "button": "Helvetica"
+        },
+        "stock_info": null,
+        "address": null,
+        "social_links": {
+          "facebook": "https://facebook.com/thehoneypotcompany",
+          "x": "https://x.com/thehoneypotcomp",
+          "linkedin": "https://linkedin.com/company/the-honey-pot-co"
+        },
+        "button_border_style": "Rounded",
+        "header_color": "#040404",
+        "body_color": "#ffffff",
+        "link_color": "#d465a5",
+        "text_color": "#141414",
+        "primary_color": "#040404",
+        "button_color": "#040404",
+        "button_text_color": "#ffffff",
+        "button_border_color": "#d465a5",
+        "description": "The Honey Pot is a company dedicated to revolutionizing feminine care products by offering chemical-free and plant-based options. From natural washes to wipes and pads, The Honey Pot is committed to promoting female health with their plant-derived products. Say goodbye to harsh chemicals and hello to the future of feminine care with The Honey Pot.",
+        "slogan": "Empower her with nature",
+        "products": []
+      },
+      "emailType": "",
+      "userContext": "",
+      "tone": ""
+    },
+    "updatedAt": "2025-08-14T16:15:28.633Z"
+  },
+  "bondibeachtea.com.au": {
+    "userId": null,
+    "brand": {
+      "storeId": "bondibeachteacomau",
+      "brandData": {
+        "store_name": "Bondi Beach Tea Co",
+        "customHeroImage": true,
+        "store_url": "https://bondibeachtea.com.au",
+        "logo_url": "https://media.brand.dev/d3b78346-b651-4837-9fb5-ca159924dccf.jpg",
+        "banner_url": "https://media.brand.dev/3b78b096-250d-4145-b298-7fbc21ee4334.png",
+        "backdrops": [
+          {
+            "url": "https://media.brand.dev/3b78b096-250d-4145-b298-7fbc21ee4334.png",
+            "colors": [
+              "Armor Wash"
+            ],
+            "desc": "brand backdrop"
+          },
+          {
+            "url": "https://media.brand.dev/f0be62a5-d997-4d76-955a-8760c3f8c032.jpg",
+            "colors": [
+              "Dover Grey",
+              "Chaos Black",
+              "Gainsboro"
+            ],
+            "desc": "brand backdrop"
+          }
+        ],
+        "fonts": {
+          "title": "Helvetica",
+          "body": "Helvetica",
+          "button": "Helvetica"
+        },
+        "stock_info": null,
+        "address": null,
+        "social_links": {
+          "x": "https://x.com/bondibeachtea",
+          "facebook": "https://facebook.com/bondibeachtea",
+          "instagram": "https://instagram.com/bondibeachtea",
+          "linkedin": "https://linkedin.com/company/bondi-beach-tea-co-",
+          "youtube": "https://youtube.com/channel/ucp9taqjuplmo6ellunsg1jq"
+        },
+        "button_border_style": "Rounded",
+        "header_color": "#90cdc8",
+        "body_color": "#ffffff",
+        "link_color": "#e5f7f7",
+        "text_color": "#141414",
+        "primary_color": "#90cdc8",
+        "button_color": "#90cdc8",
+        "button_text_color": "#ffffff",
+        "button_border_color": "#e5f7f7",
+        "description": "An Australian-based herbal tea manufacturer producing organic and vegan teas. They handcraft a range of teas for detox, energy, and relaxation, adhering to high standards of quality and purity.",
+        "slogan": "Sip pure, feel better!",
+        "products": []
+      },
+      "emailType": "",
+      "userContext": "",
+      "tone": ""
+    },
+    "updatedAt": "2025-08-14T16:35:01.932Z"
+  },
+  "flybyjing.com": {
+    "userId": null,
+    "brand": {
+      "storeId": "flybyjingcom",
+      "brandData": {
+        "store_name": "FLY BY JING",
+        "customHeroImage": true,
+        "store_url": "https://flybyjing.com",
+        "logo_url": "https://media.brand.dev/eccef1f3-907d-401c-be64-47b810eb19dd.jpg",
+        "banner_url": "https://media.brand.dev/cefacaa9-e4ec-4595-9bd2-49e9bfa6525f.png",
+        "backdrops": [
+          {
+            "url": "https://media.brand.dev/cefacaa9-e4ec-4595-9bd2-49e9bfa6525f.png",
+            "colors": [
+              "Pindjur Red",
+              "Black Rooster",
+              "Hourglass"
+            ],
+            "desc": "brand backdrop"
+          },
+          {
+            "url": "https://media.brand.dev/daea1f54-ecfe-41a4-a4fe-8523dffb5aa7.png",
+            "colors": [
+              "Sparkling Apple",
+              "Myrtle",
+              "Mack Creek"
+            ],
+            "desc": "brand backdrop"
+          }
+        ],
+        "fonts": {
+          "title": "Helvetica",
+          "body": "Helvetica",
+          "button": "Helvetica"
+        },
+        "stock_info": null,
+        "address": null,
+        "social_links": {
+          "instagram": "https://instagram.com/flybyjing",
+          "tiktok": "https://tiktok.com/@flybyjing",
+          "x": "https://x.com/flybyjing",
+          "facebook": "https://facebook.com/flybyjing",
+          "linkedin": "https://linkedin.com/company/flybyjing"
+        },
+        "button_border_style": "Rounded",
+        "header_color": "#dfd928",
+        "body_color": "#ffffff",
+        "link_color": "#6D1803",
+        "text_color": "#141414",
+        "primary_color": "#DFD928",
+        "button_color": "#dfd928",
+        "button_text_color": "#ffffff",
+        "button_border_color": "#7c7c2d",
+        "description": "FLY BY JING is a premium Chinese food and beverage company founded in 2018 by Jing Gao. Based in Chengdu, the company is known for crafting highly charged flavors using 100% real ingredients, aiming to bring uncensored Chinese flavors to the modern kitchen. Their products, including the first premium Chinese chili sauce, have been featured in various publications and are available in retailers like Whole Foods, Target, and Amazon. With a focus on thoughtfully-crafted pantry staples, FLY BY JING is on a mission to revolutionize the way people experience and enjoy Chinese cuisine.",
+        "slogan": "Uncensored Chinese flavors for a modern kitchen",
+        "products": []
+      },
+      "emailType": "",
+      "userContext": "",
+      "tone": "",
+      "primary_color": "#DFD928",
+      "link_color": "#6D1803",
+      "theme": {
+        "primaryColor": "#DFD928",
+        "linkColor": "#6D1803"
+      },
+      "styles": {
+        "primary_color": "#DFD928",
+        "link_color": "#6D1803"
+      }
+    },
+    "updatedAt": "2025-08-15T17:43:40.290Z"
+  },
+  "burga.com": {
+    "userId": null,
+    "brand": {
+      "storeId": "burgacom",
+      "brandData": {
+        "store_name": "Burga",
+        "customHeroImage": true,
+        "store_url": "https://burga.com",
+        "logo_url": "https://media.brand.dev/6f3fa6f7-5cd0-4991-b8d8-8e3f0674681f.svg",
+        "banner_url": "https://media.brand.dev/b4afb098-72de-4d4c-a8d0-e45b6a19271d.png",
+        "backdrops": [
+          {
+            "url": "https://media.brand.dev/b4afb098-72de-4d4c-a8d0-e45b6a19271d.png",
+            "colors": [
+              "Daring",
+              "Sachet Pink"
+            ],
+            "desc": "brand backdrop"
+          },
+          {
+            "url": "https://media.brand.dev/3be0c425-f775-4b59-a297-bb15a7ca22b7.png",
+            "colors": [
+              "Eclectic Plum",
+              "Black Howl",
+              "Taupe of the Morning"
+            ],
+            "desc": "brand backdrop"
+          },
+          {
+            "url": "https://media.brand.dev/77d1f692-9767-4cec-b58a-17426e429058.jpg",
+            "colors": [
+              "Lavender Suede",
+              "Castro"
+            ],
+            "desc": "brand backdrop"
+          },
+          {
+            "url": "https://media.brand.dev/84a0cc75-04f0-4d38-a297-63cc930c8a10.jpg",
+            "colors": [
+              "Lavender Suede",
+              "Zinfandel Red"
+            ],
+            "desc": "brand backdrop"
+          }
+        ],
+        "fonts": {
+          "title": "Helvetica",
+          "body": "Helvetica",
+          "button": "Helvetica"
+        },
+        "stock_info": null,
+        "address": null,
+        "social_links": {
+          "facebook": "https://facebook.com/burgaofficial",
+          "instagram": "https://instagram.com/burgaofficial",
+          "linkedin": "https://linkedin.com/company/burgaofficial",
+          "x": "https://x.com/burgaofficial",
+          "youtube": "https://youtube.com/@burgaofficial"
+        },
+        "button_border_style": "Rounded",
+        "header_color": "#7c7c7c",
+        "body_color": "#ffffff",
+        "link_color": "#0e0e0e",
+        "text_color": "#141414",
+        "primary_color": "#7c7c7c",
+        "button_color": "#7c7c7c",
+        "button_text_color": "#ffffff",
+        "button_border_color": "#0e0e0e",
+        "description": "BURGA is a global company that designs and sells unique daily essentials such as phone cases, eyewear, and drinkware. With a strong online presence, they have grown to over 2 million customers and $200 million in revenue. BURGA aims to empower individuality, encouraging customers to 'stand out from the crowd' with their stylish and statement products.",
+        "slogan": "Stand out from the crowd",
+        "products": []
+      },
+      "emailType": "",
+      "userContext": "",
+      "tone": ""
+    },
+    "updatedAt": "2025-08-14T18:51:30.462Z"
+  },
+  "kith.com": {
+    "userId": null,
+    "brand": {
+      "storeId": "kithcom",
+      "brandData": {
+        "store_name": "Kith",
+        "customHeroImage": true,
+        "store_url": "https://kith.com",
+        "logo_url": "https://media.brand.dev/4f84b927-3eda-4be5-add3-9a451d6c89ba.png",
+        "banner_url": "https://media.brand.dev/631c453a-f898-4a20-9371-b67ff1348864.png",
+        "backdrops": [
+          {
+            "url": "https://media.brand.dev/631c453a-f898-4a20-9371-b67ff1348864.png",
+            "colors": [
+              "Scattered Showers",
+              "Ruined Smores",
+              "Pinball"
+            ],
+            "desc": "brand backdrop"
+          },
+          {
+            "url": "https://media.brand.dev/68dccb78-9121-4512-8a0b-c45869cd098d.png",
+            "colors": [
+              "Namara Grey",
+              "Raven",
+              "Moon Landing"
+            ],
+            "desc": "brand backdrop"
+          },
+          {
+            "url": "https://media.brand.dev/ce5d3ade-59a4-4344-a416-fe921a78576d.png",
+            "colors": [
+              "Cold Grey",
+              "Shisha Coal",
+              "American Silver"
+            ],
+            "desc": "brand backdrop"
+          },
+          {
+            "url": "https://media.brand.dev/cb80fea2-9ca0-41dd-bc83-510f992b4ccd.jpg",
+            "colors": [
+              "Waiting",
+              "Dead Pixel",
+              "Silver Medal"
+            ],
+            "desc": "brand backdrop"
+          }
+        ],
+        "fonts": {
+          "title": "Helvetica",
+          "body": "Helvetica",
+          "button": "Helvetica"
+        },
+        "stock_info": null,
+        "address": null,
+        "social_links": {
+          "x": "https://x.com/kith",
+          "instagram": "https://instagram.com/kith",
+          "tiktok": "https://tiktok.com/@kith",
+          "facebook": "https://facebook.com/kithnyc",
+          "linkedin": "https://linkedin.com/company/kithnyc",
+          "youtube": "https://youtube.com/@kithmedia"
+        },
+        "button_border_style": "Rounded",
+        "header_color": "#040404",
+        "body_color": "#ffffff",
+        "link_color": "#848484",
+        "text_color": "#141414",
+        "primary_color": "#040404",
+        "button_color": "#040404",
+        "button_text_color": "#ffffff",
+        "button_border_color": "#848484",
+        "description": "Just Us is a lifestyle brand offering a wide range of apparel, footwear, and accessories for men, women, and kids. The company is closely associated with Ronnie Fieg and collaborates with Kith, a prominent streetwear brand, on various product lines including Kith Women, Kith Kids, and Kith Treats. Their product portfolio includes sneakers, boots, shoes, bags, and clothing, catering to the latest trends in streetwear and fashion.",
+        "slogan": "Giving you more than you pay for",
+        "products": []
+      },
+      "emailType": "",
+      "userContext": "",
+      "tone": ""
+    },
+    "updatedAt": "2025-08-20T04:34:13.057Z"
+  }
+}

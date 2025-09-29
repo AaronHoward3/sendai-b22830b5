@@ -1,0 +1,77 @@
+<mjml>
+  <mj-head>
+    <mj-attributes>
+      <mj-text font-family="Helvetica Neue, Helvetica, Arial, sans-serif"></mj-text>
+      <mj-button font-family="Helvetica Neue, Helvetica, Arial, sans-serif"></mj-button>
+    </mj-attributes>
+  </mj-head>
+  <mj-body>
+    
+    <!-- Test Section 1: White Background with Brand Color Button -->
+    <mj-section background-color="#ffffff" padding="40px 20px">
+      <mj-column>
+        <mj-text font-size="24px" color="#000000" padding-bottom="20px">White Background Test</mj-text>
+        <mj-text font-size="16px" color="#666666" padding-bottom="30px">Testing button contrast on white background</mj-text>
+        <mj-button href="#" background-color="#6a5cff" color="#ffffff" border-radius="8px" padding="12px 24px">
+          Brand Color Button
+        </mj-button>
+      </mj-column>
+    </mj-section>
+
+    <!-- Test Section 2: Dark Background with Brand Color Button -->
+    <mj-section background-color="#111111" padding="40px 20px">
+      <mj-column>
+        <mj-text font-size="24px" color="#ffffff" padding-bottom="20px">Dark Background Test</mj-text>
+        <mj-text font-size="16px" color="#cccccc" padding-bottom="30px">Testing button contrast on dark background</mj-text>
+        <mj-button href="#" background-color="#6a5cff" color="#ffffff" border-radius="8px" padding="12px 24px">
+          Brand Color Button
+        </mj-button>
+      </mj-column>
+    </mj-section>
+
+    <!-- Test Section 3: Light Brand Color Background -->
+    <mj-section background-color="#e8e5ff" padding="40px 20px">
+      <mj-column>
+        <mj-text font-size="24px" color="#000000" padding-bottom="20px">Light Brand Background Test</mj-text>
+        <mj-text font-size="16px" color="#333333" padding-bottom="30px">Testing button contrast on light brand background</mj-text>
+        <mj-button href="#" background-color="#6a5cff" color="#ffffff" border-radius="8px" padding="12px 24px">
+          Brand Color Button
+        </mj-button>
+      </mj-column>
+    </mj-section>
+
+    <!-- Test Section 4: Dark Brand Color Background -->
+    <mj-section background-color="#4a3cc7" padding="40px 20px">
+      <mj-column>
+        <mj-text font-size="24px" color="#ffffff" padding-bottom="20px">Dark Brand Background Test</mj-text>
+        <mj-text font-size="16px" color="#cccccc" padding-bottom="30px">Testing button contrast on dark brand background</mj-text>
+        <mj-button href="#" background-color="#6a5cff" color="#ffffff" border-radius="8px" padding="12px 24px">
+          Brand Color Button
+        </mj-button>
+      </mj-column>
+    </mj-section>
+
+    <!-- Test Section 5: Outline Button Test -->
+    <mj-section background-color="#ffffff" padding="40px 20px">
+      <mj-column>
+        <mj-text font-size="24px" color="#000000" padding-bottom="20px">Outline Button Test</mj-text>
+        <mj-text font-size="16px" color="#666666" padding-bottom="30px">Testing outline button contrast</mj-text>
+        <mj-button href="#" background-color="transparent" color="#6a5cff" border="2px solid #6a5cff" border-radius="8px" padding="12px 24px">
+          Outline Button
+        </mj-button>
+      </mj-column>
+    </mj-section>
+
+    <!-- Test Section 6: Ghost Button Test -->
+    <mj-section background-color="#f8f9fa" padding="40px 20px">
+      <mj-column>
+        <mj-text font-size="24px" color="#000000" padding-bottom="20px">Ghost Button Test</mj-text>
+        <mj-text font-size="16px" color="#666666" padding-bottom="30px">Testing ghost button contrast</mj-text>
+        <mj-button href="#" background-color="transparent" color="#6a5cff" border="none" border-radius="8px" padding="12px 24px">
+          Ghost Button
+        </mj-button>
+      </mj-column>
+    </mj-section>
+
+  </mj-body>
+</mjml>

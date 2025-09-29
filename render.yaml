@@ -1,0 +1,50 @@
+services:
+  - type: web
+    name: irios-api
+    env: node
+    rootDir: apps/api
+    buildCommand: "npm ci"
+    startCommand: "node server.js"
+    plan: free
+    autoDeploy: true
+    envVars:
+      - key: NODE_VERSION
+        value: 20
+      - key: PORT
+        value: 10000
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false
+      - key: OPENAI_API_KEY
+        sync: false
+      - key: GENERATOR_URL
+        sync: false
+      - key: STRIPE_SECRET_KEY
+        sync: false
+      - key: BRANDDEV_API_KEY
+        sync: false
+      - key: SCRAPINGBEE_API_KEY
+        sync: false
+      - key: CLIENT_URL
+        value: https://www.irios.ai
+      - key: ALLOW_ALL_ORIGINS
+        value: "true"
+    healthCheckPath: /healthz
+
+  - type: web
+    name: irios-generator
+    env: node
+    rootDir: apps/generator
+    buildCommand: "npm ci"
+    startCommand: "node src/server.js"
+    plan: free
+    autoDeploy: true
+    envVars:
+      - key: NODE_VERSION
+        value: 20
+      - key: PORT
+        value: 10000
+      - key: OPENAI_API_KEY
+        sync: false
+    healthCheckPath: /healthz
