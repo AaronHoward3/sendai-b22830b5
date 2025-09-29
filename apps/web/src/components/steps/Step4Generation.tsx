@@ -113,13 +113,17 @@ export const Step4Generation: React.FC<Step4GenerationProps> = ({
         let hasActiveSubscription = false;
         if (user) {
           try {
-            const { data: subscription } = await supabase
+            console.log("🔍 [DEBUG] Checking subscription for user:", user.id);
+            const { data: subscription, error: subError } = await supabase
               .from('subscriptions')
-              .select('status')
+              .select('status, price_id, current_period_end')
               .eq('user_id', user.id)
-              .eq('status', 'active')
               .maybeSingle();
-            hasActiveSubscription = !!subscription;
+            
+            console.log("🔍 [DEBUG] Subscription query result:", { subscription, subError });
+            // Check if subscription exists and is active
+            hasActiveSubscription = !!(subscription && subscription.status === 'active');
+            console.log("🔍 [DEBUG] hasActiveSubscription:", hasActiveSubscription);
           } catch (error) {
             console.warn('Failed to check subscription status:', error);
           }
