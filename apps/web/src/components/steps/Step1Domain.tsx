@@ -12,6 +12,7 @@ import { SubscriptionUpgradePrompt } from '@/components/SubscriptionUpgradePromp
 
 // Normalize domains to a comparable canonical form
 function normalizeDomain(dom: string): string {
+  // test asdf
   let d = String(dom || '').trim().toLowerCase();
   d = d.replace(/^https?:\/\//, '');      // strip protocol
   d = d.replace(/^www\./, '');            // strip www
