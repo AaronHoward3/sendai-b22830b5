@@ -90,8 +90,19 @@ function seededRng(seed) {
 
 function fillTemplate(tpl, prods) {
   let out = tpl;
+  console.log(`🔍 [DEBUG] Filling template with ${prods.length} products`);
+  
   prods.forEach((p, idx) => {
     const i = idx + 1;
+    console.log(`🔍 [DEBUG] Product ${i}:`, { 
+      title: p.title, 
+      subtitle: p.subtitle, 
+      price: p.price, 
+      imageUrl: p.imageUrl, 
+      buttonText: p.buttonText, 
+      buttonUrl: p.buttonUrl || p.buttonURL || p.url 
+    });
+    
     out = out
       .replaceAll(`{{P${i}_TITLE}}`, p.title ?? "")
       .replaceAll(`{{P${i}_SUBTITLE}}`, p.subtitle ?? "")
@@ -100,6 +111,13 @@ function fillTemplate(tpl, prods) {
       .replaceAll(`{{P${i}_BUTTON_TEXT}}`, p.buttonText ?? "View")
       .replaceAll(`{{P${i}_BUTTON_URL}}`, p.buttonUrl ?? p.buttonURL ?? p.url ?? "");
   });
+  
+  // Check for any remaining placeholders
+  const remainingPlaceholders = out.match(/\{\{P\d+_[A-Z_]+\}\}/g);
+  if (remainingPlaceholders) {
+    console.log(`🔍 [DEBUG] Warning: Unfilled placeholders found:`, remainingPlaceholders);
+  }
+  
   return out;
 }
 
@@ -162,12 +180,14 @@ function selectSmartProductLayout(availableLayouts, analysis, productCount) {
  */
 export function renderProductSection(emailType, aesthetic, products, seed = "default", desiredCount = null, analysis = {}) {
   const want = desiredCount ?? (products?.length || 0);
+  console.log(`🔍 [DEBUG] renderProductSection called:`, { emailType, aesthetic, productCount: products?.length, want, seed });
 
   // 1) Try skeleton location first
   const root1 = skeletonRoot(emailType);
   const counts1 = root1 ? listCounts(root1) : [];
   let baseRoot = root1;
   let counts = counts1;
+  console.log(`🔍 [DEBUG] Skeleton root: ${root1}, counts: ${counts1}`);
 
   // 2) Fallback: legacy per-aesthetic location
   if (!counts.length) {
@@ -175,18 +195,28 @@ export function renderProductSection(emailType, aesthetic, products, seed = "def
     const counts2 = root2 ? listCounts(root2) : [];
     baseRoot = root2;
     counts = counts2;
+    console.log(`🔍 [DEBUG] Legacy root: ${root2}, counts: ${counts2}`);
   }
 
   if (!baseRoot || !counts.length) {
+    console.log(`🔍 [DEBUG] No product sections found for ${emailType}/${aesthetic}`);
     return ""; // no product sections found
   }
 
   const pickCount = chooseCount(counts, want);
-  if (!pickCount) return "";
+  if (!pickCount) {
+    console.log(`🔍 [DEBUG] No suitable count found for ${want} products`);
+    return "";
+  }
 
   const dirForCount = path.join(baseRoot, String(pickCount));
   const variants = listVariantFiles(dirForCount);
-  if (!variants.length) return "";
+  if (!variants.length) {
+    console.log(`🔍 [DEBUG] No variants found in ${dirForCount}`);
+    return "";
+  }
+
+  console.log(`🔍 [DEBUG] Found ${variants.length} variants for ${pickCount} products`);
 
   const rng = seededRng(seed);
   
@@ -201,10 +231,18 @@ export function renderProductSection(emailType, aesthetic, products, seed = "def
     selectedVariant = variants[Math.floor(rng() * variants.length)];
   }
   
-  const tpl = fs.readFileSync(selectedVariant, "utf8");
-
-  const slice = products.slice(0, pickCount);
-  return fillTemplate(tpl, slice);
+  console.log(`🔍 [DEBUG] Selected variant: ${selectedVariant}`);
+  
+  try {
+    const tpl = fs.readFileSync(selectedVariant, "utf8");
+    const slice = products.slice(0, pickCount);
+    const result = fillTemplate(tpl, slice);
+    console.log(`🔍 [DEBUG] Template filled successfully, result length: ${result.length}`);
+    return result;
+  } catch (error) {
+    console.log(`🔍 [DEBUG] Error reading template or filling: ${error.message}`);
+    return "";
+  }
 }
 
 export default { renderProductSection };

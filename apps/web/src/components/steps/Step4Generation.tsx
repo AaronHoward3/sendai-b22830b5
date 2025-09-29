@@ -109,18 +109,35 @@ export const Step4Generation: React.FC<Step4GenerationProps> = ({
         const { data: { session } } = await supabase.auth.getSession();
         const token = session?.access_token;
 
-        // Choose endpoint based on authentication status (recalculate after waiting)
-        // If user is authenticated, always use authenticated route (admin check is just for additional features)
-        const finalIsAuthenticated = !!user || isAdmin;
-        const endpoint = user ? `${API_ROOT}/generate` : `${API_ROOT}/generate/preview`;
+        // Check if user has an active subscription
+        let hasActiveSubscription = false;
+        if (user) {
+          try {
+            const { data: subscription } = await supabase
+              .from('subscriptions')
+              .select('status')
+              .eq('user_id', user.id)
+              .eq('status', 'active')
+              .maybeSingle();
+            hasActiveSubscription = !!subscription;
+          } catch (error) {
+            console.warn('Failed to check subscription status:', error);
+          }
+        }
+
+        // Choose endpoint based on authentication AND subscription status
+        // Only use authenticated route if user has active subscription
+        const finalIsAuthenticated = !!user && hasActiveSubscription;
+        const endpoint = finalIsAuthenticated ? `${API_ROOT}/generate` : `${API_ROOT}/generate/preview`;
         
         console.log("🔍 [DEBUG] Final endpoint selection:", {
           hasUser: !!user,
           userId: user?.id,
           isAdmin,
+          hasActiveSubscription,
           finalIsAuthenticated,
           endpoint,
-          reason: user ? "User authenticated" : "No user, using preview",
+          reason: finalIsAuthenticated ? "User authenticated with active subscription" : "No user or no active subscription, using preview",
           sessionToken: token ? "Present" : "Missing"
         });
 
