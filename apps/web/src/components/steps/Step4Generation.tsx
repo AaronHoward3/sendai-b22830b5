@@ -114,18 +114,45 @@ export const Step4Generation: React.FC<Step4GenerationProps> = ({
         if (user) {
           try {
             console.log("🔍 [DEBUG] Checking subscription for user:", user.id);
+            console.log("🔍 [DEBUG] Supabase client:", !!supabase);
+            console.log("🔍 [DEBUG] User object:", user);
+            
+            // First, let's check if we can query the subscriptions table at all
+            const { data: allSubs, error: allSubsError } = await supabase
+              .from('subscriptions')
+              .select('*')
+              .limit(5);
+            
+            console.log("🔍 [DEBUG] All subscriptions query (first 5):", { allSubs, allSubsError });
+            
+            // Now query for this specific user
             const { data: subscription, error: subError } = await supabase
               .from('subscriptions')
-              .select('status, price_id, current_period_end')
+              .select('*')
               .eq('user_id', user.id)
               .maybeSingle();
             
-            console.log("🔍 [DEBUG] Subscription query result:", { subscription, subError });
+            console.log("🔍 [DEBUG] User subscription query result:", { subscription, subError });
+            console.log("🔍 [DEBUG] Subscription status:", subscription?.status);
+            console.log("🔍 [DEBUG] Subscription price_id:", subscription?.price_id);
+            console.log("🔍 [DEBUG] Subscription current_period_end:", subscription?.current_period_end);
+            
             // Check if subscription exists and is active
             hasActiveSubscription = !!(subscription && subscription.status === 'active');
             console.log("🔍 [DEBUG] hasActiveSubscription:", hasActiveSubscription);
+            
+            // Also check if user has any credits
+            const { data: credits, error: creditsError } = await supabase
+              .from('credit_balances')
+              .select('*')
+              .eq('user_id', user.id)
+              .maybeSingle();
+            
+            console.log("🔍 [DEBUG] User credits:", { credits, creditsError });
+            
           } catch (error) {
-            console.warn('Failed to check subscription status:', error);
+            console.error('Failed to check subscription status:', error);
+            console.error('Error details:', error.message, error.stack);
           }
         }
 
