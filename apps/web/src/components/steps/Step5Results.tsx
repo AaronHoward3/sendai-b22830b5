@@ -63,11 +63,11 @@ export const Step5Results: React.FC<Step5ResultsProps> = ({
   }, [formData.isPreviewMode, hasUsedFreeTrial]);
 
   const handleSubscribe = () => {
-    window.location.href = "/settings?plan=1";
+    window.location.href = "/dashboard?plan=1";
   };
 
   const handleSignIn = () => {
-    window.location.href = "/settings";
+    window.location.href = "/signin";
   };
 
   // support either generatedEmails[0] or generatedEmail
@@ -110,7 +110,7 @@ export const Step5Results: React.FC<Step5ResultsProps> = ({
   const handleSaveEmail = async () => {
     if (!email) return;
     if (!user) {
-      toast({ title: "Sign in required", description: "Open Settings and sign in to save emails.", variant: "destructive" });
+      toast({ title: "Sign in required", description: "Open Dashboard and sign in to save emails.", variant: "destructive" });
       return;
     }
 

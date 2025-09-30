@@ -125,7 +125,7 @@ const Bar: React.FC<{ label: string; remaining: number; total: number; className
 };
 
 const Settings: React.FC = () => {
-  const { user } = useSupabaseAuth();
+  const { user, signOut } = useSupabaseAuth();
   const { toast } = useToast();
   const { setTheme } = useTheme();
 
@@ -419,7 +419,7 @@ const Settings: React.FC = () => {
       <div className="min-h-screen bg-background pt-16">
         <div className="container mx-auto max-w-7xl px-4 py-8">
           <div className="mb-8">
-            <h1 className="text-3xl font-bold text-foreground">Account Dashboard</h1>
+            <h1 className="text-3xl font-bold text-foreground">Dashboard</h1>
             <p className="mt-2 text-muted-foreground">Manage your profile, preferences, brands, and billing.</p>
           </div>
 
@@ -450,6 +450,16 @@ const Settings: React.FC = () => {
                     <Input id="email" type="email" value={emailField} disabled placeholder="you@example.com" />
                   </div>
                   <Button variant="outline" onClick={handleSaveProfile}>Save Changes</Button>
+                  
+                  <div className="pt-4 border-t">
+                    <Button 
+                      variant="destructive" 
+                      onClick={signOut}
+                      className="w-full"
+                    >
+                      Log out
+                    </Button>
+                  </div>
                 </CardContent>
               </Card>
 

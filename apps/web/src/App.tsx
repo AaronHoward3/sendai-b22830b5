@@ -9,6 +9,8 @@ import Index from "./pages/Index";
 import Settings from "./pages/Settings";
 import MyEmails from "./pages/MyEmails";
 import EmailEditor from "./pages/EmailEditor";
+import Signup from "./pages/Signup";
+import Signin from "./pages/Signin";
 import NotFound from "./pages/NotFound";
 import ScrollToTop from "@/components/ScrollToTop";
 // 👇 add this import
@@ -38,7 +40,9 @@ const App = () => (
               <ScrollToTop />
               <Routes>
                 <Route path="/" element={<Index />} />
-                <Route path="/settings" element={<Settings />} />
+                <Route path="/signup" element={<Signup />} />
+                <Route path="/signin" element={<Signin />} />
+                <Route path="/dashboard" element={<Settings />} />
                 <Route path="/my-emails" element={<MyEmails />} />
                 <Route path="/email-editor" element={<EmailEditor />} />
                 {/* 👇 new admin route */}

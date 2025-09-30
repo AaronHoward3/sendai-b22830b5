@@ -105,11 +105,11 @@ const MyEmails: React.FC = () => {
           <Card>
             <CardHeader>
               <CardTitle>Sign in required</CardTitle>
-              <CardDescription>Sign in on the Settings page to view your saved emails.</CardDescription>
+              <CardDescription>Sign in on the Dashboard to view your saved emails.</CardDescription>
             </CardHeader>
             <CardContent>
-              <GradientButton onClick={() => navigate('/settings')} className="!bg-primary !text-primary-foreground">
-                Go to Settings
+              <GradientButton onClick={() => navigate('/dashboard')} className="!bg-primary !text-primary-foreground">
+                Go to Dashboard
               </GradientButton>
             </CardContent>
           </Card>
