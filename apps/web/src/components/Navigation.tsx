@@ -10,6 +10,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useSupabaseAuth } from "@/hooks/useSupabaseAuth";
 import { supabase } from "@/lib/supabaseClient";
+import { Logo } from "./ui/Logo";
 
 interface NavigationProps {
   onHomeClick?: () => void;
@@ -18,7 +19,7 @@ interface NavigationProps {
 const Navigation: React.FC<NavigationProps> = ({ onHomeClick }) => {
   const location = useLocation();
   const navigate = useNavigate();
-  const { user, signOut } = useSupabaseAuth();
+  const { user, loading, signOut } = useSupabaseAuth();
   const [isAdmin, setIsAdmin] = useState(false);
 
   const isOnGenerator = location.pathname.startsWith("/generator");
@@ -55,7 +56,7 @@ const Navigation: React.FC<NavigationProps> = ({ onHomeClick }) => {
   return (
     <>
       <nav className="fixed top-0 left-0 right-0 z-50 border-b border-border bg-background">
-        <div className="flex items-center justify-between px-4 py-3">
+        <div className="relative flex items-center justify-between px-4 py-3">
           {/* Home Button */}
           <Button
             onClick={handleHomeClick}
@@ -70,13 +71,16 @@ const Navigation: React.FC<NavigationProps> = ({ onHomeClick }) => {
           {/* Center Title - Clickable Logo */}
           <button
             onClick={handleHomeClick}
-            className="text-lg font-zen text-foreground hover:text-primary transition-colors cursor-pointer"
+            className="absolute left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2 text-lg font-zen text-foreground hover:text-primary transition-colors cursor-pointer"
           >
-            IRIOS AI
+            <Logo size="md" />
           </button>
 
-          {/* Profile Dropdown (click to open) */}
-          {user ? (
+          {/* Profile Section */}
+          {loading ? (
+            // Skeleton loading state - match Account button width
+            <div className="h-8 w-24 bg-muted animate-pulse rounded-md"></div>
+          ) : user ? (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button

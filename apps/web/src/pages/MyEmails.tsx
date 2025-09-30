@@ -92,7 +92,45 @@ const MyEmails: React.FC = () => {
     return (
       <div className="min-h-screen bg-background text-foreground">
         <Navigation />
-        <div className="pt-16 container mx-auto px-4 py-10">Loading…</div>
+        <div className="pt-16">
+          <div className="container mx-auto px-4 py-8 space-y-6 max-w-4xl">
+            {/* Header skeleton */}
+            <div className="flex items-center justify-between flex-wrap gap-4">
+              <div className="space-y-2">
+                <div className="h-8 w-48 bg-muted animate-pulse rounded-md"></div>
+                <div className="h-4 w-80 bg-muted animate-pulse rounded-md"></div>
+              </div>
+              <div className="h-10 w-32 bg-muted animate-pulse rounded-md"></div>
+            </div>
+
+            {/* Main card skeleton */}
+            <div className="bg-card border border-border rounded-lg p-6 space-y-4">
+              <div className="flex items-center justify-between">
+                <div className="h-6 w-64 bg-muted animate-pulse rounded-md"></div>
+                <div className="h-6 w-20 bg-muted animate-pulse rounded-md"></div>
+              </div>
+              <div className="h-4 w-96 bg-muted animate-pulse rounded-md"></div>
+              
+              {/* Email item skeletons */}
+              <div className="space-y-4">
+                {[1, 2, 3].map((i) => (
+                  <div key={i} className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 p-4 border rounded-2xl bg-muted/40">
+                    <div className="space-y-2 min-w-0">
+                      <div className="h-5 w-64 bg-muted animate-pulse rounded-md"></div>
+                      <div className="h-4 w-80 bg-muted animate-pulse rounded-md"></div>
+                    </div>
+                    <div className="flex flex-wrap gap-2 sm:justify-end">
+                      <div className="h-8 w-16 bg-muted animate-pulse rounded-md"></div>
+                      <div className="h-8 w-20 bg-muted animate-pulse rounded-md"></div>
+                      <div className="h-8 w-20 bg-muted animate-pulse rounded-md"></div>
+                      <div className="h-8 w-20 bg-muted animate-pulse rounded-md"></div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     );
   }
@@ -121,7 +159,8 @@ const MyEmails: React.FC = () => {
   return (
     <div className="min-h-screen bg-background text-foreground">
       <Navigation />
-      <div className="pt-16 container mx-auto px-4 py-8 space-y-6 max-w-4xl">
+      <div className="pt-16">
+        <div className="container mx-auto px-4 py-8 space-y-6 max-w-4xl">
         <div className="flex items-center justify-between flex-wrap gap-4">
           <div>
             <h1 className="text-3xl font-bold text-foreground">My Emails</h1>
@@ -220,6 +259,7 @@ const MyEmails: React.FC = () => {
             )}
           </CardContent>
         </Card>
+        </div>
       </div>
 
       {/* Modal preview */}
