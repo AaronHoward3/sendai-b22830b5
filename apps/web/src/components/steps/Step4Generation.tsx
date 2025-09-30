@@ -82,11 +82,9 @@ export const Step4Generation: React.FC<Step4GenerationProps> = ({
   };
 
   useEffect(() => {
-    // Don't run generation until user is available
-    if (!user) {
-      console.log("🔍 [DEBUG] No user available, skipping generation");
-      return;
-    }
+    // For trial users, allow generation without authentication
+    // Only require user for authenticated features
+    console.log("🔍 [DEBUG] Starting generation process", { hasUser: !!user, isTrial: !user });
 
     const controller = new AbortController();
     abortRef.current = controller;
