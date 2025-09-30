@@ -72,7 +72,7 @@ export const Step4Generation: React.FC<Step4GenerationProps> = ({
   const finishedRef = useRef(false);
 
   const handleUpgrade = () => {
-    window.location.href = "/settings?plan=1";
+    window.location.href = "/dashboard?plan=1";
   };
 
   const handleBack = () => {
@@ -216,7 +216,7 @@ export const Step4Generation: React.FC<Step4GenerationProps> = ({
         if (generateResponse.status === 402) {
           stopFake();
           setStatus("No email credits left. Redirecting to Manage Plan…");
-          window.location.href = "/settings?plan=1";
+          window.location.href = "/dashboard?plan=1";
           return;
         }
 

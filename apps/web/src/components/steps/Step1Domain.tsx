@@ -201,7 +201,7 @@ export const Step1Domain: React.FC<{
   };
 
   const handleUpgrade = () => {
-    window.location.href = "/settings?plan=1";
+    window.location.href = "/dashboard?plan=1";
   };
 
   const handleBack = () => {

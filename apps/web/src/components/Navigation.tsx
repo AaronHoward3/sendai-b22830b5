@@ -10,7 +10,6 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useSupabaseAuth } from "@/hooks/useSupabaseAuth";
 import { supabase } from "@/lib/supabaseClient";
-import AuthModal from "./auth/AuthModal";
 
 interface NavigationProps {
   onHomeClick?: () => void;
@@ -19,12 +18,11 @@ interface NavigationProps {
 const Navigation: React.FC<NavigationProps> = ({ onHomeClick }) => {
   const location = useLocation();
   const navigate = useNavigate();
-  const { user } = useSupabaseAuth();
+  const { user, signOut } = useSupabaseAuth();
   const [isAdmin, setIsAdmin] = useState(false);
-  const [showAuthModal, setShowAuthModal] = useState(false);
 
   const isOnGenerator = location.pathname.startsWith("/generator");
-  const isSettings = location.pathname === "/settings";
+  const isDashboard = location.pathname === "/dashboard";
   const isMyEmails = location.pathname === "/my-emails";
   const isAdminPage = location.pathname === "/admin";
 
@@ -69,20 +67,25 @@ const Navigation: React.FC<NavigationProps> = ({ onHomeClick }) => {
             Home
           </Button>
 
-          {/* Center Title */}
-          <div className="text-lg font-zen text-foreground">IRIOS A.I.</div>
+          {/* Center Title - Clickable Logo */}
+          <button
+            onClick={handleHomeClick}
+            className="text-lg font-zen text-foreground hover:text-primary transition-colors cursor-pointer"
+          >
+            IRIOS AI
+          </button>
 
           {/* Profile Dropdown (click to open) */}
           {user ? (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button
-                  variant={isSettings || isMyEmails || isAdminPage ? "secondary" : "ghost"}
+                  variant={isDashboard || isMyEmails || isAdminPage ? "secondary" : "ghost"}
                   size="sm"
                   className="flex items-center gap-2"
                 >
                   <User className="h-4 w-4" />
-                  My Profile
+                  Account
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent
@@ -90,13 +93,13 @@ const Navigation: React.FC<NavigationProps> = ({ onHomeClick }) => {
                 className="w-48 bg-background border border-border shadow-lg"
               >
                 <DropdownMenuItem asChild>
-                  <Link to="/settings" className="w-full cursor-pointer">
-                    My Profile
+                  <Link to="/dashboard" className="w-full cursor-pointer">
+                    Dashboard
                   </Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem asChild>
                   <Link to="/my-emails" className="w-full cursor-pointer">
-                    My Emails
+                    My emails
                   </Link>
                 </DropdownMenuItem>
                 {isAdmin && (
@@ -106,6 +109,12 @@ const Navigation: React.FC<NavigationProps> = ({ onHomeClick }) => {
                     </Link>
                   </DropdownMenuItem>
                 )}
+                <DropdownMenuItem 
+                  onClick={signOut}
+                  className="w-full cursor-pointer text-red-600 hover:text-red-700 hover:bg-red-50"
+                >
+                  Log out
+                </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
           ) : (
@@ -113,7 +122,7 @@ const Navigation: React.FC<NavigationProps> = ({ onHomeClick }) => {
               variant="default"
               size="sm"
               className="flex items-center gap-2 bg-primary text-primary-foreground hover:bg-primary/90"
-              onClick={() => setShowAuthModal(true)}
+              onClick={() => navigate("/signup")}
             >
               <User className="h-4 w-4" />
               Sign Up
@@ -121,22 +130,6 @@ const Navigation: React.FC<NavigationProps> = ({ onHomeClick }) => {
           )}
         </div>
       </nav>
-
-      {/* Auth Modal */}
-      {showAuthModal && (
-        <div className="fixed inset-0 z-50 bg-background/80 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="relative">
-            <button
-              onClick={() => setShowAuthModal(false)}
-              className="absolute -top-2 -right-2 w-8 h-8 bg-background border border-border rounded-full flex items-center justify-center hover:bg-muted transition-colors"
-              aria-label="Close modal"
-            >
-              ×
-            </button>
-            <AuthModal />
-          </div>
-        </div>
-      )}
     </>
   );
 };

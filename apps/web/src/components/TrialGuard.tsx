@@ -158,11 +158,11 @@ export const TrialGuard: React.FC<TrialGuardProps> = ({ children }) => {
   };
 
   const handleSubscribe = () => {
-    window.location.href = "/settings?plan=1";
+    window.location.href = "/dashboard?plan=1";
   };
 
   const handleSignIn = () => {
-    window.location.href = "/settings";
+    window.location.href = "/dashboard";
   };
 
   // Show loading state while auth is loading or while we're checking trial status
