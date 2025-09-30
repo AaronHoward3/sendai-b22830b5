@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Home, User } from "lucide-react";
+import { Home, LogIn, Plus, User, UserPlus } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -122,15 +122,26 @@ const Navigation: React.FC<NavigationProps> = ({ onHomeClick }) => {
               </DropdownMenuContent>
             </DropdownMenu>
           ) : (
-            <Button
-              variant="default"
-              size="sm"
-              className="flex items-center gap-2 bg-primary text-primary-foreground hover:bg-primary/90"
-              onClick={() => navigate("/signup")}
-            >
-              <User className="h-4 w-4" />
-              Sign Up
-            </Button>
+            <div className="flex items-center gap-4">
+              <Button
+                variant="outline"
+                size="sm"
+                className="flex items-center gap-2"
+                onClick={() => navigate("/signin")}
+              >
+                <LogIn className="h-4 w-4" />
+                Sign in
+              </Button>
+              <Button
+                variant="default"
+                size="sm"
+                className="flex items-center gap-2 bg-primary text-primary-foreground hover:bg-primary/90"
+                onClick={() => navigate("/signup")}
+              >
+                <UserPlus className="h-4 w-4" />
+                Sign up
+              </Button>
+            </div>
           )}
         </div>
       </nav>
