@@ -5,7 +5,7 @@ const Index = () => {
   return (
     <>
       <Navigation />
-      <div className="pt-16">
+      <div className="">
         <EmailGenerator />
       </div>
     </>
