@@ -336,7 +336,7 @@ export const Step1Domain: React.FC<{
               <button
                 onClick={handleContinue}
                 disabled={!domain.trim() || isLoading}
-                className="ml-2 p-2 rounded-full cursor-pointer bg-gradient-to-r from-[#00ffc3] to-[#a3f2d9] hover:scale-105 transition-transform disabled:opacity-50"
+                className="ml-2 p-2 rounded-full bg-gradient-to-r from-[#00ffc3] to-[#a3f2d9] hover:scale-105 transition-transform disabled:opacity-50"
                 aria-label="Continue to Step 2"
               >
                 {isLoading ? <div className="loader" /> : <ArrowRight className="w-5 h-5 text-black" />}

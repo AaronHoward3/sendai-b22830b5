@@ -244,6 +244,9 @@ export async function generateEmails(req, res) {
       if (wantsSavedHero) {
         updated = updated.replace(/src="https:\/\/SAVEDHEROIMAGE\.COM"/g, `src="${savedHeroImageUrl}"`);
         updated = updated.replace(/background-url="https:\/\/SAVEDHEROIMAGE\.COM"/g, `background-url="${savedHeroImageUrl}"`);
+        // Also replace CUSTOMHEROIMAGE.COM when using saved images
+        updated = updated.replace(/src="https:\/\/CUSTOMHEROIMAGE\.COM"/g, `src="${savedHeroImageUrl}"`);
+        updated = updated.replace(/background-url="https:\/\/CUSTOMHEROIMAGE\.COM"/g, `background-url="${savedHeroImageUrl}"`);
         heroImageUrlUsed = savedHeroImageUrl;
       }
 

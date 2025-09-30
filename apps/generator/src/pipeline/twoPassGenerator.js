@@ -206,35 +206,59 @@ ${baseMjml}
 }
 
 async function buildProductSectionWithFallbacks({ emailType, products, designAesthetic, seed, analysis = {} }) {
-  if (!Array.isArray(products) || products.length === 0) return "";
+  if (!Array.isArray(products) || products.length === 0) {
+    console.log("🔍 [DEBUG] No products provided for product section");
+    return "";
+  }
 
   const attempts = [ designAesthetic, "skeleton", "minimal_clean", "bold_contrasting" ].filter(Boolean);
 
   for (const aesthetic of attempts) {
     try {
+      console.log(`🔍 [DEBUG] Attempting product section with aesthetic: ${aesthetic}`);
       const html = await renderProductSection( emailType, aesthetic, products, seed, null, analysis );
-      if (html && typeof html === "string" && html.trim().length > 0) return html;
-    } catch {}
+      if (html && typeof html === "string" && html.trim().length > 0) {
+        console.log(`🔍 [DEBUG] Successfully generated product section with aesthetic: ${aesthetic}`);
+        return html;
+      } else {
+        console.log(`🔍 [DEBUG] Empty product section returned for aesthetic: ${aesthetic}`);
+      }
+    } catch (error) {
+      console.log(`🔍 [DEBUG] Error generating product section with aesthetic ${aesthetic}:`, error.message);
+    }
   }
+  console.log("🔍 [DEBUG] All product section generation attempts failed");
   return "";
 }
 
 function injectProductSectionIntoMjml(baseMjml, productHtml) {
-  if (!productHtml) return baseMjml;
+  if (!productHtml) {
+    console.log("🔍 [DEBUG] No product HTML to inject");
+    return baseMjml;
+  }
+
+  console.log(`🔍 [DEBUG] Injecting product section, HTML length: ${productHtml.length}`);
 
   const tokenRe = /\[\[\s*PRODUCT_SECTION\s*\]\]/i;
-  if (tokenRe.test(baseMjml)) return baseMjml.replace(tokenRe, productHtml);
+  if (tokenRe.test(baseMjml)) {
+    console.log("🔍 [DEBUG] Found PRODUCT_SECTION token, replacing");
+    return baseMjml.replace(tokenRe, productHtml);
+  }
 
   const closeSectionRe = /<\/mj-section>/i;
   const match = baseMjml.match(closeSectionRe);
   if (match && match.index != null) {
+    console.log("🔍 [DEBUG] Inserting after first mj-section");
     const insertAt = match.index + match[0].length;
     return baseMjml.slice(0, insertAt) + "\n" + productHtml + "\n" + baseMjml.slice(insertAt);
   }
 
   if (baseMjml.includes("</mj-body>")) {
+    console.log("🔍 [DEBUG] Inserting before mj-body closing tag");
     return baseMjml.replace("</mj-body>", `${productHtml}\n</mj-body>`);
   }
+
+  console.log("🔍 [DEBUG] Appending to end of MJML");
   return baseMjml + "\n" + productHtml;
 }
 

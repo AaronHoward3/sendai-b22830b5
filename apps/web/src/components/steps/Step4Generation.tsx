@@ -82,6 +82,12 @@ export const Step4Generation: React.FC<Step4GenerationProps> = ({
   };
 
   useEffect(() => {
+    // Don't run generation until user is available
+    if (!user) {
+      console.log("🔍 [DEBUG] No user available, skipping generation");
+      return;
+    }
+
     const controller = new AbortController();
     abortRef.current = controller;
 
@@ -98,29 +104,87 @@ export const Step4Generation: React.FC<Step4GenerationProps> = ({
     const run = async () => {
       setStatus("Generating email…");
       try {
-        // Wait for admin check to complete if user is authenticated
-        if (user && isLoading) {
+        // Wait for admin check to complete if needed
+        if (isLoading) {
           console.log("🔍 [DEBUG] Waiting for admin check to complete...");
           // Wait a bit for admin check to complete
-          await new Promise(resolve => setTimeout(resolve, 100));
+          await new Promise(resolve => setTimeout(resolve, 200));
         }
 
         // Get the current session token for authenticated requests
         const { data: { session } } = await supabase.auth.getSession();
         const token = session?.access_token;
 
-        // Choose endpoint based on authentication status (recalculate after waiting)
-        // If user is authenticated, always use authenticated route (admin check is just for additional features)
-        const finalIsAuthenticated = !!user || isAdmin;
-        const endpoint = user ? `${API_ROOT}/generate` : `${API_ROOT}/generate/preview`;
+        // Check if user has an active subscription
+        let hasActiveSubscription = false;
+        console.log("🔍 [DEBUG] About to check subscription, user exists:", !!user);
+        console.log("🔍 [DEBUG] Current user object:", user);
+        
+        if (user) {
+          console.log("🔍 [DEBUG] User exists, starting subscription check...");
+          try {
+            console.log("🔍 [DEBUG] Checking subscription for user:", user.id);
+            console.log("🔍 [DEBUG] Supabase client:", !!supabase);
+            console.log("🔍 [DEBUG] User object:", user);
+            
+            // Simple test query first
+            console.log("🔍 [DEBUG] Testing simple query...");
+            const { data: testData, error: testError } = await supabase
+              .from('subscriptions')
+              .select('user_id, status')
+              .eq('user_id', user.id)
+              .limit(1);
+            
+            console.log("🔍 [DEBUG] Simple test query result:", { testData, testError });
+            
+            // Now query for this specific user with all fields
+            console.log("🔍 [DEBUG] Querying user-specific subscription...");
+            const { data: subscription, error: subError } = await supabase
+              .from('subscriptions')
+              .select('*')
+              .eq('user_id', user.id)
+              .maybeSingle();
+            
+            console.log("🔍 [DEBUG] User subscription query result:", { subscription, subError });
+            console.log("🔍 [DEBUG] Subscription status:", subscription?.status);
+            console.log("🔍 [DEBUG] Subscription price_id:", subscription?.price_id);
+            console.log("🔍 [DEBUG] Subscription current_period_end:", subscription?.current_period_end);
+            
+            // Check if subscription exists and is active (NULL current_period_end is OK)
+            hasActiveSubscription = !!(subscription && subscription.status === 'active');
+            console.log("🔍 [DEBUG] hasActiveSubscription:", hasActiveSubscription);
+            
+            // Also check if user has any credits
+            console.log("🔍 [DEBUG] Querying user credits...");
+            const { data: credits, error: creditsError } = await supabase
+              .from('credit_balances')
+              .select('*')
+              .eq('user_id', user.id)
+              .maybeSingle();
+            
+            console.log("🔍 [DEBUG] User credits:", { credits, creditsError });
+            
+          } catch (error) {
+            console.error('Failed to check subscription status:', error);
+            console.error('Error details:', error.message, error.stack);
+          }
+        } else {
+          console.log("🔍 [DEBUG] No user, skipping subscription check");
+        }
+
+        // Choose endpoint based on authentication AND subscription status
+        // Only use authenticated route if user has active subscription
+        const finalIsAuthenticated = !!user && hasActiveSubscription;
+        const endpoint = finalIsAuthenticated ? `${API_ROOT}/generate` : `${API_ROOT}/generate/preview`;
         
         console.log("🔍 [DEBUG] Final endpoint selection:", {
           hasUser: !!user,
           userId: user?.id,
           isAdmin,
+          hasActiveSubscription,
           finalIsAuthenticated,
           endpoint,
-          reason: user ? "User authenticated" : "No user, using preview",
+          reason: finalIsAuthenticated ? "User authenticated with active subscription" : "No user or no active subscription, using preview",
           sessionToken: token ? "Present" : "Missing"
         });
 
@@ -232,7 +296,7 @@ export const Step4Generation: React.FC<Step4GenerationProps> = ({
       stopFake();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [user]);
 
   return (
     <>
