@@ -450,16 +450,6 @@ const Settings: React.FC = () => {
                     <Input id="email" type="email" value={emailField} disabled placeholder="you@example.com" />
                   </div>
                   <Button variant="outline" onClick={handleSaveProfile}>Save Changes</Button>
-                  
-                  <div className="pt-4 border-t">
-                    <Button 
-                      variant="destructive" 
-                      onClick={signOut}
-                      className="w-full"
-                    >
-                      Log out
-                    </Button>
-                  </div>
                 </CardContent>
               </Card>
 
@@ -509,6 +499,7 @@ const Settings: React.FC = () => {
                   </div>
                 </CardContent>
               </Card>
+              <Button variant="outline" onClick={signOut} className="w-full bg-white">Log out</Button>
             </div>
 
             {/* RIGHT COLUMN */}

@@ -35,7 +35,7 @@ const App = () => (
         {/* Trial Guard - blocks site if free trial is used */}
         <TrialGuard>
           {/* Main app wrapper - now uses auto scroll to prevent phantom scrollbar */}
-          <div className="min-h-screen overflow-y-auto overflow-x-hidden">
+          <div className="min-h-screen">
             <BrowserRouter>
               <ScrollToTop />
               <Routes>

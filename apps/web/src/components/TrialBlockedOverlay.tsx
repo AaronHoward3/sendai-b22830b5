@@ -3,7 +3,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/
 import { GradientButton } from './ui/gradient-button';
 import { Lock } from 'lucide-react';
 import { useTheme } from '@/hooks/useTheme';
-import { supabase } from '@/lib/supabaseClient';
+import { supabase, getAuthRedirectUrl } from '@/lib/supabaseClient';
 
 interface TrialBlockedOverlayProps {
   onSubscribe: () => void;
@@ -25,7 +25,7 @@ export const TrialBlockedOverlay: React.FC<TrialBlockedOverlayProps> = ({ onSubs
     
     const { error } = await supabase.auth.signInWithOtp({
       email: trimmed,
-      options: { emailRedirectTo: window.location.origin },
+      options: { emailRedirectTo: getAuthRedirectUrl() },
     });
     
     if (error) {

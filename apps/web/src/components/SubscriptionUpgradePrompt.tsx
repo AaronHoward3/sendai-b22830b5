@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
 import { GradientButton } from './ui/gradient-button';
 import { Check, CreditCard, ArrowLeft } from 'lucide-react';
-import { supabase } from '@/lib/supabaseClient';
+import { supabase, getAuthRedirectUrl } from '@/lib/supabaseClient';
 
 interface SubscriptionUpgradePromptProps {
   onUpgrade: () => void;
@@ -71,7 +71,7 @@ export const SubscriptionUpgradePrompt: React.FC<SubscriptionUpgradePromptProps>
     
     const { error } = await supabase.auth.signInWithOtp({
       email: trimmed,
-      options: { emailRedirectTo: window.location.origin },
+      options: { emailRedirectTo: getAuthRedirectUrl() },
     });
     
     if (error) {
