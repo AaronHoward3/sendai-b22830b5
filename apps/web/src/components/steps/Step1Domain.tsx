@@ -391,10 +391,8 @@ export const Step1Domain: React.FC<{
                     ))}
                   </div>
                 )}
-
-                {/* Loading text positioned absolutely to prevent layout shift */}
                 {isLoading && (
-                  <div className="absolute top-full left-0 right-0 mt-3">
+                  <div className="absolute top-full left-0 right-0 mt-5">
                     <p className="text-xs text-muted-foreground text-center">Fetching brand…</p>
                   </div>
                 )}

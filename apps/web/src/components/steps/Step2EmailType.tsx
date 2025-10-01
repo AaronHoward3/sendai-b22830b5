@@ -680,8 +680,7 @@ export const Step2EmailType: React.FC<Step2EmailTypeProps> = ({
     'focus:outline-none focus-visible:ring-2 focus-visible:ring-ring ' +
     'focus-visible:ring-offset-2 !ring-offset-background';
 
-  return (
-    <motion.div className="space-y-8 mt-16 pb-24" variants={containerVariants} initial="hidden" animate="show">
+  return <motion.div className="space-y-8 mt-14 pb-24" variants={containerVariants} initial="hidden" animate="show">
       <motion.div className="text-center space-y-4" variants={fadeInUp}>
         <h1 className="text-3xl font-bold text-foreground tracking-tight">Configure your email</h1>
         <p className="text-lg text-muted-foreground">Choose your type, tone, and style — text inputs stay inline.</p>
@@ -896,14 +895,14 @@ export const Step2EmailType: React.FC<Step2EmailTypeProps> = ({
             </GradientButton>
           </div>
         </div>
-                 <textarea
-           id="user-context-textarea"
-           placeholder="In 2–3 short sentences, say what this email should do (offer, audience, vibe). Avoid labels like 'Tone: …'. End with a natural CTA (e.g., 'Shop Deals')."
-           value={userContext}
-           onChange={(e) => setUserContext(sanitizeInput(e.target.value, 1000))}
-           rows={4}
-           className={plainTextarea}
-         />
+        <textarea
+          id="user-context-textarea"
+          placeholder="In 2–3 short sentences, say what this email should do (offer, audience, vibe). Avoid labels like 'Tone: …'. End with a natural CTA (e.g., 'Shop Deals')."
+          value={userContext}
+          onChange={(e) => setUserContext(sanitizeInput(e.target.value, 1000))}
+          rows={4}
+          className={plainTextarea}
+        />
       </motion.div>
 
              {/* Products */}
@@ -959,10 +958,8 @@ export const Step2EmailType: React.FC<Step2EmailTypeProps> = ({
                       <Pencil className="w-4 h-4" />
                     </GradientButton>
                     <GradientButton
-                      variant="white-outline"
-                      onClick={() => handleRemoveProduct(index)}
+                      variant="white-outline" title="Remove" onClick={() => handleRemoveProduct(index)}
                       className="px-3 py-2 !bg-background !text-foreground !border !border-border hover:!bg-muted"
-                      title="Remove"
                     >
                       <X className="w-4 h-4" />
                     </GradientButton>
@@ -997,16 +994,12 @@ export const Step2EmailType: React.FC<Step2EmailTypeProps> = ({
           );
         })}
 
-                 {!showProductForm && (
-           <GradientButton 
-             onClick={() => setShowProductForm(true)} 
-             variant="white-outline" 
-             className="!bg-background !text-foreground !border !border-border hover:!bg-muted"
-             disabled={products.length >= 4}
-           >
-             Add Product {products.length >= 4 ? '(Max Reached)' : ''}
-           </GradientButton>
-         )}
+        {!showProductForm && (
+          <GradientButton 
+            onClick={() => setShowProductForm(true)} variant="white-outline" disabled={products.length >= 4}
+            className="!bg-background !text-foreground !border !border-border hover:!bg-muted"
+          >Add Product {products.length >= 4 ? '(Max Reached)' : ''}</GradientButton>
+        )}
 
         {showProductForm && (
           <div className="space-y-2 p-4 border border-border rounded-lg">
@@ -1024,22 +1017,12 @@ export const Step2EmailType: React.FC<Step2EmailTypeProps> = ({
           </div>
         )}
       </motion.div>
-
-      {/* Nav - Fixed at bottom */}
-      <motion.div 
-        className="fixed bottom-0 left-0 right-0 z-40 bg-background border-t border-border p-2 shadow-lg"
-        variants={fadeInUp}
-      >
+      <motion.div className="fixed bottom-0 left-0 right-0 z-40 bg-background border-t border-border p-2 shadow-lg" variants={fadeInUp}>
         <div className="max-w-4xl mx-auto flex justify-between">
-          <GradientButton variant="white-outline" onClick={onPrev} className="!bg-background !text-foreground !border !border-border hover:!bg-muted">
-            Back
-          </GradientButton>
+          <GradientButton variant="white-outline" onClick={onPrev} className="!bg-background !text-foreground !border !border-border hover:!bg-muted">Back</GradientButton>
           <GradientButton variant="solid" onClick={handleContinue} disabled={!selectedEmailType} className="disabled:opacity-60">
             <Mail className="w-4 h-4 mr-1" />
             Generate Email
-          </GradientButton>
-        </div>
-      </motion.div>
-    </motion.div>
-  );
+      </GradientButton></div></motion.div>
+  </motion.div>;
 };
