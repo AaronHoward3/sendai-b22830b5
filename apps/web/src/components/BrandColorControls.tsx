@@ -130,21 +130,14 @@ const BrandColorControls: React.FC<Props> = ({
     setSwatchSecondary(l);
     onChange({ primary_color: p, link_color: l });
   };
-
-  return (
-    <div className="rounded-xl border p-4 space-y-4">
+  return <div className="rounded-xl border p-4 space-y-4">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {/* Primary */}
-        <div className="space-y-2">
+        <div className="space-y-2 relative">
           <label htmlFor="primary-color-input" className="text-sm font-medium">Primary Color</label>
           <div className="flex items-center gap-3">
             <button
-              type="button"
-              onClick={() => pick("primary")}
-              style={{ background: swatchPrimary }}
-              className="h-9 w-9 rounded-md border"
-              title="Pick color"
-            />
+              type="button" onClick={() => pick("primary")} title="Pick color" style={{ background: swatchPrimary }} className="h-9 w-9 rounded-md border" />
             <input
               id="primary-color-input"
               value={primary}
@@ -155,26 +148,18 @@ const BrandColorControls: React.FC<Props> = ({
               spellCheck={false}
             />
             <input
-              ref={primaryPickerRef}
-              type="color"
-              value={swatchPrimary}
+              ref={primaryPickerRef} type="color" value={swatchPrimary}
               onChange={(e) => setAndNotify("primary", e.target.value)}
-              className="hidden"
+              className="sr-only" style={{ position: 'absolute', left: '0', top: '100%', marginTop: '4px', zIndex: 1000 }}
             />
           </div>
         </div>
-
         {/* Link / Secondary */}
-        <div className="space-y-2">
+        <div className="space-y-2 relative">
           <label htmlFor="secondary-color-input" className="text-sm font-medium">Link / Secondary Color</label>
           <div className="flex items-center gap-3">
             <button
-              type="button"
-              onClick={() => pick("secondary")}
-              style={{ background: swatchSecondary }}
-              className="h-9 w-9 rounded-md border"
-              title="Pick color"
-            />
+              type="button" onClick={() => pick("secondary")} title="Pick color" style={{ background: swatchSecondary }} className="h-9 w-9 rounded-md border" />
             <input
               id="secondary-color-input"
               value={secondary}
@@ -189,7 +174,8 @@ const BrandColorControls: React.FC<Props> = ({
               type="color"
               value={swatchSecondary}
               onChange={(e) => setAndNotify("secondary", e.target.value)}
-              className="hidden"
+              className="sr-only"
+              style={{ position: 'absolute', left: '0', top: '100%', marginTop: '4px', zIndex: 1000 }}
             />
           </div>
         </div>
@@ -198,23 +184,19 @@ const BrandColorControls: React.FC<Props> = ({
       {/* Actions */}
       <div className="flex items-center gap-3">
         <button
-          type="button"
-          disabled={saving}
-          onClick={save}
+          type="button" disabled={saving} onClick={save}
           className="inline-flex items-center rounded-md border border-border px-3 py-2 text-sm hover:bg-muted"
         >
           {saving ? 'Saving…' : 'Update Brand Colors'}
         </button>
         <button
-          type="button"
-          onClick={resetToScraped}
+          type="button" onClick={resetToScraped}
           className="inline-flex items-center rounded-md border border-border px-3 py-2 text-sm hover:bg-muted"
         >
           Reset to Scraped
         </button>
       </div>
-    </div>
-  );
+  </div>
 };
 
 export default BrandColorControls;

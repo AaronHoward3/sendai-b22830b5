@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import Navigation from '@/components/Navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -7,7 +7,7 @@ import { GradientButton } from '@/components/ui/gradient-button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 
-import { Pencil, X, Check, Copy, Sun, Moon } from 'lucide-react';
+import { Pencil, X, Check, Copy, Sun, Moon, LogOut } from 'lucide-react';
 import { useTheme } from '@/hooks/useTheme';
 import { supabase } from '@/lib/supabaseClient';
 import { useSupabaseAuth } from '@/hooks/useSupabaseAuth';
@@ -125,9 +125,14 @@ const Bar: React.FC<{ label: string; remaining: number; total: number; className
 };
 
 const Dashboard: React.FC = () => {
-  const { user, signOut } = useSupabaseAuth();
+  const { user, loading, signOut } = useSupabaseAuth();
   const { toast } = useToast();
   const { setTheme } = useTheme();
+  const navigate = useNavigate();
+  useEffect(() => {
+    if (loading) return;
+    if (!user) navigate('/');
+  }, [user, loading, navigate]);
 
   // Theme local state
   const [isDark, setIsDark] = useState<boolean>(() => {
@@ -456,38 +461,27 @@ const Dashboard: React.FC = () => {
               <Card>
                 <CardHeader>
                   <CardTitle>Subscription</CardTitle>
-                  <CardDescription>
-                    Your current subscription and usage.
-                    {currentPlan ? (
+                  <CardDescription>Your current subscription and usage.</CardDescription>
+                  {currentPlan ? (
                       <div className="mt-2 inline-flex items-center gap-2">
-                        <span className="text-sm text-muted-foreground">Current Plan</span>
                         <span className="inline-flex items-center rounded-md bg-gradient-to-r from-[#00ffc3] to-[#a3f2d9] px-2 py-2 text-xs font-semibold text-black shadow-sm">
                           <svg className="mr-1 h-3 w-3" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" /></svg>
                           {PLANS.find(p => p.key === currentPlan)?.title || 'Unknown'}
-                        </span>
-                      </div>
+                      </span></div>
                     ) : sub?.status === 'active' ? (
                       <div className="mt-2 inline-flex items-center gap-2">
-                        <span className="text-sm text-muted-foreground">Current Plan</span>
                         <span className="inline-flex items-center rounded-full bg-muted px-3 py-1 text-xs font-semibold text-muted-foreground">
-                          <svg className="mr-1.5 h-3 w-3" fill="currentColor" viewBox="0 0 20 20">
-                            <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                          </svg>
+                          <svg className="mr-1.5 h-3 w-3" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" /></svg>
                           Active
-                        </span>
-                      </div>
+                      </span></div>
                     ) : null}
-                  </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-6">
                   <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                     <Bar label="Emails" remaining={credits?.emails_remaining ?? 0} total={totals.emails} />
                     <Bar label="Images" remaining={credits?.images_remaining ?? 0} total={totals.images} />
                     <Bar label="Revisions" remaining={credits?.revisions_remaining ?? 0} total={totals.revisions} />
-                    <Bar
-                      label="Brands" total={totals.brands}
-                      remaining={(credits?.brand_limit ?? 0) - (brandCount ?? 0) >= 0 ? (credits?.brand_limit ?? 0) - (brandCount ?? 0) : 0}
-                    />
+                    <Bar label="Brands" total={totals.brands} remaining={(credits?.brand_limit ?? 0) - (brandCount ?? 0) >= 0 ? (credits?.brand_limit ?? 0) - (brandCount ?? 0) : 0} />
                   </div>
                   <div className="flex gap-3">
                     {sub?.status === 'active' ? (
@@ -498,7 +492,7 @@ const Dashboard: React.FC = () => {
                   </div>
                 </CardContent>
               </Card>
-              <Button variant="outline" onClick={signOut} className="w-full bg-white">Log out</Button>
+              <Button variant="outline" onClick={signOut} className="w-full"><LogOut className="h-4 w-4" />Log out</Button>
             </div>
 
             {/* RIGHT COLUMN */}
@@ -540,9 +534,7 @@ const Dashboard: React.FC = () => {
                         </svg>
                       </div>
                       <h3 className="text-lg font-semibold text-foreground mb-2">No brands yet</h3>
-                      <p className="text-sm text-muted-foreground mb-4 max-w-sm">
-                        Generate your first email to automatically discover and save brand ideas from any website.
-                      </p>
+                      <p className="text-sm text-muted-foreground mb-4 max-w-sm">Generate your first email to automatically discover and save brand ideas from any website.</p>
                       <div className="flex flex-col sm:flex-row gap-3">
                         <button
                           onClick={() => window.location.href = '/'}
