@@ -1,5 +1,5 @@
 // src/components/steps/Step2EmailType.tsx
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { ChevronDown, Pencil, Save, X, Check, Sparkles, RotateCcw, Mail } from 'lucide-react';
 import { motion, easeOut } from 'framer-motion';
 
@@ -418,7 +418,7 @@ export const Step2EmailType: React.FC<Step2EmailTypeProps> = ({
   const brandPrimary = scrapedPrimary || getBrandString(formData?.brandData?.primary_color);
   const brandLink = scrapedSecondary || getBrandString(formData?.brandData?.link_color);
 
-  const handleColorsChange = (colors: { primary_color: string; link_color: string }) => {
+  const handleColorsChange = useCallback((colors: { primary_color: string; link_color: string }) => {
     const existing = formData.brandData || {};
     const updated = {
       ...existing,
@@ -431,7 +431,7 @@ export const Step2EmailType: React.FC<Step2EmailTypeProps> = ({
       link_color: colors.link_color,
     };
     updateFormData({ brandData: updated });
-  };
+  }, [formData.brandData, updateFormData]);
 
   const selectedStyleLabel = useMemo(
     () => DESIGN_STYLES.find(s => s.value === designAesthetic)?.label ?? 'Select style…',
