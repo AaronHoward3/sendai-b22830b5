@@ -9,7 +9,7 @@ interface SubscriptionPromptProps {
   onSignIn: () => void;
 }
 
-// Use the same plans as Settings page
+// Use the same plans as Dashboard page
 const PLANS = [
   { key: 'PAYG', title: 'Pay As You Go', priceLabel: '$9 one-time', blurb: 'Simple credits pack. No renewal.',
     bullets: ['10 emails', '1 image', '20 revisions', '1 brand'] },

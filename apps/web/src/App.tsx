@@ -6,7 +6,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { ThemeProvider } from "@/contexts/ThemeContext";
 import { TrialGuard } from "@/components/TrialGuard";
 import Index from "./pages/Index";
-import Settings from "./pages/Settings";
+import Dashboard from "./pages/Dashboard";
 import MyEmails from "./pages/MyEmails";
 import EmailEditor from "./pages/EmailEditor";
 import Signup from "./pages/Signup";
@@ -42,7 +42,7 @@ const App = () => (
                 <Route path="/" element={<Index />} />
                 <Route path="/signup" element={<Signup />} />
                 <Route path="/signin" element={<Signin />} />
-                <Route path="/dashboard" element={<Settings />} />
+                <Route path="/dashboard" element={<Dashboard />} />
                 <Route path="/my-emails" element={<MyEmails />} />
                 <Route path="/email-editor" element={<EmailEditor />} />
                 {/* 👇 new admin route */}

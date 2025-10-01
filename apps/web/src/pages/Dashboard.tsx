@@ -119,12 +119,12 @@ const Bar: React.FC<{ label: string; remaining: number; total: number; className
       <div className="h-2 w-full overflow-hidden rounded bg-muted">
         <div className="h-2 bg-primary transition-all" style={{ width: `${percent}%` }} />
       </div>
-      {total > 0 && used > 0 && <div className="mt-1 text-[11px] text-muted-foreground">{used} used</div>}
+      {/* {total > 0 && used > 0 && <div className="mt-1 text-[11px] text-muted-foreground">{used} used</div>} */}
     </div>
   );
 };
 
-const Settings: React.FC = () => {
+const Dashboard: React.FC = () => {
   const { user, signOut } = useSupabaseAuth();
   const { toast } = useToast();
   const { setTheme } = useTheme();
@@ -149,20 +149,14 @@ const Settings: React.FC = () => {
   const dialogRef = useRef<HTMLDialogElement>(null);
   
   useEffect(() => {
-    if (!previewUrl) {
-      dialogRef.current?.close();
-      return;
-    }
+    if (!previewUrl) { dialogRef.current?.close(); return; }
     dialogRef.current?.showModal();
     const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setPreviewUrl(null); };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
   }, [previewUrl]);
-
-  // Profile
   const [name, setName] = useState('');
   const [emailField, setEmailField] = useState('');
-
   // Subscription snapshot
   const [sub, setSub] = useState<{ status?: string; price_id?: string; current_period_end?: string } | null>(null);
   
@@ -179,6 +173,7 @@ const Settings: React.FC = () => {
   // Brands + saved images
   const [usedBrands, setUsedBrands] = useState<UsedBrand[]>([]);
   const [imagesByDomain, setImagesByDomain] = useState<Record<string, SavedImage[]>>({});
+  const [isLoadingBrands, setIsLoadingBrands] = useState(true);
 
   // Edit brand modal
   const [showBrandModal, setShowBrandModal] = useState(false);
@@ -321,20 +316,24 @@ const Settings: React.FC = () => {
       toast({ title: 'Portal error', description: json?.error || 'Unable to open billing portal', variant: 'destructive' });
     }
   };
-
   // --- Brands list + colors + images ---
   useEffect(() => {
     if (!user) return;
     (async () => {
-      const { data: domainsRows } = await supabase
-        .from('emails')
-        .select('brand_domain')
+      // First, get domains from user_brands table (the correct source)
+      const { data: userBrandsRows } = await supabase
+        .from('user_brands')
+        .select('domain')
         .eq('user_id', user.id)
         .order('created_at', { ascending: false });
 
-      const domains = Array.from(new Set((domainsRows || []).map((r: { brand_domain?: string }) => normalizeDomain(r?.brand_domain || '')).filter(Boolean)));
-
-      if (domains.length === 0) { setUsedBrands([]); setImagesByDomain({}); return; }
+      const domains = Array.from(new Set((userBrandsRows || []).map((r: { domain?: string }) => normalizeDomain(r?.domain || '')).filter(Boolean)));
+      if (domains.length === 0) { 
+        setUsedBrands([]); 
+        setImagesByDomain({}); 
+        setIsLoadingBrands(false);
+        return; 
+      }
 
       const { data: cacheRows } = await supabase
         .from('brand_cache')
@@ -362,6 +361,7 @@ const Settings: React.FC = () => {
         } catch { /* ignore */ }
       }
       setImagesByDomain(imagesMap);
+      setIsLoadingBrands(false);
     })();
   }, [user]);
 
@@ -459,13 +459,23 @@ const Settings: React.FC = () => {
                   <CardDescription>
                     Your current subscription and usage.
                     {currentPlan ? (
-                      <span className="block mt-1 text-sm font-medium text-primary">
-                        Current Plan: {PLANS.find(p => p.key === currentPlan)?.title || 'Unknown'}
-                      </span>
+                      <div className="mt-2 inline-flex items-center gap-2">
+                        <span className="text-sm text-muted-foreground">Current Plan</span>
+                        <span className="inline-flex items-center rounded-md bg-gradient-to-r from-[#00ffc3] to-[#a3f2d9] px-2 py-2 text-xs font-semibold text-black shadow-sm">
+                          <svg className="mr-1 h-3 w-3" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" /></svg>
+                          {PLANS.find(p => p.key === currentPlan)?.title || 'Unknown'}
+                        </span>
+                      </div>
                     ) : sub?.status === 'active' ? (
-                      <span className="block mt-1 text-sm font-medium text-muted-foreground">
-                        Active subscription (plan details unavailable)
-                      </span>
+                      <div className="mt-2 inline-flex items-center gap-2">
+                        <span className="text-sm text-muted-foreground">Current Plan</span>
+                        <span className="inline-flex items-center rounded-full bg-muted px-3 py-1 text-xs font-semibold text-muted-foreground">
+                          <svg className="mr-1.5 h-3 w-3" fill="currentColor" viewBox="0 0 20 20">
+                            <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                          </svg>
+                          Active
+                        </span>
+                      </div>
                     ) : null}
                   </CardDescription>
                 </CardHeader>
@@ -475,17 +485,10 @@ const Settings: React.FC = () => {
                     <Bar label="Images" remaining={credits?.images_remaining ?? 0} total={totals.images} />
                     <Bar label="Revisions" remaining={credits?.revisions_remaining ?? 0} total={totals.revisions} />
                     <Bar
-                      label="Brands"
+                      label="Brands" total={totals.brands}
                       remaining={(credits?.brand_limit ?? 0) - (brandCount ?? 0) >= 0 ? (credits?.brand_limit ?? 0) - (brandCount ?? 0) : 0}
-                      total={totals.brands}
                     />
                   </div>
-
-                  <div className="flex items-center justify-between text-sm text-muted-foreground">
-                    <span>Used brands: {brandCount}{credits?.brand_limit != null ? ` / ${credits.brand_limit}` : ''}</span>
-                    {sub?.current_period_end && <span>Renews: {new Date(sub.current_period_end).toLocaleDateString()}</span>}
-                  </div>
-
                   <div className="flex gap-3">
                     {sub?.status === 'active' ? (
                       <GradientButton variant="solid" onClick={openBillingPortal} className="!bg-primary !text-primary-foreground">Manage Plan</GradientButton>
@@ -499,17 +502,59 @@ const Settings: React.FC = () => {
             </div>
 
             {/* RIGHT COLUMN */}
-            <div className="space-y-6 lg:col-span-8">
-              <Card>
+            <div className="space-y-6 lg:col-span-8"><Card>
                 <CardHeader>
-                  <CardTitle className="flex items-center justify-between">
-                    <span>Brands</span>
-                  </CardTitle>
+                  <CardTitle className="flex items-center justify-between">Brands</CardTitle>
                   <CardDescription>Brands you’ve used appear here. Edit to tweak cached colors.</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-6">
-                  {usedBrands.length === 0 ? (
-                    <p className="text-sm text-muted-foreground">No brands yet. Generate an email to see brands here.</p>
+                  {isLoadingBrands ? (
+                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                      {[1, 2].map((i) => (
+                        <Card key={i} className="overflow-hidden animate-pulse">
+                          <div className="h-20 w-full bg-gray-200 dark:bg-gray-700"></div>
+                          <CardContent className="space-y-3 pt-4">
+                            <div className="flex items-start justify-between gap-2">
+                              <div className="min-w-0 flex-1">
+                                <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-3/4 mb-2"></div>
+                                <div className="flex items-center gap-2">
+                                  <div className="h-4 w-4 bg-gray-200 dark:bg-gray-700 rounded"></div>
+                                  <div className="h-4 w-4 bg-gray-200 dark:bg-gray-700 rounded"></div>
+                                </div>
+                              </div>
+                              <div className="h-8 w-8 bg-gray-200 dark:bg-gray-700 rounded"></div>
+                            </div>
+                            <div className="space-y-2">
+                              <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded w-1/2"></div>
+                              <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded w-1/3"></div>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      ))}
+                    </div>
+                  ) : usedBrands.length === 0 ? (
+                    <div className="flex flex-col items-center justify-center py-12 text-center">
+                      <div className="mb-6 rounded-full bg-gradient-to-br from-[#00ffc3]/10 to-[#a3f2d9]/10 p-6">
+                        <svg className="h-12 w-12 text-[#00ffc3]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                        </svg>
+                      </div>
+                      <h3 className="text-lg font-semibold text-foreground mb-2">No brands yet</h3>
+                      <p className="text-sm text-muted-foreground mb-4 max-w-sm">
+                        Generate your first email to automatically discover and save brand ideas from any website.
+                      </p>
+                      <div className="flex flex-col sm:flex-row gap-3">
+                        <button
+                          onClick={() => window.location.href = '/'}
+                          className="inline-flex items-center justify-center rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors"
+                        >
+                          <svg className="mr-2 h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                          </svg>
+                          Start Creating
+                        </button>
+                      </div>
+                    </div>
                   ) : (
                     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                       {usedBrands.map((b) => {
@@ -532,9 +577,7 @@ const Settings: React.FC = () => {
                                     </span>
                                   </div>
                                 </div>
-                                <Button variant="outline" size="icon" onClick={() => openBrandModal(b)} aria-label="Edit brand">
-                                  <Pencil className="h-4 w-4" />
-                                </Button>
+                                <Button variant="outline" size="icon" onClick={() => openBrandModal(b)} aria-label="Edit brand"><Pencil className="h-4 w-4" /></Button>
                               </div>
 
                               <div className="space-y-2">
@@ -601,36 +644,34 @@ const Settings: React.FC = () => {
           <Card className="w-full max-w-lg">
             <CardHeader>
               <div className="flex items-center justify-between">
-                <CardTitle>Edit Brand</CardTitle>
-                <Button variant="ghost" size="icon" onClick={closeBrandModal} aria-label="Close">
-                  <X className="h-5 w-5" />
-                </Button>
+                <div className="space-y-2">
+                  <CardTitle>Edit Brand</CardTitle>
+                  <CardDescription>Update cached colors for this domain.</CardDescription>
+                </div>
+                <Button variant="ghost" size="icon" onClick={closeBrandModal} aria-label="Close"><X className="h-5 w-5" /></Button>
               </div>
-              <CardDescription>Update cached colors for this domain.</CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-2">
+            <CardContent className="space-y-3">
+              <div className="space-y-1">
                 <Label htmlFor="brand-domain">Brand domain</Label>
                 <Input id="brand-domain" value={brandDomain} onChange={(e) => setBrandDomain(e.target.value)} disabled />
               </div>
 
               <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
+                <div className="space-y-1">
                   <Label htmlFor="brand-primary">Primary</Label>
-                  <input id="brand-primary" type="color" value={color1} onChange={(e) => setColor1(e.target.value)} className="h-10 w-full rounded-md border bg-background" />
+                  <input id="brand-primary" type="color" value={color1} onChange={(e) => setColor1(e.target.value)} className="h-10 w-full rounded-lg bg-background border-none cursor-pointer" />
                 </div>
-                <div className="space-y-2">
+                <div className="space-y-1">
                   <Label htmlFor="brand-link">Link</Label>
-                  <input id="brand-link" type="color" value={color2} onChange={(e) => setColor2(e.target.value)} className="h-10 w-full rounded-md border bg-background" />
+                  <input id="brand-link" type="color" value={color2} onChange={(e) => setColor2(e.target.value)} className="h-10 w-full rounded-lg bg-background border-none cursor-pointer" />
                 </div>
               </div>
 
-              <div className="flex justify-end gap-2 pt-2">
-                <Button variant="outline" onClick={closeBrandModal}>Cancel</Button>
-                <GradientButton variant="solid" onClick={saveBrandColors} disabled={!isBrandValid} className="!bg-primary !text-primary-foreground disabled:opacity-60">
-                  Save
-                </GradientButton>
-              </div>
+                <div className="flex justify-end gap-2 pt-2">
+                  <Button variant="outline" onClick={closeBrandModal}>Cancel</Button>
+                  <GradientButton variant="solid" onClick={saveBrandColors} disabled={!isBrandValid} className="!bg-primary !text-primary-foreground disabled:opacity-60 h-10 px-4 py-2">Save</GradientButton>
+                </div>
             </CardContent>
           </Card>
         </div>
@@ -638,8 +679,7 @@ const Settings: React.FC = () => {
 
       {/* Plan Picker Modal */}
       {showPlanModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm">
-          <Card className="w-full max-w-5xl">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm"><Card className="w-full max-w-5xl">
             <CardHeader>
               <div className="flex items-center justify-between">
                 <CardTitle>Choose a Plan</CardTitle>
@@ -691,8 +731,7 @@ const Settings: React.FC = () => {
                 })}
               </div>
             </CardContent>
-          </Card>
-        </div>
+        </Card></div>
       )}
 
       {/* Image Preview Modal */}
@@ -740,4 +779,4 @@ const Settings: React.FC = () => {
   );
 };
 
-export default Settings;
+export default Dashboard;
