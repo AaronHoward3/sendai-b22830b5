@@ -81,9 +81,10 @@ export async function createCheckoutSession(req, res) {
       customer: customerId,
       client_reference_id: req.user.id,     // so webhook can map user
       line_items: [{ price: price_id, quantity: 1 }],
-      success_url: `${process.env.CLIENT_URL}/settings?billing=success`,
-      cancel_url: `${process.env.CLIENT_URL}/settings?billing=cancel`,
-      allow_promotion_codes: true
+      success_url: `${process.env.CLIENT_URL}/dashboard?billing=success`,
+      cancel_url: `${process.env.CLIENT_URL}/dashboard?billing=cancel`,
+      allow_promotion_codes: true,
+      payment_method_types: ['card']
     });
 
     res.json({ url: session.url });
@@ -122,7 +123,7 @@ export async function createPortalSession(req, res) {
       // Try to create billing portal session
       const portal = await stripe.billingPortal.sessions.create({
         customer: customerId,
-        return_url: `${process.env.CLIENT_URL}/settings`
+        return_url: `${process.env.CLIENT_URL}/dashboard`
       });
 
       res.json({ url: portal.url });

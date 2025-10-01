@@ -78,7 +78,6 @@ const Navigation: React.FC<NavigationProps> = ({ onHomeClick }) => {
 
           {/* Profile Section */}
           {loading ? (
-            // Skeleton loading state - match Account button width
             <div className="h-8 w-24 bg-muted animate-pulse rounded-md"></div>
           ) : user ? (
             <DropdownMenu>
@@ -121,8 +120,7 @@ const Navigation: React.FC<NavigationProps> = ({ onHomeClick }) => {
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
-          ) : (
-            <div className="flex items-center gap-4">
+          ) : (<div className="flex items-center gap-4">
               <Button
                 variant="outline"
                 size="sm"

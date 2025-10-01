@@ -5,12 +5,13 @@ import { Lock } from 'lucide-react';
 import { useTheme } from '@/hooks/useTheme';
 import { supabase, getAuthRedirectUrl } from '@/lib/supabaseClient';
 
-interface TrialBlockedOverlayProps {
+interface Props {
   onSubscribe: () => void;
   onSignIn: () => void;
+  inline?: boolean;
 }
 
-export const TrialBlockedOverlay: React.FC<TrialBlockedOverlayProps> = ({ onSubscribe, onSignIn }) => {
+export const TrialBlockedOverlay: React.FC<Props> = ({ onSubscribe, onSignIn, inline = false }) => {
   const { theme } = useTheme();
   const [email, setEmail] = useState('');
   const [sent, setSent] = useState(false);
@@ -37,11 +38,11 @@ export const TrialBlockedOverlay: React.FC<TrialBlockedOverlayProps> = ({ onSubs
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-background flex items-center justify-center p-4">
-      <div className="w-full max-w-5xl mx-auto">
-        <Card className="border-2 border-destructive/20 bg-card">
+    <div className={inline ? "w-full" : "fixed inset-0 z-50 bg-background flex items-center justify-center p-4"}>
+      <div className={inline ? "w-full" : "w-full max-w-5xl mx-auto"}>
+        <Card className="">
           <CardHeader className="text-center pb-4">
-            <div className="mx-auto mb-4 w-16 h-16 bg-gradient-to-br from-destructive to-orange-600 rounded-full flex items-center justify-center">
+            <div className="mx-auto w-16 h-16 bg-gradient-to-br from-[#00ffc3] to-[#a3f2d9] rounded-full flex items-center justify-center">
               <Lock className="h-8 w-8 text-white" />
             </div>
             <CardTitle className="text-2xl font-bold text-foreground">
