@@ -429,7 +429,7 @@ const Settings: React.FC = () => {
               <Card>
                 <CardHeader>
                   <div className="flex items-start justify-between gap-4">
-                    <div>
+                    <div className="space-y-3">
                       <CardTitle>Profile Information</CardTitle>
                       <CardDescription>Update your personal information and account details.</CardDescription>
                     </div>
@@ -488,13 +488,9 @@ const Settings: React.FC = () => {
 
                   <div className="flex gap-3">
                     {sub?.status === 'active' ? (
-                      <GradientButton variant="solid" onClick={openBillingPortal} className="!bg-primary !text-primary-foreground">
-                        Manage Plan
-                      </GradientButton>
+                      <GradientButton variant="solid" onClick={openBillingPortal} className="!bg-primary !text-primary-foreground">Manage Plan</GradientButton>
                     ) : (
-                      <GradientButton variant="solid" onClick={() => setShowPlanModal(true)} className="!bg-primary !text-primary-foreground">
-                        Choose Plan
-                      </GradientButton>
+                      <GradientButton variant="solid" onClick={() => setShowPlanModal(true)} className="!bg-primary !text-primary-foreground">Choose Plan</GradientButton>
                     )}
                   </div>
                 </CardContent>

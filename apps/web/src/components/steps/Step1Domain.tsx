@@ -9,6 +9,7 @@ import { apiPath } from '@/lib/api';
 import { useSupabaseAuth } from '@/hooks/useSupabaseAuth';
 import { useToast } from '@/hooks/use-toast';
 import { SubscriptionUpgradePrompt } from '@/components/SubscriptionUpgradePrompt';
+import { TrialBlockedOverlay } from '@/components/TrialBlockedOverlay';
 
 // Normalize domains to a comparable canonical form
 function normalizeDomain(dom: string): string {
@@ -27,7 +28,7 @@ export const Step1Domain: React.FC<{
   onNext: () => void;
 }> = ({ formData, updateFormData, onNext }) => {
   const { theme } = useTheme();
-  const { user } = useSupabaseAuth();
+  const { user, loading } = useSupabaseAuth();
   const { toast } = useToast();
   const isDark = theme === 'dark';
   const isAuthenticated = !!user;
@@ -53,11 +54,15 @@ export const Step1Domain: React.FC<{
   const [noBrandsOpen, setNoBrandsOpen] = useState(false);
   const [showUpgradePrompt, setShowUpgradePrompt] = useState(false);
   const [upgradeReason, setUpgradeReason] = useState<'no_credits' | 'no_subscription' | 'trial_expired'>('no_credits');
+  
+  // Trial blocking state
+  const [isTrialBlocked, setIsTrialBlocked] = useState(false);
+  const [isCheckingTrial, setIsCheckingTrial] = useState(!isAuthenticated && !loading);
+  const [hasLoaded, setHasLoaded] = useState(false);
 
   // -------- Saved brand domains (client-only; user_brands only; safe alphabetical order) --------
   useEffect(() => {
     let cancelled = false;
-
     (async () => {
       try {
         const { data: { session } } = await supabase.auth.getSession();
@@ -84,10 +89,65 @@ export const Step1Domain: React.FC<{
         // ignore; suggestions are optional
       }
     })();
-
     return () => { cancelled = true; };
   }, []);
 
+  // Check trial status for anonymous users only
+  useEffect(() => {
+    // Wait for authentication state to be determined
+    if (loading) return;
+    if (isAuthenticated) {
+      setIsTrialBlocked(false);
+      setIsCheckingTrial(false);
+      setHasLoaded(true);
+      return;
+    }
+    // Reset states when starting check
+    setIsTrialBlocked(false);
+    setIsCheckingTrial(true);
+    // Check localStorage for trial usage
+    const freeTrialUsed = localStorage.getItem('freemium_trial_used');
+    if (freeTrialUsed) {
+      setIsTrialBlocked(true);
+      setIsCheckingTrial(false);
+      setHasLoaded(true);
+      return;
+    }
+    // Check IP-based blocking with a minimum delay to prevent flash
+    const checkIPTrialStatus = async () => {
+      try {
+        // Add a minimum delay to prevent flash
+        await new Promise(resolve => setTimeout(resolve, 500));
+        
+        const response = await fetch('/api/generate/preview', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            domain: 'test.com',
+            emailType: 'Promotion',
+            userContext: 'test',
+            imageContext: 'test',
+            products: [],
+            brandData: {},
+            customHeroImage: true
+          })
+        });
+
+        if (response.status === 403) {
+          const data = await response.json();
+          if (data.code === 'TRIAL_USED') {
+            setIsTrialBlocked(true);
+          }
+        }
+      } catch (error) {
+        console.error('Failed to check IP trial status:', error);
+      } finally {
+        setIsCheckingTrial(false);
+        setHasLoaded(true);
+      }
+    };
+    checkIPTrialStatus();
+  }, [loading]);
   // helper: compute available brand slots
   async function getAvailableBrandSlots(): Promise<number> {
     const { data: { session } } = await supabase.auth.getSession();
@@ -111,7 +171,6 @@ export const Step1Domain: React.FC<{
     const used = count ?? 0;
     return Math.max(limit - used, 0);
   }
-
   // NEW: check if this domain is already owned by the user (user_brands only)
   async function domainOwnedByUser(dom: string): Promise<boolean> {
     const target = normalizeDomain(dom);
@@ -122,25 +181,18 @@ export const Step1Domain: React.FC<{
       const owned = savedDomains.some((d) => normalizeDomain(d) === target);
       if (owned) return true;
     }
-
     // 2) DB fallback: user_brands
     const { data: ub } = await supabase
       .from('user_brands')
       .select('domain')
       .eq('user_id', (await supabase.auth.getUser()).data.user?.id || '')
       .limit(200);
-
-    if (Array.isArray(ub) && ub.some((r: { domain?: string }) => normalizeDomain(r.domain || '') === target)) {
-      return true;
-    }
-
+    if (Array.isArray(ub) && ub.some((r: { domain?: string }) => normalizeDomain(r.domain || '') === target)) return true;
     return false;
   }
-
   // Helper function to check brand slot availability
   const checkBrandSlotAvailability = async (alreadyOwned: boolean): Promise<boolean> => {
     if (alreadyOwned) return true;
-    
     const available = await getAvailableBrandSlots();
     if (available <= 0) {
       setNoBrandsOpen(true);
@@ -148,7 +200,6 @@ export const Step1Domain: React.FC<{
     }
     return true;
   };
-
   // Helper function to fetch brand data
   const fetchBrandData = async (domain: string) => {
     const brandRes = await fetch(apiPath('brand/check'), {
@@ -170,11 +221,9 @@ export const Step1Domain: React.FC<{
     if (!productRes.ok) throw new Error('Failed to fetch products');
     return productRes.json();
   };
-
   // Helper function to claim brand
   const claimBrandIfNeeded = async (domain: string, alreadyOwned: boolean): Promise<boolean> => {
     if (alreadyOwned) return true;
-
     try {
       const { data: { session } } = await supabase.auth.getSession();
       const token = session?.access_token;
@@ -199,20 +248,14 @@ export const Step1Domain: React.FC<{
     }
     return true;
   };
-
-  const handleUpgrade = () => {
-    window.location.href = "/dashboard?plan=1";
-  };
-
-  const handleBack = () => {
-    setShowUpgradePrompt(false);
-  };
-
+  const handleUpgrade = () => { window.location.href = "/dashboard?plan=1"; };
+  const handleBack = () => { setShowUpgradePrompt(false); };
+  const handleTrialSubscribe = () => { window.location.href = "/dashboard?plan=1"; };
+  const handleTrialSignIn = () => { window.location.href = "/dashboard"; };
   const handleContinue = async () => {
     const trimmed = normalizeDomain(domain);
     if (!trimmed) return;
     setIsLoading(true);
-
     try {
       // For anonymous users, check if they've already used their free trial
       if (!isAuthenticated) {
@@ -226,40 +269,24 @@ export const Step1Domain: React.FC<{
           setIsLoading(false);
           return;
         }
-        
         console.log("🎯 [FREEMIUM] Fetching brand data for anonymous user...");
-        
-        const [brandData, productSuggestions] = await Promise.all([
-          fetchBrandData(trimmed),
-          fetchProductData(trimmed)
-        ]);
-
+        const [brandData, productSuggestions] = await Promise.all([ fetchBrandData(trimmed), fetchProductData(trimmed) ]);
         updateFormData({
-          domain: trimmed,
-          brandData,
+          domain: trimmed, brandData,
           products: productSuggestions.products,
         });
         onNext();
         return;
       }
-
       // For authenticated users, do the full brand checking flow
       const alreadyOwned = await domainOwnedByUser(trimmed);
-      
       const canProceed = await checkBrandSlotAvailability(alreadyOwned);
       if (!canProceed) return;
-
-      const [brandData, productSuggestions] = await Promise.all([
-        fetchBrandData(trimmed),
-        fetchProductData(trimmed)
-      ]);
-
+      const [brandData, productSuggestions] = await Promise.all([ fetchBrandData(trimmed), fetchProductData(trimmed) ]);
       const claimSuccessful = await claimBrandIfNeeded(trimmed, alreadyOwned);
       if (!claimSuccessful) return;
-
       updateFormData({
-        domain: trimmed,
-        brandData,
+        domain: trimmed, brandData,
         products: productSuggestions.products,
       });
       onNext();
@@ -271,7 +298,6 @@ export const Step1Domain: React.FC<{
       setIsLoading(false);
     }
   };
-
   const gradientBg = `linear-gradient(
     90deg,
     ${glowColor1} 0%,
@@ -284,29 +310,18 @@ export const Step1Domain: React.FC<{
     ${glowColor4},
     ${glowColor1}
   )`;
-
   const containerVariants = { hidden: {}, show: { transition: { staggerChildren: 0.2 } } };
   const fadeInUp = { hidden: { opacity: 0, y: 30 }, show: { opacity: 1, y: 0, transition: { duration: 0.8, ease: easeOut } } };
-
   const filteredSuggestions = useMemo(() => {
     if (!domain.trim()) return savedDomains;
     const q = normalizeDomain(domain);
     return savedDomains.filter((d) => normalizeDomain(d).includes(q));
   }, [domain, savedDomains]);
-
-  return (
-    <>
-      {showUpgradePrompt ? (
-        <SubscriptionUpgradePrompt
-          onUpgrade={handleUpgrade}
-          onBack={handleBack}
-          reason={upgradeReason}
-        />
-      ) : (
-        <div className="fixed inset-0 z-0 bg-transparent">
-      {/* Background blobs */}
-      <Background variant="blobs" />
-
+  return (<>
+      {showUpgradePrompt 
+      ? <SubscriptionUpgradePrompt onUpgrade={handleUpgrade} onBack={handleBack} reason={upgradeReason} />
+      : (<div className="fixed inset-0 z-0 bg-transparent">
+          <Background variant="blobs" />
       <div className="relative z-10 h-screen flex items-center justify-center px-4 overflow-hidden">
         <motion.div className="text-center max-w-lg w-full" variants={containerVariants} initial="hidden" animate="show">
           <motion.div className="space-y-2" variants={fadeInUp}>
@@ -315,64 +330,75 @@ export const Step1Domain: React.FC<{
           </motion.div>
 
           <motion.div className="relative w-full max-w-md mx-auto mt-10" variants={fadeInUp}>
-            <div
-              className="absolute inset-0 rounded-full p-[2px] blur-xl opacity-90 bg-repeat bg-[length:800%_100%] animate-gradient-sweep pointer-events-none"
-              style={{ backgroundImage: gradientBg }}
-            />
-            <div
-              className="relative z-10 flex items-center rounded-full ring-1 ring-white/20 pl-5 pr-2 py-2 shadow-xl transition"
-              style={{ backgroundColor: inputBg }}
-            >
-              <input
-                type="text"
-                placeholder="example.com"
-                value={domain}
-                onChange={(e) => setDomain(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && handleContinue()}
-                onFocus={() => setShowSuggestions(true)}
-                onBlur={() => setTimeout(() => setShowSuggestions(false), 120)}
-                className={`bg-transparent text-base w-full focus:outline-none placeholder-opacity-50 ${inputText} ${placeholderText}`}
-              />
-              <button
-                onClick={handleContinue}
-                disabled={!domain.trim() || isLoading}
-                className="ml-2 p-2 rounded-full bg-gradient-to-r from-[#00ffc3] to-[#a3f2d9] hover:scale-105 transition-transform disabled:opacity-50"
-                aria-label="Continue to Step 2"
-              >
-                {isLoading ? <div className="loader" /> : <ArrowRight className="w-5 h-5 text-black" />}
-              </button>
-            </div>
-
-            {showSuggestions && filteredSuggestions.length > 0 && (
-              <div
-                className={`absolute z-20 mt-2 w-full max-h-56 overflow-auto rounded-xl border shadow-xl ${
-                  isDark ? 'bg-[#111111]/95 border-white/10' : 'bg-white/95 border-black/10'
-                }`}
-              >
-                {filteredSuggestions.map((s, index) => (
+            {!hasLoaded || isCheckingTrial ? (
+              <div className="relative w-full">
+                <div className="absolute inset-0 rounded-full p-[2px] bg-gray-200 dark:bg-gray-700 animate-pulse"></div>
+                <div className="relative z-10 flex items-center rounded-full ring-1 ring-gray-200 dark:ring-gray-700 pl-5 pr-2 py-2 bg-white dark:bg-gray-800">
+                  <div className="bg-white dark:bg-gray-600 rounded h-6 flex-1 animate-pulse"></div>
+                  <div className="ml-2 p-2 rounded-full bg-gray-200 dark:bg-gray-600 animate-pulse"><div className="w-5 h-5"></div></div>
+                </div>
+              </div>
+            ) : isTrialBlocked 
+            ? <TrialBlockedOverlay onSubscribe={handleTrialSubscribe} onSignIn={handleTrialSignIn} inline={true} />
+            : (
+              <>
+                <div
+                  className="absolute inset-0 rounded-full p-[2px] blur-xl opacity-90 bg-repeat bg-[length:800%_100%] animate-gradient-sweep pointer-events-none"
+                  style={{ backgroundImage: gradientBg }}
+                />
+                <div className="relative z-10 flex items-center rounded-full ring-1 ring-white/20 pl-5 pr-2 py-2 shadow-xl transition" style={{ backgroundColor: inputBg }}>
+                  <input
+                    type="text"
+                    placeholder="example.com"
+                    value={domain}
+                    onChange={(e) => setDomain(e.target.value)}
+                    onKeyDown={(e) => e.key === 'Enter' && handleContinue()}
+                    onFocus={() => setShowSuggestions(true)}
+                    onBlur={() => setTimeout(() => setShowSuggestions(false), 120)}
+                    className={`bg-transparent text-base w-full focus:outline-none placeholder-opacity-50 ${inputText} ${placeholderText}`}
+                  />
                   <button
-                    key={s}
-                    type="button"
-                    className={`w-full px-4 py-2 text-left cursor-pointer hover:bg-white/10 ${isDark ? 'text-white' : 'text-black'}`}
-                    onMouseDown={(e) => {
-                      e.preventDefault();
-                      setDomain(s);
-                      setShowSuggestions(false);
-                      handleContinue();
-                    }}
-                    aria-label={`Select domain ${s}`}
+                    onClick={handleContinue}
+                    disabled={!domain.trim() || isLoading}
+                    className="ml-2 p-2 cursor-pointer rounded-full bg-gradient-to-r from-[#00ffc3] to-[#a3f2d9] hover:scale-105 transition-transform disabled:opacity-50"
+                    aria-label="Continue to Step 2"
                   >
-                    {s}
+                    {isLoading ? <div className="loader" /> : <ArrowRight className="w-5 h-5 text-black" />}
                   </button>
-                ))}
-              </div>
-            )}
+                </div>
 
-            {/* Loading text positioned absolutely to prevent layout shift */}
-            {isLoading && (
-              <div className="absolute top-full left-0 right-0 mt-3">
-                <p className="text-xs text-muted-foreground text-center">Fetching brand…</p>
-              </div>
+                {showSuggestions && filteredSuggestions.length > 0 && (
+                  <div
+                    className={`absolute z-20 mt-2 w-full max-h-56 overflow-auto rounded-xl border shadow-xl ${
+                      isDark ? 'bg-[#111111]/95 border-white/10' : 'bg-white/95 border-black/10'
+                    }`}
+                  >
+                    {filteredSuggestions.map((s, index) => (
+                      <button
+                        key={s}
+                        type="button"
+                        className={`w-full px-4 py-2 text-left cursor-pointer hover:bg-white/10 ${isDark ? 'text-white' : 'text-black'}`}
+                        onMouseDown={(e) => {
+                          e.preventDefault();
+                          setDomain(s);
+                          setShowSuggestions(false);
+                          handleContinue();
+                        }}
+                        aria-label={`Select domain ${s}`}
+                      >
+                        {s}
+                      </button>
+                    ))}
+                  </div>
+                )}
+
+                {/* Loading text positioned absolutely to prevent layout shift */}
+                {isLoading && (
+                  <div className="absolute top-full left-0 right-0 mt-3">
+                    <p className="text-xs text-muted-foreground text-center">Fetching brand…</p>
+                  </div>
+                )}
+              </>
             )}
           </motion.div>
         </motion.div>
@@ -383,22 +409,12 @@ export const Step1Domain: React.FC<{
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm">
           <div className="w-full max-w-md rounded-2xl bg-background border border-border shadow-xl p-6">
             <h3 className="text-lg font-semibold">No more brand slots</h3>
-            <p className="mt-2 text-sm text-muted-foreground">
-              You’ve reached your plan’s brand limit. Upgrade your plan to add more brands.
-            </p>
+            <p className="mt-2 text-sm text-muted-foreground">You’ve reached your plan’s brand limit. Upgrade your plan to add more brands.</p>
             <div className="mt-6 flex justify-end gap-2">
               <button className="btn bg-secondary text-secondary-foreground" onClick={() => setNoBrandsOpen(false)}>Cancel</button>
-              <button
-                className="btn"
-                onClick={() => { setNoBrandsOpen(false); window.location.href = '/settings?plan=1'; }}
-              >
-                Upgrade
-              </button>
-            </div>
-          </div>
-        </div>
+              <button className="btn" onClick={() => { setNoBrandsOpen(false); window.location.href = '/dashboard?plan=1'; }}>Upgrade</button>
+        </div></div></div>
       )}
-
       <style>{`
         @keyframes gradient-sweep {
           0% { background-position: 0% 50%; }

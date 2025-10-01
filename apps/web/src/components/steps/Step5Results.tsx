@@ -154,7 +154,7 @@ export const Step5Results: React.FC<Step5ResultsProps> = ({
   // Show subscription prompt for preview mode users (but not for admins)
   if (formData.isPreviewMode && !isAdmin) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center p-4">
+      <div className="min-h-screen bg-background flex items-center justify-center p-4 mt-12">
         <div className="w-full max-w-4xl space-y-8">
           {/* Email Preview */}
           <div className="bg-white rounded-xl border shadow-lg overflow-hidden">
@@ -166,8 +166,6 @@ export const Step5Results: React.FC<Step5ResultsProps> = ({
               <iframe srcDoc={html} sandbox="" className="w-full h-full border-0" style={{ background: "white" }} title="Email Preview" />
             </div>
           </div>
-
-          {/* Subscription Prompt */}
           <SubscriptionPrompt onSubscribe={handleSubscribe} onSignIn={handleSignIn} />
         </div>
       </div>

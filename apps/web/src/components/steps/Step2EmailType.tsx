@@ -1,6 +1,6 @@
 // src/components/steps/Step2EmailType.tsx
 import React, { useEffect, useMemo, useState } from 'react';
-import { ChevronDown, Pencil, Save, X, Check, Sparkles, RotateCcw } from 'lucide-react';
+import { ChevronDown, Pencil, Save, X, Check, Sparkles, RotateCcw, Mail } from 'lucide-react';
 import { motion, easeOut } from 'framer-motion';
 
 import { GradientButton } from '../ui/gradient-button';
@@ -681,12 +681,10 @@ export const Step2EmailType: React.FC<Step2EmailTypeProps> = ({
     'focus-visible:ring-offset-2 !ring-offset-background';
 
   return (
-    <motion.div className="space-y-8" variants={containerVariants} initial="hidden" animate="show">
+    <motion.div className="space-y-8 mt-16 pb-24" variants={containerVariants} initial="hidden" animate="show">
       <motion.div className="text-center space-y-4" variants={fadeInUp}>
         <h1 className="text-3xl font-bold text-foreground tracking-tight">Configure your email</h1>
-        <p className="text-lg text-muted-foreground">
-          Choose your type, tone, and style — text inputs stay inline.
-        </p>
+        <p className="text-lg text-muted-foreground">Choose your type, tone, and style — text inputs stay inline.</p>
       </motion.div>
 
       {/* Email Type */}
@@ -1027,14 +1025,20 @@ export const Step2EmailType: React.FC<Step2EmailTypeProps> = ({
         )}
       </motion.div>
 
-      {/* Nav */}
-      <motion.div className="flex justify-between pt-6" variants={fadeInUp}>
-        <GradientButton variant="white-outline" onClick={onPrev} className="!bg-background !text-foreground !border !border-border hover:!bg-muted">
-          Back
-        </GradientButton>
-        <GradientButton variant="solid" onClick={handleContinue} disabled={!selectedEmailType} className="disabled:opacity-60">
-          Generate Email
-        </GradientButton>
+      {/* Nav - Fixed at bottom */}
+      <motion.div 
+        className="fixed bottom-0 left-0 right-0 z-40 bg-background border-t border-border p-2 shadow-lg"
+        variants={fadeInUp}
+      >
+        <div className="max-w-4xl mx-auto flex justify-between">
+          <GradientButton variant="white-outline" onClick={onPrev} className="!bg-background !text-foreground !border !border-border hover:!bg-muted">
+            Back
+          </GradientButton>
+          <GradientButton variant="solid" onClick={handleContinue} disabled={!selectedEmailType} className="disabled:opacity-60">
+            <Mail className="w-4 h-4 mr-1" />
+            Generate Email
+          </GradientButton>
+        </div>
       </motion.div>
     </motion.div>
   );

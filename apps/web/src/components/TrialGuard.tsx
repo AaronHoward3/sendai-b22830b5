@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { useSupabaseAuth } from '@/hooks/useSupabaseAuth';
-import { TrialBlockedOverlay } from '@/components/TrialBlockedOverlay';
 import { supabase } from '@/lib/supabaseClient';
 
 const checkAdminStatus = async (userId: string): Promise<boolean> => {
@@ -175,9 +174,7 @@ export const TrialGuard: React.FC<TrialGuardProps> = ({ children }) => {
   }
 
   // If trial is blocked, show the blocking overlay
-  if (isTrialBlocked) {
-    return <TrialBlockedOverlay onSubscribe={handleSubscribe} onSignIn={handleSignIn} />;
-  }
+  // if (isTrialBlocked)  return <TrialBlockedOverlay onSubscribe={handleSubscribe} onSignIn={handleSignIn} />;
 
   // Otherwise, render the normal app
   return <>{children}</>;
