@@ -104,22 +104,36 @@ function pct(rem: number, total: number) {
 }
 
 const Bar: React.FC<{ label: string; remaining: number; total: number; className?: string }> = ({ label, remaining, total, className }) => {
-  const percent = pct(remaining, total);
+  // Handle loading state - if remaining is undefined/null and total is 0, show skeleton
+  if (remaining === undefined || remaining === null || total === 0) {
+    return (
+      <div className={className}>
+        <div className="mb-2 flex items-center justify-between">
+          <span className="text-sm font-medium">{label}</span>
+          <div className="h-3 w-12 animate-pulse rounded bg-muted"></div>
+        </div>
+        <div className="h-2 w-full overflow-hidden rounded bg-muted">
+          <div className="h-2 animate-pulse bg-muted"></div>
+        </div>
+      </div>
+    );
+  }
+
   const used = total > 0 ? total - remaining : 0;
+  const percent = total > 0 ? Math.max(0, Math.min(1, used / total)) * 100 : 0;
   return (
     <div className={className}>
       <div className="mb-2 flex items-center justify-between">
         <span className="text-sm font-medium">{label}</span>
         {total > 0 ? (
-          <span className="text-xs text-muted-foreground">{remaining} / {total}</span>
+          <span className="text-xs text-muted-foreground">{used} / {total}</span>
         ) : (
-          <span className="text-xs text-muted-foreground">{remaining} remaining</span>
+          <span className="text-xs text-muted-foreground">{used} used</span>
         )}
       </div>
       <div className="h-2 w-full overflow-hidden rounded bg-muted">
         <div className="h-2 bg-primary transition-all" style={{ width: `${percent}%` }} />
       </div>
-      {/* {total > 0 && used > 0 && <div className="mt-1 text-[11px] text-muted-foreground">{used} used</div>} */}
     </div>
   );
 };
@@ -462,7 +476,11 @@ const Dashboard: React.FC = () => {
                 <CardHeader>
                   <CardTitle>Subscription</CardTitle>
                   <CardDescription>Your current subscription and usage.</CardDescription>
-                  {currentPlan ? (
+                  {!sub && !currentPlan ? (
+                    <div className="mt-2 inline-flex items-center gap-2">
+                      <div className="h-6 w-24 animate-pulse rounded-md bg-muted"></div>
+                    </div>
+                  ) : currentPlan ? (
                       <div className="mt-2 inline-flex items-center gap-2">
                         <span className="inline-flex items-center rounded-md bg-gradient-to-r from-[#00ffc3] to-[#a3f2d9] px-2 py-2 text-xs font-semibold text-black shadow-sm">
                           <svg className="mr-1 h-3 w-3" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" /></svg>
@@ -672,12 +690,10 @@ const Dashboard: React.FC = () => {
       {/* Plan Picker Modal */}
       {showPlanModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm"><Card className="w-full max-w-5xl">
-            <CardHeader>
+            <CardHeader className='space-y-0'>
               <div className="flex items-center justify-between">
                 <CardTitle>Choose a Plan</CardTitle>
-                <Button variant="ghost" size="icon" onClick={() => setShowPlanModal(false)} aria-label="Close">
-                  <X className="h-5 w-5" />
-                </Button>
+                <Button variant="ghost" size="icon" onClick={() => setShowPlanModal(false)} aria-label="Close"><X className="h-5 w-5" /></Button>
               </div>
               <CardDescription>Select the plan that fits your workflow. You can change or cancel anytime.</CardDescription>
             </CardHeader>

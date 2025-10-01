@@ -856,25 +856,19 @@ export const Step2EmailType: React.FC<Step2EmailTypeProps> = ({
             <label htmlFor="image-context-textarea" className="text-lg font-medium text-foreground">Image Context</label>
             <div className="flex gap-2">
               <GradientButton
-                variant="white-outline"
-                onClick={generateAIContexts}
-                disabled={isGeneratingContext}
+                variant="white-outline" onClick={generateAIContexts} disabled={isGeneratingContext} title="Regenerate Image Context with AI"
                 className="!bg-background !text-foreground !border !border-border hover:!bg-muted px-3 py-1.5 text-sm disabled:opacity-50"
-                title="Regenerate Image Context with AI"
               >
                 <Sparkles className="w-4 h-4 mr-1.5" /> 
                 {isGeneratingContext ? 'Generating...' : 'AI Regenerate'}
               </GradientButton>
             </div>
           </div>
-                     <textarea
-             id="image-context-textarea"
-             placeholder="Describe the hero vibe (e.g., 'Dynamic splash shot with icy droplets; bold contrast; clean background; no text.')"
-             value={imageContext}
-             onChange={(e) => setImageContext(sanitizeInput(e.target.value, 1000))}
-             rows={4}
-             className={plainTextarea}
-           />
+          <textarea
+            id="image-context-textarea" value={imageContext} rows={4} className={plainTextarea}
+            placeholder="Describe the hero vibe (e.g., 'Dynamic splash shot with icy droplets; bold contrast; clean background; no text.')"
+            onChange={(e) => setImageContext(sanitizeInput(e.target.value, 1000))}
+          />
         </motion.div>
       )}
 
@@ -884,11 +878,8 @@ export const Step2EmailType: React.FC<Step2EmailTypeProps> = ({
           <label htmlFor="user-context-textarea" className="text-lg font-medium text-foreground">User Context</label>
           <div className="flex gap-2">
             <GradientButton
-              variant="white-outline"
-              onClick={generateAIContexts}
-              disabled={isGeneratingContext}
+              variant="white-outline" onClick={generateAIContexts} disabled={isGeneratingContext} title="Regenerate User Context with AI"
               className="!bg-background !text-foreground !border !border-border hover:!bg-muted px-3 py-1.5 text-sm disabled:opacity-50"
-              title="Regenerate User Context with AI"
             >
               <Sparkles className="w-4 h-4 mr-1.5" /> 
               {isGeneratingContext ? 'Generating...' : 'AI Regenerate'}
@@ -896,27 +887,19 @@ export const Step2EmailType: React.FC<Step2EmailTypeProps> = ({
           </div>
         </div>
         <textarea
-          id="user-context-textarea"
+          id="user-context-textarea" value={userContext} rows={4} className={plainTextarea}
           placeholder="In 2–3 short sentences, say what this email should do (offer, audience, vibe). Avoid labels like 'Tone: …'. End with a natural CTA (e.g., 'Shop Deals')."
-          value={userContext}
           onChange={(e) => setUserContext(sanitizeInput(e.target.value, 1000))}
-          rows={4}
-          className={plainTextarea}
         />
       </motion.div>
-
-             {/* Products */}
-       <motion.div className="space-y-4" variants={fadeInUp}>
+      {/* Products */}
+      <motion.div className="space-y-4" variants={fadeInUp}>
          <h3 className="text-lg font-medium text-foreground">Products</h3>
          <p className="text-sm text-muted-foreground">Maximum 4 products allowed ({products.length}/4)</p>
-         {products.length === 0 && (
-           <p className="text-sm text-muted-foreground italic">No products added yet.</p>
-         )}
+         {products.length === 0 && <p className="text-sm text-muted-foreground italic">No products added yet.</p>}
         {products.map((product, index) => {
           const isEditing = editingIndex === index;
-
-          return (
-            <div key={`${product.url || product.name || 'product'}-${index}`} className="space-y-2 rounded-lg border border-border p-4">
+          return <div key={`${product.url || product.name || 'product'}-${index}`} className="space-y-2 rounded-lg border border-border p-4">
               {!isEditing ? (
                 <div className="flex items-center justify-between gap-4">
                   <div className="flex items-center gap-3 min-w-0">
@@ -929,9 +912,7 @@ export const Step2EmailType: React.FC<Step2EmailTypeProps> = ({
                           (e.currentTarget as HTMLImageElement).src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDgiIGhlaWdodD0iNDgiIHZpZXdCb3g9IjAgMCA0OCA0OCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjQ4IiBoZWlnaHQ9IjQ4IiBmaWxsPSIjRjNGNEY2Ii8+CjxwYXRoIGQ9Ik0yNCAyOEMyNi4yMDkxIDI4IDI4IDI2LjIwOTEgMjggMjRDMjggMjEuNzkwOSAyNi4yMDkxIDIwIDI0IDIwQzIxLjc5MDkgMjAgMjAgMjEuNzkwOSAyMCAyNEMyMCAyNi4yMDkxIDIxLjc5MDkgMjggMjQgMjhaIiBmaWxsPSIjOUI5QkEwIi8+CjxwYXRoIGQ9Ik0xMiAzNkMxMiAzNiAxOCAyOCAyNCAyOEMzMCAyOCAzNiAzNiAzNiAzNkgxMloiIGZpbGw9IiM5QjlCQTAiLz4KPC9zdmc+';
                         }}
                       /></div>
-                    ) : (
-                      <div className="w-12 h-12 rounded-md border border-dashed border-border grid place-items-center text-xs text-muted-foreground">N/A</div>
-                    )}
+                    ) : <div className="w-12 h-12 rounded-md border border-dashed border-border grid place-items-center text-xs text-muted-foreground">N/A</div>}
                     <div className="min-w-0">
                       <div className="font-medium text-foreground truncate">{product.name}</div>
                       <a href={product.url} target="_blank" rel="noreferrer" className="text-sm text-muted-foreground underline underline-offset-2 break-all">
@@ -940,51 +921,36 @@ export const Step2EmailType: React.FC<Step2EmailTypeProps> = ({
                       {product.image && <div className="text-xs text-muted-foreground mt-0.5 break-all">Image: {product.image}</div>}
                     </div>
                   </div>
-
                   <div className="flex items-center gap-2 shrink-0">
                     <GradientButton
-                      variant="white-outline"
-                      onClick={() => startEdit(index)}
+                      variant="white-outline" onClick={() => startEdit(index)} title="Edit"
                       className="px-3 py-2 !bg-background !text-foreground !border !border-border hover:!bg-muted"
-                      title="Edit"
-                    >
-                      <Pencil className="w-4 h-4" />
-                    </GradientButton>
+                    ><Pencil className="w-4 h-4" /></GradientButton>
                     <GradientButton
                       variant="white-outline" title="Remove" onClick={() => handleRemoveProduct(index)}
-                      className="px-3 py-2 !bg-background !text-foreground !border !border-border hover:!bg-muted"
-                    >
+                      className="px-3 py-2 !bg-background !text-foreground !border !border-border hover:!bg-muted">
                       <X className="w-4 h-4" />
                     </GradientButton>
                   </div>
                 </div>
-              ) : (
-                <div className="space-y-2">
+              ) : (<div className="space-y-2">
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
                     <GradientInput placeholder="Product name..." value={editName} onChange={(e) => setEditName(e.target.value)} className="!bg-background !text-foreground !border !border-input placeholder:!text-muted-foreground" />
                     <GradientInput placeholder="Product URL (https://...)" value={editUrl} onChange={(e) => setEditUrl(e.target.value)} className="!bg-background !text-foreground !border !border-input placeholder:!text-muted-foreground" />
                     <GradientInput placeholder="Image URL (optional)" value={editImage} onChange={(e) => setEditImage(e.target.value)} className="!bg-background !text-foreground !border !border-input placeholder:!text-muted-foreground" />
                   </div>
                   <div className="flex items-center gap-3">
-                    {editImage ? (
-                      <img src={editImage} alt="Preview" className="w-12 h-12 rounded-md object-cover border border-border" onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }} />
-                    ) : (
-                      <div className="w-12 h-12 rounded-md border border-dashed border-border grid place-items-center text-xs text-muted-foreground">N/A</div>
-                    )}
+                    {editImage 
+                      ? <img src={editImage} alt="Preview" className="w-12 h-12 rounded-md object-cover border border-border" onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }} />
+                      : <div className="w-12 h-12 rounded-md border border-dashed border-border grid place-items-center text-xs text-muted-foreground">N/A</div>}
                     <div className="text-sm text-muted-foreground">Preview</div>
                   </div>
                   <div className="flex gap-2">
-                    <GradientButton variant="solid" onClick={saveEdit} className="px-4" disabled={!editName.trim() || !editUrl.trim()}>
-                      <Save className="w-4 h-4 mr-2" /> Save
-                    </GradientButton>
-                    <GradientButton variant="white-outline" onClick={cancelEdit} className="px-4 !bg-background !text-foreground !border !border-border hover:!bg-muted">
-                      Cancel
-                    </GradientButton>
+                    <GradientButton variant="solid" onClick={saveEdit} className="px-4" disabled={!editName.trim() || !editUrl.trim()}><Save className="w-4 h-4 mr-2" /> Save</GradientButton>
+                    <GradientButton variant="white-outline" onClick={cancelEdit} className="px-4 !bg-background !text-foreground !border !border-border hover:!bg-muted">Cancel</GradientButton>
                   </div>
-                </div>
-              )}
-            </div>
-          );
+              </div>)}
+          </div>
         })}
 
         {!showProductForm && (
@@ -1001,7 +967,7 @@ export const Step2EmailType: React.FC<Step2EmailTypeProps> = ({
               <GradientInput placeholder="Product URL (https://...)" value={newProductUrl} onChange={(e) => setNewProductUrl(e.target.value)} className="!bg-background !text-foreground !border !border-input placeholder:!text-muted-foreground" />
               <GradientInput placeholder="Image URL (optional)" value={newProductImage} onChange={(e) => setNewProductImage(e.target.value)} className="!bg-background !text-foreground !border !border-input placeholder:!text-muted-foreground" />
             </div>
-                         <div className="flex gap-2">
+            <div className="flex gap-2">
                <GradientButton variant="solid" onClick={handleAddProduct} disabled={!newProductName || !newProductUrl || products.length >= 4} className="disabled:opacity-60">
                  Add Product {products.length >= 4 ? '(Max Reached)' : ''}
                </GradientButton>
