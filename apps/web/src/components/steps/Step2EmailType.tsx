@@ -921,30 +921,23 @@ export const Step2EmailType: React.FC<Step2EmailTypeProps> = ({
                 <div className="flex items-center justify-between gap-4">
                   <div className="flex items-center gap-3 min-w-0">
                     {product.image ? (
-                      <div className="relative">
-                                                 <img
-                           src={product.image}
-                           alt={product.name || 'Product image'}
-                           className="w-12 h-12 rounded-md object-cover border border-border"
-                           onError={(e) => { 
-                             // Replace with a placeholder instead of hiding
-                             (e.currentTarget as HTMLImageElement).src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDgiIGhlaWdodD0iNDgiIHZpZXdCb3g9IjAgMCA0OCA0OCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjQ4IiBoZWlnaHQ9IjQ4IiBmaWxsPSIjRjNGNEY2Ii8+CjxwYXRoIGQ9Ik0yNCAyOEMyNi4yMDkxIDI4IDI4IDI2LjIwOTEgMjggMjRDMjggMjEuNzkwOSAyNi4yMDkxIDIwIDI0IDIwQzIxLjc5MDkgMjAgMjAgMjEuNzkwOSAyMCAyNEMyMCAyNi4yMDkxIDIxLjc5MDkgMjggMjQgMjhaIiBmaWxsPSIjOUI5QkEwIi8+CjxwYXRoIGQ9Ik0xMiAzNkMxMiAzNiAxOCAyOCAyNCAyOEMzMCAyOCAzNiAzNiAzNiAzNkgxMloiIGZpbGw9IiM5QjlCQTAiLz4KPC9zdmc+';
-                           }}
-                         />
-                      </div>
+                      <div className="relative"><img
+                        src={product.image} alt={product.name || 'Product image'}
+                        className="w-12 h-12 rounded-md object-cover border border-border"
+                        onError={(e) => { 
+                          // Replace with a placeholder instead of hiding
+                          (e.currentTarget as HTMLImageElement).src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDgiIGhlaWdodD0iNDgiIHZpZXdCb3g9IjAgMCA0OCA0OCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjQ4IiBoZWlnaHQ9IjQ4IiBmaWxsPSIjRjNGNEY2Ii8+CjxwYXRoIGQ9Ik0yNCAyOEMyNi4yMDkxIDI4IDI4IDI2LjIwOTEgMjggMjRDMjggMjEuNzkwOSAyNi4yMDkxIDIwIDI0IDIwQzIxLjc5MDkgMjAgMjAgMjEuNzkwOSAyMCAyNEMyMCAyNi4yMDkxIDIxLjc5MDkgMjggMjQgMjhaIiBmaWxsPSIjOUI5QkEwIi8+CjxwYXRoIGQ9Ik0xMiAzNkMxMiAzNiAxOCAyOCAyNCAyOEMzMCAyOCAzNiAzNiAzNiAzNkgxMloiIGZpbGw9IiM5QjlCQTAiLz4KPC9zdmc+';
+                        }}
+                      /></div>
                     ) : (
-                      <div className="w-12 h-12 rounded-md border border-dashed border-border grid place-items-center text-xs text-muted-foreground">
-                        N/A
-                      </div>
+                      <div className="w-12 h-12 rounded-md border border-dashed border-border grid place-items-center text-xs text-muted-foreground">N/A</div>
                     )}
                     <div className="min-w-0">
                       <div className="font-medium text-foreground truncate">{product.name}</div>
                       <a href={product.url} target="_blank" rel="noreferrer" className="text-sm text-muted-foreground underline underline-offset-2 break-all">
                         {product.url}
                       </a>
-                      {product.image && (
-                        <div className="text-xs text-muted-foreground mt-0.5 break-all">Image: {product.image}</div>
-                      )}
+                      {product.image && <div className="text-xs text-muted-foreground mt-0.5 break-all">Image: {product.image}</div>}
                     </div>
                   </div>
 
