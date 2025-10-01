@@ -211,7 +211,12 @@ export const Step4Generation: React.FC<Step4GenerationProps> = ({
           signal: controller.signal,
         });
 
+        console.log("🔍 [DEBUG] API Response Status:", generateResponse.status);
+        console.log("🔍 [DEBUG] API Response Headers:", Object.fromEntries(generateResponse.headers.entries()));
+        
         if (generateResponse.status === 402) {
+          const errorText = await generateResponse.text();
+          console.log("🔍 [DEBUG] 402 Error Response:", errorText);
           stopFake();
           setStatus("No email credits left. Redirecting to Manage Plan…");
           window.location.href = "/dashboard?plan=1";
