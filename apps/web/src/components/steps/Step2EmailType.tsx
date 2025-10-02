@@ -25,6 +25,7 @@ import { generateAIContext, generateAIContextPreview } from '@/lib/contextServic
 import { supabase } from '@/lib/supabaseClient';
 import { sanitizeInput, validateUrl } from '@/lib/security';
 import { useSupabaseAuth } from '@/hooks/useSupabaseAuth';
+import { checkUserCredits } from '@/lib/api';
 
 const API_ROOT = '/api';
 
@@ -315,7 +316,6 @@ function uniqProducts(list: ProductLink[]): ProductLink[] {
   }
   return out;
 }
-
 /** Scan common places for scraped products and normalize them */
 function getScrapedProductsFromFormData(fd: FormData): ProductLink[] {
   const candidates: unknown[] = [];
@@ -351,7 +351,6 @@ function getScrapedProductsFromFormData(fd: FormData): ProductLink[] {
 
   return uniqProducts(normalized);
 }
-
 /** Crisp, visual image context (no text) */
 function buildImageContext(opts: {
   occasion: Occasion;
@@ -377,32 +376,28 @@ function buildImageContext(opts: {
 
   return `${occasion.short || occasion.label} hero for ${brandName} — ${motif}, ${trait}, ${paletteLine};${focal} cinematic product focus if applicable; no text, no logos, no watermark, uncluttered background.`;
 }
-
 /* ----------------- Component ----------------- */
-
-export const Step2EmailType: React.FC<Step2EmailTypeProps> = ({
-  formData,
-  updateFormData,
-  onNext,
-  onPrev,
-}) => {
+export const Step2EmailType: React.FC<Step2EmailTypeProps> = ({formData, updateFormData, onNext, onPrev}) => {
   const { user } = useSupabaseAuth();
   const isAuthenticated = !!user;
   
   const [selectedEmailType, setSelectedEmailType] = useState<EmailType | null>(formData.emailType);
-  const [useCustomHero, setUseCustomHero] = useState<boolean>(formData.useCustomHero ?? true);
+  const [useCustomHero, setUseCustomHero] = useState<boolean>(false);
+  const [isCustomHeroEnabledToChoose, setIsCustomHeroEnabledToChoose] = useState<boolean>(true);
   const [userContext, setUserContext] = useState<string>(formData.userContext ?? '');
   const [imageContext, setImageContext] = useState<string>(formData.imageContext ?? '');
   const [tone, setTone] = useState<Tone>(formData.tone ?? 'bold');
   const [designAesthetic, setDesignAesthetic] =
     useState<DesignAesthetic>(formData.designAesthetic ?? 'bold_contrasting');
   const [isGeneratingContext, setIsGeneratingContext] = useState<boolean>(false);
-
+  const [userCredits, setUserCredits] = useState<{
+    emails_remaining: number;
+    images_remaining: number;
+    revisions_remaining: number;
+    brand_limit: number;
+  } | null>(null);
   // Helper function to safely get string values from brand data
-  const getBrandString = (value: unknown): string => {
-    return typeof value === 'string' ? value : '';
-  };
-
+  const getBrandString = (value: unknown): string => {return typeof value === 'string' ? value : '';};
   // From Step 1 brand payload
   const scrapedPrimary = getBrandString(formData?.brandData?.brandData?.primary_color) || '';
   const scrapedSecondary = getBrandString(formData?.brandData?.brandData?.link_color) || '';
@@ -432,89 +427,54 @@ export const Step2EmailType: React.FC<Step2EmailTypeProps> = ({
     };
     updateFormData({ brandData: updated });
   }, [formData.brandData, updateFormData]);
-
-  const selectedStyleLabel = useMemo(
-    () => DESIGN_STYLES.find(s => s.value === designAesthetic)?.label ?? 'Select style…',
-    [designAesthetic]
-  );
-
-  // Saved images for this brand
+  const selectedStyleLabel = useMemo(() => DESIGN_STYLES.find(s => s.value === designAesthetic)?.label ?? 'Select style…', [designAesthetic]);
   const [savedImages, setSavedImages] = useState<SavedImage[]>([]);
   const [selectedSavedUrl, setSelectedSavedUrl] = useState<string | null>(formData.savedHeroImageUrl || null);
-
   useEffect(() => {
     const domain = normalizeDomain(formData.domain || '');
     if (!domain) return;
-    (async () => {
-      try {
-        const { data: { session } } = await supabase.auth.getSession();
-        const token = session?.access_token;
+    (async () => { try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const token = session?.access_token;
+      
+      // Use appropriate endpoint based on authentication status
+      const endpoint = isAuthenticated 
+        ? `${API_ROOT}/images?domain=${encodeURIComponent(domain)}`
+        : `${API_ROOT}/images/preview?domain=${encodeURIComponent(domain)}`;
         
-        // Use appropriate endpoint based on authentication status
-        const endpoint = isAuthenticated 
-          ? `${API_ROOT}/images?domain=${encodeURIComponent(domain)}`
-          : `${API_ROOT}/images/preview?domain=${encodeURIComponent(domain)}`;
-          
-        const res = await fetch(endpoint, {
-          headers: token ? { Authorization: `Bearer ${token}` } : {},
-        });
-        if (res.ok) {
-          const json = await res.json();
-          setSavedImages(json?.images || []);
-        }
-      } catch {
-        // ignore
+      const res = await fetch(endpoint, { headers: token ? { Authorization: `Bearer ${token}` } : {}, });
+      if (res.ok) {
+        const json = await res.json();
+        setSavedImages(json?.images || []);
       }
-    })();
+    } catch {}})();
   }, [formData.domain, isAuthenticated]);
-
   // ------------ Scraped products + seed ------------
   const scrapedProducts = useMemo(() => getScrapedProductsFromFormData(formData), [formData]);
-
   const [products, setProducts] = useState<ProductLink[]>([]);
-
   // Set products once when scrapedProducts are available
   useEffect(() => {
-    if (scrapedProducts.length > 0 && products.length === 0) {
-      setProducts(scrapedProducts);
-    }
+    if (scrapedProducts.length > 0 && products.length === 0) setProducts(scrapedProducts);
   }, [scrapedProducts, products.length]);
-
   /* ---------- Auto-suggest contexts on entry (human-friendly) ---------- */
   const generateContexts = React.useCallback(() => {
     const occ = nearestOccasion(new Date());
     const productsForContext = products.length > 0 ? products : scrapedProducts;
-
     const uc = buildUserContext({
-      occasion: occ,
-      brandName,
-      brandDesc,
-      emailType: selectedEmailType,
-      tone,
-      products: productsForContext,
+      occasion: occ, brandName, brandDesc, emailType: selectedEmailType, tone, products: productsForContext,
     });
-
     const ic = buildImageContext({
-      occasion: occ,
-      brandName,
-      design: designAesthetic,
-      brandPrimary,
-      brandLink,
-      products: productsForContext,
+      occasion: occ, brandName, design: designAesthetic, brandPrimary, brandLink, products: productsForContext,
     });
-
     return { uc, ic, occ };
   }, [brandName, brandDesc, selectedEmailType, tone, designAesthetic, brandPrimary, brandLink, products, scrapedProducts]);
-
   /* ---------- AI-powered context generation ---------- */
   const generateAIContexts = React.useCallback(async () => {
     if (!formData.domain) return;
-
     setIsGeneratingContext(true);
     try {
       const occ = nearestOccasion(new Date());
       const productsForContext = products.length > 0 ? products : scrapedProducts;
-
       // Use appropriate context generation based on authentication status
       const response = isAuthenticated 
         ? await generateAIContext({
@@ -535,7 +495,6 @@ export const Step2EmailType: React.FC<Step2EmailTypeProps> = ({
             occasion: occ.short || occ.label,
             domain: formData.domain,
           });
-
       if (response.success) {
         setUserContext(response.userContext);
         setImageContext(response.imageContext);
@@ -546,60 +505,58 @@ export const Step2EmailType: React.FC<Step2EmailTypeProps> = ({
       const { uc, ic } = generateContexts();
       setUserContext(uc);
       setImageContext(ic);
-    } finally {
-      setIsGeneratingContext(false);
-    }
+    } 
+    finally { setIsGeneratingContext(false); }
   }, [formData.domain, formData.brandData, selectedEmailType, tone, designAesthetic, products, scrapedProducts, generateContexts, isAuthenticated]);
-
   useEffect(() => {
     // Prefill only if empty so we never overwrite user text when returning to Step 2
-    if (!userContext?.trim() || !imageContext?.trim()) {
-      // Use AI-powered context generation for better results
-      generateAIContexts();
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    if (!userContext?.trim() || !imageContext?.trim()) generateAIContexts();
   }, []); // run once on mount
-
+  // Check user credits when component mounts or user changes
+  useEffect(() => {
+    const checkCredits = async () => {
+      if (userCredits !== null) return;
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        const { balance } = await checkUserCredits(session?.access_token);
+        if (balance.images_remaining < 1) {
+          setUseCustomHero(false);
+          setSelectedSavedUrl(null);
+          setIsCustomHeroEnabledToChoose(false);
+        }
+        setUserCredits(balance);
+        console.log("🔍 [DEBUG] User credits loaded:", balance);
+      } catch (error) {
+        console.error("🔍 [DEBUG] Failed to load user credits:", error);
+        setUserCredits(null);
+      } finally { }
+    };
+    checkCredits();
+  }, [userCredits]);
   const [showProductForm, setShowProductForm] = useState<boolean>(false);
   const [newProductName, setNewProductName] = useState<string>('');
   const [newProductUrl, setNewProductUrl] = useState<string>('');
   const [newProductImage, setNewProductImage] = useState<string>('');
-
   // Inline edit state
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
   const [editName, setEditName] = useState<string>('');
   const [editUrl, setEditUrl] = useState<string>('');
   const [editImage, setEditImage] = useState<string>('');
-
-     const handleAddProduct = () => {
-     if (!newProductName.trim() || !newProductUrl.trim() || products.length >= 4) return;
-     
-     // Validate and sanitize input
-     const sanitizedName = sanitizeInput(newProductName.trim(), 200);
-     const sanitizedUrl = sanitizeInput(newProductUrl.trim(), 500);
-     const sanitizedImage = newProductImage.trim() ? sanitizeInput(newProductImage.trim(), 500) : '';
-     
-     // Validate URL
-     if (!validateUrl(sanitizedUrl)) {
-       alert('Please enter a valid URL for the product');
-       return;
-     }
-     
-     const newProduct: ProductLink = {
-       name: sanitizedName,
-       url: sanitizedUrl,
-       image: sanitizedImage || undefined,
-     };
-     const exists = products.some(p => p.name === newProduct.name || p.url === newProduct.url);
-     if (!exists) {
-       setProducts(prev => [...prev, newProduct]);
-       setNewProductName('');
-       setNewProductUrl('');
-       setNewProductImage('');
-       setShowProductForm(false);
-     }
-   };
-
+  const handleAddProduct = () => {
+    if (!newProductName.trim() || !newProductUrl.trim() || products.length >= 4) return;
+    const sanitizedName = sanitizeInput(newProductName.trim(), 200);
+    const sanitizedUrl = sanitizeInput(newProductUrl.trim(), 500);
+    const sanitizedImage = newProductImage.trim() ? sanitizeInput(newProductImage.trim(), 500) : '';
+    if (!validateUrl(sanitizedUrl)) { alert('Please enter a valid URL for the product'); return; }
+    const newProduct: ProductLink = { name: sanitizedName, url: sanitizedUrl, image: sanitizedImage };
+    const exists = products.some(p => p.name === newProduct.name || p.url === newProduct.url);
+    if (!exists) {
+      setProducts(prev => [...prev, newProduct]);
+      setNewProductName('');
+      setNewProductUrl('');
+      setNewProductImage('');
+      setShowProductForm(false);
+  }};
   const handleRemoveProduct = (index: number) => {
     setProducts(products.filter((_, i) => i !== index));
     if (editingIndex === index) setEditingIndex(null);
@@ -612,27 +569,19 @@ export const Step2EmailType: React.FC<Step2EmailTypeProps> = ({
     setEditUrl(p.url || '');
     setEditImage(p.image || '');
   };
-
   const cancelEdit = () => {
     setEditingIndex(null);
     setEditName('');
     setEditUrl('');
     setEditImage('');
   };
-
-     const saveEdit = () => {
+  const saveEdit = () => {
      if (editingIndex === null) return;
-     
      // Validate and sanitize input
      const sanitizedName = sanitizeInput(editName.trim(), 200);
      const sanitizedUrl = sanitizeInput(editUrl.trim(), 500);
      const sanitizedImage = editImage.trim() ? sanitizeInput(editImage.trim(), 500) : '';
-     
-     // Validate URL
-     if (!validateUrl(sanitizedUrl)) {
-       alert('Please enter a valid URL for the product');
-       return;
-     }
+     if (!validateUrl(sanitizedUrl)) { alert('Please enter a valid URL for the product'); return; }
      
      const updated = [...products];
      updated[editingIndex] = {
@@ -643,14 +592,11 @@ export const Step2EmailType: React.FC<Step2EmailTypeProps> = ({
      };
      setProducts(updated);
      cancelEdit();
-   };
-
+  };
   const handleContinue = () => {
     if (!selectedEmailType) return;
-
     // Safety: ensure we always carry products even if local state is momentarily empty.
     const safeProducts = products.length > 0 ? products : scrapedProducts;
-
     updateFormData({
       emailType: selectedEmailType,
       useCustomHero,
@@ -664,77 +610,49 @@ export const Step2EmailType: React.FC<Step2EmailTypeProps> = ({
     });
     onNext();
   };
-
-  // Unselected segmented buttons look
-  const unselectedSegBtn =
-    '!bg-background !text-foreground !border !border-border hover:!bg-muted';
-
+  const unselectedSegBtn = '!bg-background !text-foreground !border !border-border hover:!bg-muted';
   // ===== Animations (quicker than Step 1) =====
   const containerVariants = { hidden: {}, show: { transition: { staggerChildren: 0.06 } } };
   const fadeInUp = { hidden: { opacity: 0, y: 20 }, show: { opacity: 1, y: 0, transition: { duration: 0.45, ease: easeOut } } };
-
-  // Textarea class
   const plainTextarea =
     'w-full min-h-[128px] rounded-xl border !border-border !bg-background !text-foreground ' +
     'placeholder:text-muted-foreground px-4 py-3 ' +
     'focus:outline-none focus-visible:ring-2 focus-visible:ring-ring ' +
     'focus-visible:ring-offset-2 !ring-offset-background';
-
-  return <motion.div className="space-y-8 mt-14 pb-24" variants={containerVariants} initial="hidden" animate="show">
+  return <motion.div className="space-y-5 mt-14 pb-24" variants={containerVariants} initial="hidden" animate="show">
       <motion.div className="text-center space-y-4" variants={fadeInUp}>
         <h1 className="text-3xl font-bold text-foreground tracking-tight">Configure your email</h1>
         <p className="text-lg text-muted-foreground">Choose your type, tone, and style — text inputs stay inline.</p>
       </motion.div>
 
       {/* Email Type */}
-      <motion.div variants={fadeInUp}>
-        <fieldset className="space-y-3">
-          <legend className="text-lg font-medium text-foreground">Email Type</legend>
+      <motion.div variants={fadeInUp}><fieldset className="space-y-3">
+        <legend className="text-lg font-medium text-foreground">Email Type</legend>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 w-full">
           {EMAIL_TYPES.map(t => {
             const active = selectedEmailType === t.value;
-            return (
-              <GradientButton
-                key={t.value}
-                type="button"
-                variant={active ? 'solid' : 'white-outline'}
-                onClick={() => setSelectedEmailType(t.value)}
-                title={t.description}
-                aria-pressed={active}
-                className={`w-full px-4 py-2 rounded-xl transition ${active ? '' : unselectedSegBtn}`}
-              >
-                {t.label}
-              </GradientButton>
-            );
+            return <GradientButton
+              key={t.value} type="button"
+              variant={active ? 'solid' : 'white-outline'}
+              onClick={() => setSelectedEmailType(t.value)}
+              title={t.description} aria-pressed={active}
+              className={`w-full px-4 py-2 rounded-xl transition ${active ? '' : unselectedSegBtn}`}
+            >{t.label}</GradientButton>
           })}
-        </div>
-        </fieldset>
-      </motion.div>
-
+      </div></fieldset></motion.div>
       {/* Tone */}
-      <motion.div variants={fadeInUp}>
-        <fieldset className="space-y-3">
-          <legend className="text-lg font-medium text-foreground">Tone</legend>
+      <motion.div variants={fadeInUp}><fieldset className="space-y-3">
+        <legend className="text-lg font-medium text-foreground">Tone</legend>
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 w-full">
           {TONES.map(tn => {
             const active = tone === tn.value;
-            return (
-              <GradientButton
-                key={tn.value}
-                type="button"
-                variant={active ? 'solid' : 'white-outline'}
-                onClick={() => setTone(tn.value)}
-                aria-pressed={active}
+            return <GradientButton
+                key={tn.value} type="button" aria-pressed={active}
+                variant={active ? 'solid' : 'white-outline'} onClick={() => setTone(tn.value)}
                 className={`w-full px-4 py-2 rounded-xl transition ${active ? '' : unselectedSegBtn}`}
-              >
-                {tn.label}
-              </GradientButton>
-            );
+            >{tn.label}</GradientButton>
           })}
-        </div>
-        </fieldset>
-      </motion.div>
-
+      </div></fieldset></motion.div>
       {/* Design Style */}
       <motion.div className="space-y-2" variants={fadeInUp}>
         <label htmlFor="design-style-trigger" className="text-lg font-medium text-foreground">Design Style</label>
@@ -753,46 +671,43 @@ export const Step2EmailType: React.FC<Step2EmailTypeProps> = ({
                   {s.blurb && <span className="text-xs text-muted-foreground">{s.blurb}</span>}
                 </DropdownMenuItem>
               ))}
-            </div>
-          </DropdownMenuContent>
-        </DropdownMenu>
-      </motion.div>
+      </div></DropdownMenuContent></DropdownMenu></motion.div>
 
       {/* Brand Colors */}
       {formData.brandData && (
         <motion.div className="space-y-2" variants={fadeInUp}>
           <h3 className="text-lg font-medium text-foreground">Brand Colors</h3>
           <BrandColorControls
-            scrapedPrimary={scrapedPrimary}
-            scrapedSecondary={scrapedSecondary}
-            brandDomain={formData.domain}
-            onChange={handleColorsChange}
-          />
-        </motion.div>
+            scrapedPrimary={scrapedPrimary} scrapedSecondary={scrapedSecondary}
+            brandDomain={formData.domain} onChange={handleColorsChange}
+        /></motion.div>
       )}
-
       {/* Use Custom Hero */}
-      <motion.div variants={fadeInUp}>
-        <fieldset className="space-y-2">
+      <motion.div variants={fadeInUp}><fieldset className="space-y-2">
           <legend className="text-lg font-medium text-foreground">Use Custom Hero Image?</legend>
-        <div className="flex gap-3">
-          <GradientButton
-            variant={useCustomHero ? 'solid' : 'white-outline'}
-            onClick={() => { setUseCustomHero(true); setSelectedSavedUrl(null); }}
-            className={`flex-1 ${useCustomHero ? '' : unselectedSegBtn}`}
-          >
-            Yes
-          </GradientButton>
-          <GradientButton
-            variant={!useCustomHero ? 'solid' : 'white-outline'}
-            onClick={() => setUseCustomHero(false)}
-            className={`flex-1 ${!useCustomHero ? '' : unselectedSegBtn}`}
-          >
-            No
-          </GradientButton>
-        </div>
-        </fieldset>
-      </motion.div>
+          {!userCredits ? (
+            <div className="flex gap-3">
+              <div className="flex-1 h-12 bg-muted animate-pulse rounded-xl"></div>
+              <div className="flex-1 h-12 bg-muted animate-pulse rounded-xl"></div>
+            </div>
+          ) : <div className="flex gap-3">
+              <GradientButton
+                variant={!isCustomHeroEnabledToChoose ? 'white-outline' : useCustomHero ? 'solid' : 'white-outline'}
+                onClick={() => { setUseCustomHero(true); setSelectedSavedUrl(null); }}
+                className={`flex-1 ${useCustomHero ? '' : unselectedSegBtn}`}
+                disabled={userCredits.images_remaining === 0 || !isCustomHeroEnabledToChoose}
+              >Yes{userCredits.images_remaining < 1 && <span className="text-xs text-muted-foreground ml-1">(No credits)</span>}
+              </GradientButton>
+              <GradientButton
+                variant={!useCustomHero || !isCustomHeroEnabledToChoose ? 'solid' : 'white-outline'} onClick={() => setUseCustomHero(false)}
+                className={`flex-1 ${!useCustomHero ? '' : unselectedSegBtn}`}
+              >No</GradientButton>
+          </div>}
+          {!isCustomHeroEnabledToChoose && <div className="mt-3 p-3 bg-amber-50 border border-amber-200 rounded-lg">
+              <p className="text-sm text-amber-800 font-medium">⚠️ No image credits remaining</p>
+              <p className="text-xs text-amber-700 mt-1">You don't have any image credits available to generate new custom hero images. You can still use saved images from previous generations.</p>
+          </div>}
+      </fieldset></motion.div>
 
       {/* Saved images (only when NOT using custom hero) */}
       {!useCustomHero && (
@@ -808,17 +723,14 @@ export const Step2EmailType: React.FC<Step2EmailTypeProps> = ({
               <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                 {savedImages.map((img) => {
                   const active = selectedSavedUrl === img.public_url;
-                  return (
-                    <button
-                      type="button"
-                      key={img.id}
+                  return <button
+                      type="button" key={img.id}
                       onClick={() => setSelectedSavedUrl(active ? null : img.public_url)}
                       className={`relative rounded-lg border transition overflow-hidden aspect-[4/3] ${active ? 'border-primary ring-2 ring-primary' : 'border-border hover:bg-muted/40'}`}
                       aria-pressed={active}
                     >
                       <img
-                        src={img.public_url}
-                        alt="Saved"
+                        src={img.public_url} alt="Saved"
                         className="w-full h-full object-cover"
                         onError={(e) => { (e.currentTarget as HTMLImageElement).style.visibility = 'hidden'; }}
                       />
@@ -827,20 +739,15 @@ export const Step2EmailType: React.FC<Step2EmailTypeProps> = ({
                           <Check className="w-3 h-3" /> Selected
                         </div>
                       )}
-                    </button>
-                  );
+                  </button>;
                 })}
               </div>
-
               {selectedSavedUrl && (
                 <div className="flex gap-2">
                   <GradientButton
-                    variant="white-outline"
-                    onClick={() => setSelectedSavedUrl(null)}
+                    variant="white-outline" onClick={() => setSelectedSavedUrl(null)}
                     className="!bg-background !text-foreground !border !border-border hover:!bg-muted"
-                  >
-                    Clear selection
-                  </GradientButton>
+                  >Clear selection</GradientButton>
                 </div>
               )}
             </>

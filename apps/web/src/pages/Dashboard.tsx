@@ -589,54 +589,34 @@ const Dashboard: React.FC = () => {
                                 </div>
                                 <Button variant="outline" size="icon" onClick={() => openBrandModal(b)} aria-label="Edit brand"><Pencil className="h-4 w-4" /></Button>
                               </div>
-
                               <div className="space-y-2">
                                 <div className="text-xs text-muted-foreground">Saved images</div>
                                 {imgs.length === 0 ? (
                                   <div className="text-xs italic text-muted-foreground">None yet — generate or reuse a hero image to save it here.</div>
                                 ) : (
                                   /* --- VERTICAL SCROLL: 2-column grid of image boxes (no URLs shown) --- */
-                                  <div className="relative -mx-1">
-                                    <div className="max-h-56 overflow-y-auto px-1">
-                                      <div className="grid grid-cols-2 gap-3">
-                                        {imgs.map((img) => (
-                                          <div
-                                            key={img.id}
-                                            className="relative overflow-hidden rounded-lg border border-border"
-                                          >
-                                            <button
-                                              type="button"
-                                              onClick={() => setPreviewUrl(img.public_url)}
-                                              className="block w-full focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                                            >
-                                              <div className="aspect-[4/3] w-full">
-                                                <img
-                                                  src={img.public_url}
-                                                  alt="Saved"
-                                                  className="h-full w-full object-cover"
-                                                  onError={(e) => { (e.currentTarget as HTMLImageElement).style.visibility = 'hidden'; }}
-                                                />
-                                              </div>
-                                            </button>
-
-                                            {/* Copy button (doesn't trigger preview) */}
-                                            <button
-                                              type="button"
-                                              onClick={(e) => { e.stopPropagation(); copy(img.public_url); }}
-                                              aria-label="Copy image URL"
-                                              className="absolute right-1 top-1 inline-flex h-7 w-7 items-center justify-center rounded-md border border-border bg-background/80 backdrop-blur text-foreground hover:bg-muted"
-                                            >
-                                              <Copy className="h-3.5 w-3.5" />
-                                            </button>
-                                          </div>
-                                        ))}
-                                      </div>
-                                    </div>
-                                  </div>
+                                  <div className="relative -mx-1"><div className="max-h-28 overflow-y-auto px-1"><div className="grid grid-cols-2 gap-3">
+                                    {imgs.map((img) => (
+                                      <div key={img.id} className="relative overflow-hidden rounded-lg border border-border">
+                                        <button
+                                          type="button" onClick={() => setPreviewUrl(img.public_url)}
+                                          className="block w-full focus:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+                                          <div className="aspect-[4/3] w-full"><img
+                                              src={img.public_url} alt="Saved" className="h-full w-full object-cover"
+                                              onError={(e) => { (e.currentTarget as HTMLImageElement).style.visibility = 'hidden'; }}
+                                          /></div>
+                                        </button>
+                                        {/* Copy button (doesn't trigger preview) */}
+                                        <button
+                                          type="button" onClick={(e) => { e.stopPropagation(); copy(img.public_url); }} aria-label="Copy image URL"
+                                          className="absolute right-1 top-1 inline-flex h-7 w-7 items-center justify-center rounded-md border border-border bg-background/80 backdrop-blur text-foreground hover:bg-muted"
+                                        >
+                                          <Copy className="h-3.5 w-3.5" />
+                                      </button></div>
+                                    ))}
+                                  </div></div></div>
                                 )}
-                              </div>
-                            </CardContent>
-                          </Card>
+                          </div></CardContent></Card>
                         );
                       })}
                     </div>

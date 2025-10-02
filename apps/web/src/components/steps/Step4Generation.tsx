@@ -3,8 +3,8 @@ import { FormData } from "../EmailGenerator";
 import { AnimatedBlobLoader } from "@/components/ui/AnimatedBlobLoader";
 import { useSupabaseAuth } from "@/hooks/useSupabaseAuth";
 import { supabase } from "@/lib/supabaseClient";
-import { postJSON } from "@/lib/api";
 import { SubscriptionUpgradePrompt } from "@/components/SubscriptionUpgradePrompt";
+import { checkUserCredits } from "@/lib/api";
 
 const API_ROOT = '/api';
 
@@ -14,126 +14,133 @@ interface Step4GenerationProps {
   onNext: () => void;
 }
 
-export const Step4Generation: React.FC<Step4GenerationProps> = ({
-  formData,
-  updateFormData,
-  onNext,
-}) => {
+export const Step4Generation: React.FC<Step4GenerationProps> = ({ formData, updateFormData, onNext }) => {
   const { user } = useSupabaseAuth();
   const [isAdmin, setIsAdmin] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [showUpgradePrompt, setShowUpgradePrompt] = useState(false);
-  const [upgradeReason, setUpgradeReason] = useState<'no_credits' | 'no_subscription' | 'trial_expired'>('no_credits');
-  
-  // Check admin status
+  const [upgradeReason, setUpgradeReason] = useState<'no_credits' | 'no_subscription' | 'trial_expired' | 'no_image_credits'>('no_credits');
   useEffect(() => {
     const checkAdmin = async () => {
       if (user?.id) {
         try {
-          const { data } = await supabase
-            .from('profiles')
-            .select('is_admin')
-            .eq('user_id', user.id)
-            .maybeSingle();
+          const { data } = await supabase.from('profiles').select('is_admin').eq('user_id', user.id).maybeSingle();
           setIsAdmin(Boolean(data?.is_admin));
         } catch (error) {
           console.error('Failed to check admin status:', error);
           setIsAdmin(false);
-        }
-      } else {
-        setIsAdmin(false);
-      }
+      }} else { setIsAdmin(false); }
       setIsLoading(false);
     };
-    
     checkAdmin();
   }, [user?.id]);
-  
   // Admin users are always considered authenticated for full access
-  const isAuthenticated = !!user || isAdmin;
-  
-  console.log("🔍 [DEBUG] Step4Generation auth status:", {
-    hasUser: !!user,
-    userId: user?.id,
-    userEmail: user?.email,
-    isAdmin,
-    isAuthenticated
-  });
-  
+  // const isAuthenticated = !!user || isAdmin;
+  // console.log("🔍 [DEBUG] Step4Generation auth status:", {
+  //   hasUser: !!user,
+  //   userId: user?.id,
+  //   userEmail: user?.email,
+  //   isAdmin,
+  //   isAuthenticated
+  // });
   // Also log each value separately for better debugging
-  console.log("🔍 [DEBUG] hasUser:", !!user);
-  console.log("🔍 [DEBUG] userId:", user?.id);
-  console.log("🔍 [DEBUG] userEmail:", user?.email);
-  console.log("🔍 [DEBUG] isAdmin:", isAdmin);
-  console.log("🔍 [DEBUG] isAuthenticated:", isAuthenticated);
+  // console.log("🔍 [DEBUG] hasUser:", !!user);
+  // console.log("🔍 [DEBUG] userId:", user?.id);
+  // console.log("🔍 [DEBUG] userEmail:", user?.email);
+  // console.log("🔍 [DEBUG] isAdmin:", isAdmin);
+  // console.log("🔍 [DEBUG] isAuthenticated:", isAuthenticated);
   const [status, setStatus] = useState("Starting…");
   const abortRef = useRef<AbortController | null>(null);
   const timersRef = useRef<number[]>([]);
   const finishedRef = useRef(false);
-
-  const handleUpgrade = () => {
-    window.location.href = "/dashboard?plan=1";
-  };
-
+  const handleUpgrade = () => { window.location.href = "/dashboard?plan=1"; };
   const handleBack = () => {
     setShowUpgradePrompt(false);
     // Go back to previous step or restart the flow
     // For now, we'll just hide the prompt and let the user try again
   };
-
+  const handleContinueWithoutImage = () => {
+    setShowUpgradePrompt(false);
+    // Update form data to disable custom hero image and retry generation
+    updateFormData({ useCustomHero: false });
+    // Restart the generation process
+    window.location.reload();
+  };
   useEffect(() => {
     // For trial users, allow generation without authentication
     // Only require user for authenticated features
     console.log("🔍 [DEBUG] Starting generation process", { hasUser: !!user, isTrial: !user });
-
     const controller = new AbortController();
     abortRef.current = controller;
-
     // If we have a saved image URL, treat as "no custom hero generation" for progress timing.
     const useCustomHeroEffective = !!formData.useCustomHero && !formData.savedHeroImageUrl;
-
-    const stopFake = startFakeProgress({
-      useCustomHero: useCustomHeroEffective,
-      setStatus,
-      timersRef,
-    });
-
+    const stopFake = startFakeProgress({ useCustomHero: useCustomHeroEffective, setStatus, timersRef });
     let didAbort = false;
     const run = async () => {
       setStatus("Generating email…");
       try {
         // Wait for admin check to complete if needed
-        if (isLoading) {
-          console.log("🔍 [DEBUG] Waiting for admin check to complete...");
-          // Wait a bit for admin check to complete
-          await new Promise(resolve => setTimeout(resolve, 200));
-        }
+        if (isLoading) await new Promise(resolve => setTimeout(resolve, 200));
 
         // Get the current session token for authenticated requests
         const { data: { session } } = await supabase.auth.getSession();
         const token = session?.access_token;
 
+        // Check user credits before proceeding with generation
+        if (user) {
+          try {
+            console.log("🔍 [DEBUG] Checking user credits before generation...");
+            const userCredits = await checkUserCredits(token);
+            console.log("🔍 [DEBUG] User credits:", userCredits);
+            
+            // Check if user has enough credits for the operation
+            const needsImageCredit = !!formData.useCustomHero && !formData.savedHeroImageUrl;
+            const needsEmailCredit = true; // Always need email credit for generation
+            
+            if (needsEmailCredit && userCredits.balance.emails_remaining < 1) {
+              console.log("🔍 [DEBUG] Insufficient email credits");
+              stopFake();
+              setStatus("No email credits remaining");
+              setUpgradeReason('no_credits');
+              setShowUpgradePrompt(true);
+              return;
+            }
+            
+            if (needsImageCredit && userCredits.balance.images_remaining < 1) {
+              console.log("🔍 [DEBUG] Insufficient image credits for custom hero");
+              stopFake();
+              setStatus("No image credits remaining for custom hero image");
+              setUpgradeReason('no_image_credits');
+              setShowUpgradePrompt(true);
+              return;
+            }
+            
+            console.log("🔍 [DEBUG] Credit check passed - proceeding with generation");
+          } catch (error) {
+            console.error("🔍 [DEBUG] Failed to check credits:", error);
+            // Continue with generation if credit check fails (fallback behavior)
+          }
+        }
+
         // Check if user has an active subscription
         let hasActiveSubscription = false;
         console.log("🔍 [DEBUG] About to check subscription, user exists:", !!user);
         console.log("🔍 [DEBUG] Current user object:", user);
-        
         if (user) {
-          console.log("🔍 [DEBUG] User exists, starting subscription check...");
+          // User exists, starting subscription check...
           try {
-            console.log("🔍 [DEBUG] Checking subscription for user:", user.id);
-            console.log("🔍 [DEBUG] Supabase client:", !!supabase);
-            console.log("🔍 [DEBUG] User object:", user);
+            // console.log("🔍 [DEBUG] Checking subscription for user:", user.id);
+            // console.log("🔍 [DEBUG] Supabase client:", !!supabase);
+            // console.log("🔍 [DEBUG] User object:", user);
             
             // Simple test query first
-            console.log("🔍 [DEBUG] Testing simple query...");
-            const { data: testData, error: testError } = await supabase
-              .from('subscriptions')
-              .select('user_id, status')
-              .eq('user_id', user.id)
-              .limit(1);
-            
-            console.log("🔍 [DEBUG] Simple test query result:", { testData, testError });
+            // console.log("🔍 [DEBUG] Testing simple query...");
+            // const { data: testData, error: testError } = await supabase
+            //   .from('subscriptions')
+            //   .select('user_id, status')
+            //   .eq('user_id', user.id)
+            //   .limit(1);
+            // console.log("🔍 [DEBUG] Simple test query result:", { testData, testError });
             
             // Now query for this specific user with all fields
             console.log("🔍 [DEBUG] Querying user-specific subscription...");
@@ -144,9 +151,6 @@ export const Step4Generation: React.FC<Step4GenerationProps> = ({
               .maybeSingle();
             
             console.log("🔍 [DEBUG] User subscription query result:", { subscription, subError });
-            console.log("🔍 [DEBUG] Subscription status:", subscription?.status);
-            console.log("🔍 [DEBUG] Subscription price_id:", subscription?.price_id);
-            console.log("🔍 [DEBUG] Subscription current_period_end:", subscription?.current_period_end);
             
             // Check if subscription exists and is active (NULL current_period_end is OK)
             hasActiveSubscription = !!(subscription && subscription.status === 'active');
@@ -166,9 +170,7 @@ export const Step4Generation: React.FC<Step4GenerationProps> = ({
             console.error('Failed to check subscription status:', error);
             console.error('Error details:', error.message, error.stack);
           }
-        } else {
-          console.log("🔍 [DEBUG] No user, skipping subscription check");
-        }
+        } else { console.log("🔍 [DEBUG] No user, skipping subscription check"); }
 
         // Choose endpoint based on authentication AND subscription status
         // Only use authenticated route if user has active subscription
@@ -208,35 +210,25 @@ export const Step4Generation: React.FC<Step4GenerationProps> = ({
             // kept for future compatibility if you ever resolve by id:
             savedHeroImageId: formData.savedHeroImageId || null,
           }),
-          signal: controller.signal,
+          signal: controller.signal
         });
-
         console.log("🔍 [DEBUG] API Response Status:", generateResponse.status);
         console.log("🔍 [DEBUG] API Response Headers:", Object.fromEntries(generateResponse.headers.entries()));
-        
         if (generateResponse.status === 402) {
           const errorText = await generateResponse.text();
           console.log("🔍 [DEBUG] 402 Error Response:", errorText);
           stopFake();
-          setStatus("No email credits left. Redirecting to Manage Plan…");
+          setStatus(`No email credits left. Redirecting to Manage Plan…`);
           window.location.href = "/dashboard?plan=1";
           return;
         }
-
         if (!generateResponse.ok) {
           const errorText = await generateResponse.text();
           throw new Error(`HTTP ${generateResponse.status} ${generateResponse.statusText}\n${errorText.slice(0, 800)}`);
         }
-
         const data = await generateResponse.json();
-
         const first = data?.emails?.[0];
-        if (!first) {
-          stopFake();
-          setStatus("Error: No email returned");
-          return;
-        }
-
+        if (!first) { stopFake(); setStatus("Error: No email returned"); return; }
         const subjectFromTop = data?.subjectLine;
         const subjectFromEmail = first?.subject;
         const subject =
@@ -249,29 +241,22 @@ export const Step4Generation: React.FC<Step4GenerationProps> = ({
 
         updateFormData({
           subjectLine: subject,
-          generatedEmails: [
-            {
+          generatedEmails: [{
               index: 1,
               subject,
               content: first.content || "",
               html: first.html || "",
-            },
-          ],
+          }],
           // Store preview mode information
           isPreviewMode: data.isPreviewMode || false,
           previewMessage: data.previewMessage || null,
         });
-
         setStatus("Done!");
         onNext();
       } catch (err: unknown) {
-        if (err instanceof Error && err.name === "AbortError") {
-          didAbort = true;
-          return;
-        }
+        if (err instanceof Error && err.name === "AbortError") { didAbort = true; return; }
         stopFake();
         console.error("Generate failed:", err);
-        
         // Handle specific error cases
         if (err instanceof Error) {
           if (err.message.includes("HTTP 402")) {
@@ -286,40 +271,28 @@ export const Step4Generation: React.FC<Step4GenerationProps> = ({
             return;
           }
           setStatus("Error: " + err.message);
-        } else {
-          setStatus("Error: unknown");
-        }
-      }
-    };
-
+        } else { setStatus("Error: unknown"); }
+    }};
     run();
-
     return () => {
       if (!finishedRef.current && !didAbort) controller.abort();
       stopFake();
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user]);
-
-  return (
-    <>
+  return <>
       {showUpgradePrompt ? (
         <SubscriptionUpgradePrompt
-          onUpgrade={handleUpgrade}
-          onBack={handleBack}
-          reason={upgradeReason}
+          onUpgrade={handleUpgrade} onBack={handleBack} reason={upgradeReason}
+          onContinueWithoutImage={upgradeReason === 'no_image_credits' ? handleContinueWithoutImage : undefined}
         />
       ) : (
         <div className="fixed inset-0 flex flex-col items-center justify-center bg-background overflow-hidden">
-          <h1 className="text-2xl font-normal text-gray-100 z-10 text-center" style={{ textShadow: "0 2px 10px rgba(0, 0, 0, 0.8)" }}>
-            Generating your email...
-          </h1>
+          <h1 className="text-2xl font-normal text-gray-100 z-10 text-center" style={{ textShadow: "0 2px 10px rgba(0, 0, 0, 0.8)" }}>Generating your email...</h1>
           <p className="text-sm text-gray-400 animate-pulse mt-2 z-10">{status}</p>
           <AnimatedBlobLoader />
         </div>
       )}
-    </>
-  );
+  </>;
 };
 
 function startFakeProgress({ 

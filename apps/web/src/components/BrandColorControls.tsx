@@ -48,9 +48,10 @@ const BrandColorControls: React.FC<Props> = ({
   const primaryPickerRef = useRef<HTMLInputElement | null>(null);
   const secondaryPickerRef = useRef<HTMLInputElement | null>(null);
 
+  // Call onChange with initial values when component mounts
   useEffect(() => {
     onChange({ primary_color: primary, link_color: secondary });
-  }, [primary, secondary, onChange]);
+  }, []); // Only run once on mount
 
   const setAndNotify = (which: "primary" | "secondary", hex: string) => {
     const normalized = normalizeHex(hex);
@@ -58,9 +59,11 @@ const BrandColorControls: React.FC<Props> = ({
     if (which === "primary") {
       setPrimary(normalized);
       setSwatchPrimary(normalized);
+      onChange({ primary_color: normalized, link_color: secondary });
     } else {
       setSecondary(normalized);
       setSwatchSecondary(normalized);
+      onChange({ primary_color: primary, link_color: normalized });
     }
   };
 

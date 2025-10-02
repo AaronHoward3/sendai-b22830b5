@@ -7,7 +7,8 @@ import { supabase, getAuthRedirectUrl } from '@/lib/supabaseClient';
 interface SubscriptionUpgradePromptProps {
   onUpgrade: () => void;
   onBack: () => void;
-  reason?: 'no_credits' | 'no_subscription' | 'trial_expired';
+  onContinueWithoutImage?: () => void;
+  reason?: 'no_credits' | 'no_subscription' | 'trial_expired' | 'no_image_credits';
 }
 
 // Use the same plans as Dashboard page
@@ -29,6 +30,12 @@ const getReasonMessage = (reason?: string) => {
         title: 'No Email Credits Remaining',
         description: 'You\'ve used all your email credits. Upgrade your plan to continue generating emails.',
         icon: '📧'
+      };
+    case 'no_image_credits':
+      return {
+        title: 'No Image Credits Remaining',
+        description: 'You\'ve used all your image credits. You can still generate emails without custom hero images, or upgrade to get more image credits.',
+        icon: '🖼️'
       };
     case 'no_subscription':
       return {
@@ -54,6 +61,7 @@ const getReasonMessage = (reason?: string) => {
 export const SubscriptionUpgradePrompt: React.FC<SubscriptionUpgradePromptProps> = ({ 
   onUpgrade, 
   onBack, 
+  onContinueWithoutImage,
   reason 
 }) => {
   const [email, setEmail] = useState('');
@@ -135,6 +143,16 @@ export const SubscriptionUpgradePrompt: React.FC<SubscriptionUpgradePromptProps>
                       <CreditCard className="h-4 w-4 mr-2" />
                       Choose Plan & Upgrade
                     </GradientButton>
+                    
+                    {reason === 'no_image_credits' && onContinueWithoutImage && (
+                      <GradientButton
+                        variant="solid"
+                        onClick={onContinueWithoutImage}
+                        className="!bg-green-600 !text-white hover:!bg-green-700"
+                      >
+                        Continue Without Image
+                      </GradientButton>
+                    )}
                     
                     <GradientButton
                       variant="outline"

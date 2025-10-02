@@ -14,16 +14,10 @@ export function apiPath(path: string) {
 
 async function parseJsonOrThrow(res: Response) {
   const text = await res.text(); // read once so we can show the real error body
-  
   // Extract CSRF token from response headers
   const newCsrfToken = res.headers.get('X-CSRF-Token');
-  if (newCsrfToken) {
-    csrfToken = newCsrfToken;
-  }
-  
-  if (!res.ok) {
-    throw new Error(`HTTP ${res.status} ${res.statusText}\n${text.slice(0, 800)}`);
-  }
+  if (newCsrfToken) csrfToken = newCsrfToken;
+  if (!res.ok) throw new Error(`HTTP ${res.status} ${res.statusText}\n${text.slice(0, 800)}`);
   try {
     return JSON.parse(text);
   } catch {
@@ -33,17 +27,8 @@ async function parseJsonOrThrow(res: Response) {
 
 export async function postJSON<T>(path: string, body?: unknown, authToken?: string, signal?: AbortSignal): Promise<T> {
   const headers: Record<string, string> = { "Content-Type": "application/json" };
-  
-  // Add CSRF token if available
-  if (csrfToken) {
-    headers['X-CSRF-Token'] = csrfToken;
-  }
-  
-  // Add authorization token if provided
-  if (authToken) {
-    headers['Authorization'] = `Bearer ${authToken}`;
-  }
-  
+  if (csrfToken) headers['X-CSRF-Token'] = csrfToken;
+  if (authToken) headers['Authorization'] = `Bearer ${authToken}`;
   const res = await fetch(apiPath(path), {
     method: "POST",
     headers,
@@ -53,22 +38,32 @@ export async function postJSON<T>(path: string, body?: unknown, authToken?: stri
   });
   return parseJsonOrThrow(res) as Promise<T>;
 }
-
 export async function getJSON<T>(path: string): Promise<T> {
-  const res = await fetch(apiPath(path), {
-    method: "GET",
-    credentials: "include",
-  });
+  const res = await fetch(apiPath(path), { method: "GET", credentials: "include" });
   return parseJsonOrThrow(res) as Promise<T>;
 }
-
 // Convenience helpers for your UI
 export async function checkout(planId: string): Promise<void> {
   const { url } = await postJSON<{ url: string }>("/billing/checkout", { planId });
   window.location.assign(url);
 }
-
 export async function openBillingPortal(): Promise<void> {
   const { url } = await postJSON<{ url: string }>("/billing/portal");
   window.location.assign(url);
+}
+// Check user credits before generation
+export async function checkUserCredits(authToken?: string): Promise<{
+  balance: {
+    emails_remaining: number;
+    images_remaining: number;
+    revisions_remaining: number;
+    brand_limit: number;
+  }, 
+  brand_count: number;
+}> {
+  const headers: Record<string, string> = {};
+  if (authToken) headers['Authorization'] = `Bearer ${authToken}`;
+  const res = await fetch(apiPath("/credits/me"), { method: "GET", headers, credentials: "include" });
+  if (!res.ok) throw new Error(`Failed to check credits: ${res.status} ${res.statusText}`);
+  return await res.json();
 }
