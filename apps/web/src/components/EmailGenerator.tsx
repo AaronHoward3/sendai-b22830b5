@@ -171,6 +171,7 @@ const EmailGenerator: React.FC = () => {
             formData={formData}
             updateFormData={updateFormData}
             onNext={nextStep}
+            onBack={() => setCurrentStep(1)}
           />
         );
       case 4:

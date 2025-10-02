@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { motion, easeOut } from 'framer-motion';
 import type { FormData } from '../EmailGenerator';
-import { ArrowRight } from 'lucide-react';
+import { ArrowRight, Globe } from 'lucide-react';
 import { useTheme } from '@/hooks/useTheme';
 import { supabase } from '@/lib/supabaseClient';
 import Background from '../Background';
@@ -20,6 +20,44 @@ function normalizeDomain(dom: string): string {
   d = d.replace(/\s+/g, '');              // strip internal spaces
   if (d.endsWith('.')) d = d.slice(0, -1);
   return d;
+}
+
+// Validate domain format
+function isValidDomain(domain: string): boolean {
+  if (!domain || typeof domain !== 'string') return false;
+  
+  const trimmed = domain.trim();
+  if (trimmed.length === 0) return false;
+  
+  // Basic domain regex pattern
+  const domainRegex = /^[a-zA-Z0-9]([a-zA-Z0-9\-]{0,61}[a-zA-Z0-9])?(\.[a-zA-Z0-9]([a-zA-Z0-9\-]{0,61}[a-zA-Z0-9])?)*$/;
+  
+  // Check if it matches the basic pattern
+  if (!domainRegex.test(trimmed)) return false;
+  
+  // Additional checks
+  const parts = trimmed.split('.');
+  
+  // Must have at least 2 parts (domain.tld)
+  if (parts.length < 2) return false;
+  
+  // Each part must not be empty
+  if (parts.some(part => part.length === 0)) return false;
+  
+  // Each part must not start or end with hyphen
+  if (parts.some(part => part.startsWith('-') || part.endsWith('-'))) return false;
+  
+  // TLD must be at least 2 characters
+  const tld = parts[parts.length - 1];
+  if (tld.length < 2) return false;
+  
+  // Domain must not be too long (253 characters max)
+  if (trimmed.length > 253) return false;
+  
+  // Each label must not exceed 63 characters
+  if (parts.some(part => part.length > 63)) return false;
+  
+  return true;
 }
 
 export const Step1Domain: React.FC<{
@@ -54,6 +92,10 @@ export const Step1Domain: React.FC<{
   const [noBrandsOpen, setNoBrandsOpen] = useState(false);
   const [showUpgradePrompt, setShowUpgradePrompt] = useState(false);
   const [upgradeReason, setUpgradeReason] = useState<'no_credits' | 'no_subscription' | 'trial_expired'>('no_credits');
+  
+  // Domain validation modal
+  const [domainErrorModal, setDomainErrorModal] = useState(false);
+  const [domainErrorMessage, setDomainErrorMessage] = useState('');
   
   // Trial blocking state
   const [isTrialBlocked, setIsTrialBlocked] = useState(false);
@@ -252,9 +294,31 @@ export const Step1Domain: React.FC<{
   const handleBack = () => { setShowUpgradePrompt(false); };
   const handleTrialSubscribe = () => { window.location.href = "/dashboard?plan=1"; };
   const handleTrialSignIn = () => { window.location.href = "/dashboard"; };
-  const handleContinue = async () => {
+  
+  // Validate domain input
+  const validateDomain = (inputDomain: string): boolean => {
+    const normalized = normalizeDomain(inputDomain);
+    if (!normalized) {
+      setDomainErrorMessage('Please enter a domain');
+      setDomainErrorModal(true);
+      return false;
+    }
+    
+    if (!isValidDomain(normalized)) {
+      setDomainErrorMessage('Please enter a valid domain (e.g., example.com)');
+      setDomainErrorModal(true);
+      return false;
+    }
+    
+    return true;
+  };
+  const handleContinue = async (skipValidation = false, skipBrandCheck = false) => {
+    // Validate domain before proceeding (skip for saved domains)
+    if (!skipValidation && !validateDomain(domain)) {
+      return;
+    }
+    
     const trimmed = normalizeDomain(domain);
-    if (!trimmed) return;
     setIsLoading(true);
     try {
       // For anonymous users, check if they've already used their free trial
@@ -280,8 +344,10 @@ export const Step1Domain: React.FC<{
       }
       // For authenticated users, do the full brand checking flow
       const alreadyOwned = await domainOwnedByUser(trimmed);
-      const canProceed = await checkBrandSlotAvailability(alreadyOwned);
-      if (!canProceed) return;
+      if (!skipBrandCheck) {
+        const canProceed = await checkBrandSlotAvailability(alreadyOwned);
+        if (!canProceed) return;
+      }
       const [brandData, productSuggestions] = await Promise.all([ fetchBrandData(trimmed), fetchProductData(trimmed) ]);
       const claimSuccessful = await claimBrandIfNeeded(trimmed, alreadyOwned);
       if (!claimSuccessful) return;
@@ -340,55 +406,49 @@ export const Step1Domain: React.FC<{
               </div>
             ) : isTrialBlocked 
             ? <TrialBlockedOverlay onSubscribe={handleTrialSubscribe} onSignIn={handleTrialSignIn} inline={true} />
-            : (
-              <>
-                <div
+            : <><div
                   className="absolute inset-0 rounded-full p-[2px] blur-xl opacity-90 bg-repeat bg-[length:800%_100%] animate-gradient-sweep pointer-events-none"
                   style={{ backgroundImage: gradientBg }}
                 />
                 <div className="relative z-10 flex items-center rounded-full ring-1 ring-white/20 pl-5 pr-2 py-2 shadow-xl transition" style={{ backgroundColor: inputBg }}>
+                  <Globe className={`w-5 h-5 mr-2 mt-1 ${isDark ? 'text-white/70' : 'text-black/70'}`} />
                   <input
-                    type="text"
-                    placeholder="example.com"
-                    value={domain}
+                    type="text" placeholder="example.com" value={domain}
                     onChange={(e) => setDomain(e.target.value)}
-                    onKeyDown={(e) => e.key === 'Enter' && handleContinue()}
+                    // onKeyDown={(e) => e.key === 'Enter' && handleContinue()}
                     onFocus={() => setShowSuggestions(true)}
                     onBlur={() => setTimeout(() => setShowSuggestions(false), 120)}
                     className={`bg-transparent text-base w-full focus:outline-none placeholder-opacity-50 ${inputText} ${placeholderText}`}
                   />
                   <button
-                    onClick={handleContinue}
-                    disabled={!domain.trim() || isLoading}
+                    onClick={() => handleContinue()} disabled={!domain.trim() || isLoading}
                     className="ml-2 p-2 cursor-pointer rounded-full bg-gradient-to-r from-[#00ffc3] to-[#a3f2d9] hover:scale-105 transition-transform disabled:opacity-50"
                     aria-label="Continue to Step 2"
-                  >
-                    {isLoading ? <div className="loader" /> : <ArrowRight className="w-5 h-5 text-black" />}
+                  >{isLoading ? <div className="loader" /> : <ArrowRight className="w-5 h-5 text-black" />}
                   </button>
                 </div>
 
                 {showSuggestions && filteredSuggestions.length > 0 && (
                   <div
-                    className={`absolute z-20 mt-2 w-full max-h-56 overflow-auto rounded-xl border shadow-xl ${
-                      isDark ? 'bg-[#111111]/95 border-white/10' : 'bg-white/95 border-black/10'
-                    }`}>
+                    className={`absolute z-20 mt-2 w-full max-h-56 overflow-auto rounded-xl border shadow-xl ${isDark ? 'bg-[#111111]/95 border-white/10' : 'bg-white/95 border-black/10'}`}>
                     {filteredSuggestions.map((s, index) => (
                       <button
                         key={s} type="button" aria-label={`Select domain ${s}`}
-                        className={`w-full px-4 py-2 text-left cursor-pointer hover:bg-white/10 ${isDark ? 'text-white' : 'text-black'}`}
+                        className={`w-full px-3 py-2 text-left cursor-pointer transition-all duration-200 hover:bg-gray-100 flex items-center gap-2 ${isDark ? 'text-white' : 'text-black'}`}
                         onMouseDown={(e) => {
                           e.preventDefault();
                           setDomain(s);
                           setShowSuggestions(false);
-                          handleContinue();
                         }}
-                      >{s}</button>
+                      >
+                        {/* <Globe className="h-4 w-4 flex-shrink-0" /> */}
+                        <span className="truncate">{s}</span>
+                      </button>
                     ))}
                   </div>
                 )}
                 {isLoading && <div className="absolute top-full left-0 right-0 mt-5"><p className="text-xs text-muted-foreground text-center">Fetching brand…</p></div>}
-              </>
-            )}
+            </>}
       </motion.div></motion.div></div>
       {/* Upgrade modal */}
       {noBrandsOpen && (
@@ -397,10 +457,28 @@ export const Step1Domain: React.FC<{
             <h3 className="text-lg font-semibold">No more brand slots</h3>
             <p className="mt-2 text-sm text-muted-foreground">You’ve reached your plan’s brand limit. Upgrade your plan to add more brands.</p>
             <div className="mt-6 flex justify-end gap-2">
-              <button className="btn bg-secondary text-secondary-foreground" onClick={() => setNoBrandsOpen(false)}>Cancel</button>
+              <button onClick={() => setNoBrandsOpen(false)}
+                className="btn px-4 py-2 bg-secondary text-secondary-foreground hover:bg-secondary/90 hover:text-secondary-foreground transition-colors border border-border" 
+              >Close</button>
               <button className="btn" onClick={() => { setNoBrandsOpen(false); window.location.href = '/dashboard?plan=1'; }}>Upgrade</button>
         </div></div></div>
       )}
+      
+      {/* Domain validation error modal */}
+      {domainErrorModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm">
+          <div className="w-full max-w-md rounded-2xl bg-background border border-border shadow-xl p-6 space-y-2">
+            <h3 className="text-lg font-semibold">Invalid Domain</h3>
+            <p className="text-sm text-muted-foreground">{domainErrorMessage}</p>
+            <div className="flex pt-2 justify-end gap-2">
+              <button onClick={() => setDomainErrorModal(false)}
+                className="btn px-4 py-2 bg-secondary text-secondary-foreground hover:bg-secondary/90 hover:text-secondary-foreground transition-colors border border-border" 
+              >Try Again</button>
+            </div>
+          </div>
+        </div>
+      )}
+      
       <style>{`
         @keyframes gradient-sweep {
           0% { background-position: 0% 50%; }

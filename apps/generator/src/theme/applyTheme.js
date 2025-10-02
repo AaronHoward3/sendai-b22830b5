@@ -93,24 +93,30 @@ function buildHead(skin) {
     "border-radius": `${skin.radii.btn}px`
   };
 
-  // Button variants + caps/letter-spacing + optional card shadow
+  // Enhanced button variants with modern styling
   let btnCss = "";
   if (skin.buttons.variant === "filled") {
-    btnCss = `.btn a{background-color:${skin.palette.brand};color:#ffffff;border:0;}`;
+    btnCss = `.btn a{background-color:${skin.palette.brand};color:#ffffff;border:0;transition:all 0.2s ease;box-shadow:0 2px 8px rgba(0,0,0,0.1);}` +
+             `.btn a:hover{background-color:${skin.palette.brandAlt};transform:translateY(-1px);box-shadow:0 4px 12px rgba(0,0,0,0.15);}`;
   } else if (skin.buttons.variant === "outline") {
-    btnCss = `.btn a{background-color:transparent;color:${skin.palette.text};border:${skin.border.width}px ${skin.border.style} ${skin.palette.border};}`;
+    btnCss = `.btn a{background-color:transparent;color:${skin.palette.brand};border:2px solid ${skin.palette.brand};transition:all 0.2s ease;}` +
+             `.btn a:hover{background-color:${skin.palette.brand};color:#ffffff;transform:translateY(-1px);box-shadow:0 4px 12px rgba(0,0,0,0.1);}`;
   } else if (skin.buttons.variant === "ghost") {
-    btnCss = `.btn a{background-color:transparent;color:${skin.palette.brand};border:0;}`;
+    btnCss = `.btn a{background-color:transparent;color:${skin.palette.brand};border:0;transition:all 0.2s ease;}` +
+             `.btn a:hover{background-color:${skin.palette.brand};color:#ffffff;transform:translateY(-1px);}`;
   } else if (skin.buttons.variant === "gradient") {
-    btnCss = `.btn a{background-image:linear-gradient(90deg, ${skin.palette.brand}, ${skin.palette.brandAlt});color:#ffffff;border:0;}`;
+    btnCss = `.btn a{background-image:linear-gradient(135deg, ${skin.palette.brand}, ${skin.palette.brandAlt});color:#ffffff;border:0;transition:all 0.2s ease;box-shadow:0 4px 15px rgba(0,0,0,0.2);}` +
+             `.btn a:hover{transform:translateY(-2px);box-shadow:0 8px 25px rgba(0,0,0,0.3);}`;
   }
-  const capsCss = `.btn a{text-transform:${skin.buttons?.caps ? "uppercase" : "none"};letter-spacing:${(skin.buttons?.letterSpacing ?? 0)}em;}`;
+  const capsCss = `.btn a{text-transform:${skin.buttons?.caps ? "uppercase" : "none"};letter-spacing:${(skin.buttons?.letterSpacing ?? 0)}em;font-weight:600;}`;
 
   const css =
-    `a{color:${skin.palette.brand};}a:hover{color:${skin.palette.brandAlt};}` +
-    `.btn-secondary a{background-color:${skin.palette.brandAlt};color:#ffffff;border:0;}` +
+    `a{color:${skin.palette.brand};transition:color 0.2s ease;}a:hover{color:${skin.palette.brandAlt};}` +
+    `.btn-secondary a{background-color:${skin.palette.brandAlt};color:#ffffff;border:0;transition:all 0.2s ease;box-shadow:0 2px 8px rgba(0,0,0,0.1);}` +
+    `.btn-secondary a:hover{transform:translateY(-1px);box-shadow:0 4px 12px rgba(0,0,0,0.15);}` +
     `${btnCss}${capsCss}` +
-    (skin.shadow?.card ? `.card{box-shadow:${skin.shadow.card};}` : "");
+    (skin.shadow?.card ? `.card{box-shadow:${skin.shadow.card};transition:box-shadow 0.2s ease;}` : "") +
+    `.card:hover{box-shadow:${skin.shadow?.card ? skin.shadow.card.replace('0.08', '0.12').replace('0.04', '0.08') : '0 4px 20px rgba(0,0,0,0.1)'};}`;
 
   const cardAttrs = {
     "background-color": skin.palette.cardBg,

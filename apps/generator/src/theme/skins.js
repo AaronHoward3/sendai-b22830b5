@@ -136,10 +136,10 @@ export function makeSkin(tokens, skinIdRaw) {
   // Per-skin definitions
   switch (skinId) {
     case "bold_contrasting": {
-      // Sans everywhere; BIG, THICK headings & titles
+      // Modern, bold fonts for high impact
       base.fonts.heading = {
-        name: "Inter",
-        hrefs: ["https://fonts.googleapis.com/css2?family=Inter:wght@800;900&display=swap"],
+        name: "Poppins",
+        hrefs: ["https://fonts.googleapis.com/css2?family=Poppins:wght@700;800;900&display=swap"],
         isSerif: false
       };
       base.fonts.body = {
@@ -148,256 +148,365 @@ export function makeSkin(tokens, skinIdRaw) {
         isSerif: false
       };
 
-      // Extra-large, extra-bold headings
-      base.h1 = { size: 56, weight: 900 };
-      base.h2 = { size: 34, weight: 900 };
-      base.bodySize = 17;
-      base.typography = { ...base.typography, h1LS: -0.02, h2LS: -0.01, capsHeadings: false };
+      // Enhanced typography with better hierarchy
+      base.h1 = { size: 64, weight: 900 };
+      base.h2 = { size: 38, weight: 800 };
+      base.bodySize = 18;
+      base.typography = { ...base.typography, h1LS: -0.03, h2LS: -0.02, capsHeadings: false };
 
-      // Shape & visuals (square images + square buttons)
-      base.radii = { card: 14, img: 0, btn: 0 };
+      // Modern rounded elements with subtle shadows
+      base.radii = { card: 20, img: 12, btn: 8 };
 
-      // Buttons stay bold but not shouty
-      base.buttons = { ...base.buttons, variant: "filled", pad: "16px 24px", caps: false, letterSpacing: 0.02 };
+      // Enhanced button styling
+      base.buttons = { ...base.buttons, variant: "filled", pad: "18px 32px", caps: false, letterSpacing: 0.03 };
 
-      // Images: wide
-      base.img = { width: 580 };
+      // Optimized image sizing
+      base.img = { width: 600 };
 
-      // Cards a bit tighter so big images feel flush
-      base.space = { cardPad: 20 };
-      base.shadow = { card: "0 12px 36px rgba(0,0,0,.24)" };
+      // Improved spacing and shadows
+      base.space = { cardPad: 24 };
+      base.shadow = { card: "0 20px 60px rgba(0,0,0,.3), 0 8px 24px rgba(0,0,0,.15)" };
 
-      // Dark backgrounds for bold contrasting
+      // Enhanced dark palette with better contrast
       base.palette = {
-        pageBg: "#0f1014",      // Dark background
-        sectionBg: "#111319",    // Dark sections
-        text: "#ffffff",         // White text
-        muted: "#cccccc",        // Light gray muted text
+        pageBg: "#0a0b0f",      // Deeper dark background
+        sectionBg: "#111319",    // Rich dark sections
+        text: "#ffffff",         // Pure white text
+        muted: "#b8bcc8",        // Better contrast muted text
         brand: tokens.brand,     // Keep brand color
         brandAlt: tokens.brandAlt || tokens.brand,
-        border: "#2c2d30",       // Dark gray borders
-        cardBg: "#151824"        // Dark cards
+        border: "#2a2d35",       // Subtle dark borders
+        cardBg: "#1a1d26"        // Rich dark cards
       };
 
-      // Keep the dark slab look for sections
+      // Enhanced dark slab look
       base.extras.slabMode = "dark";
       const brandDark = isDark(tokens.brand);
       const altDark = isDark(tokens.brandAlt || tokens.brand);
-      base.extras.slabColor = brandDark ? tokens.brand : (altDark ? (tokens.brandAlt || tokens.brand) : "#111111");
+      base.extras.slabColor = brandDark ? tokens.brand : (altDark ? (tokens.brandAlt || tokens.brand) : "#1a1d26");
       break;
     }
 
     case "gradient_glow": {
-      // Extra bold headings for better visibility on gradient background
-      base.h1 = { size: 48, weight: 900 };  // Increased size and weight
-      base.h2 = { size: 30, weight: 900 };   // Increased size and weight
-      base.radii = { card: 16, img: 16, btn: 9999 };
-      base.buttons = { ...base.buttons, variant: "gradient", pad: "14px 22px", caps: true, letterSpacing: 0.06 };
-      base.img = { width: 540 };
-      base.space = { cardPad: 28 };
-      base.shadow = { card: "0 8px 24px rgba(0,0,0,.12)" };
-      base.typography = { ...base.typography, h1LS: -0.01, h2LS: -0.01, capsHeadings: false }; // Tighter letter spacing for bold text
+      // Modern gradient fonts for better readability
+      base.fonts.heading = {
+        name: "Montserrat",
+        hrefs: ["https://fonts.googleapis.com/css2?family=Montserrat:wght@700;800;900&display=swap"],
+        isSerif: false
+      };
+      base.fonts.body = {
+        name: "Inter",
+        hrefs: ["https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap"],
+        isSerif: false
+      };
+
+      // Enhanced gradient typography
+      base.h1 = { size: 52, weight: 900 };
+      base.h2 = { size: 32, weight: 800 };
+      base.bodySize = 17;
+      base.radii = { card: 24, img: 20, btn: 50 };
+      base.buttons = { ...base.buttons, variant: "gradient", pad: "16px 28px", caps: true, letterSpacing: 0.05 };
+      base.img = { width: 560 };
+      base.space = { cardPad: 32 };
+      base.shadow = { card: "0 16px 40px rgba(0,0,0,.15), 0 4px 12px rgba(0,0,0,.1)" };
+      base.typography = { ...base.typography, h1LS: -0.02, h2LS: -0.01, capsHeadings: false };
       base.extras.globalGradient = true;
       base.extras.buttonContrastFromBg = true;
 
-      // Ensure we have distinct gradient colors
+      // Enhanced gradient with better color stops
       let g1 = tokens.gradient.from;
       let g2 = tokens.gradient.to;
       if (!g2 || g2.toLowerCase() === g1.toLowerCase()) g2 = deriveSecondStop(g1);
       
-      // Make gradient more dramatic by ensuring good contrast
+      // More dramatic gradient with better angles
       base.pattern = { 
         kind: "linear", 
         grad1: g1, 
         grad2: g2, 
-        angle: 135 // Fixed angle for better visibility
+        angle: 120 // Better angle for modern look
       };
       break;
     }
 
     case "warm_editorial": {
-      // Warm serif fonts for editorial feel
+      // Enhanced editorial fonts for better readability
       base.fonts.heading = {
-        name: "Crimson Text",
-        hrefs: ["https://fonts.googleapis.com/css2?family=Crimson+Text:wght@600;700&display=swap"],
+        name: "Playfair Display",
+        hrefs: ["https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700;800&display=swap"],
         isSerif: true
       };
       base.fonts.body = {
-        name: "Crimson Text",
-        hrefs: ["https://fonts.googleapis.com/css2?family=Crimson+Text:wght@400&display=swap"],
+        name: "Source Serif Pro",
+        hrefs: ["https://fonts.googleapis.com/css2?family=Source+Serif+Pro:wght@400;500;600&display=swap"],
         isSerif: true
       };
 
-      // Warm, readable typography
-      base.h1 = { size: 38, weight: 700 };
-      base.h2 = { size: 24, weight: 600 };
-      base.bodySize = 17;
-      base.typography = { ...base.typography, h1LS: 0, h2LS: 0, capsHeadings: false };
+      // Enhanced editorial typography
+      base.h1 = { size: 44, weight: 800 };
+      base.h2 = { size: 28, weight: 700 };
+      base.bodySize = 18;
+      base.typography = { ...base.typography, h1LS: 0.01, h2LS: 0.01, capsHeadings: false };
 
-      // Soft, rounded elements
-      base.radii = { card: 12, img: 8, btn: 20 };
+      // Refined rounded elements
+      base.radii = { card: 16, img: 12, btn: 24 };
       
-      // Soft, warm buttons
-      base.buttons = { ...base.buttons, variant: "filled", pad: "14px 24px", caps: false, letterSpacing: 0.01 };
+      // Enhanced warm buttons
+      base.buttons = { ...base.buttons, variant: "filled", pad: "16px 28px", caps: false, letterSpacing: 0.02 };
       
-      // Comfortable image sizing
-      base.img = { width: 500 };
+      // Optimized image sizing
+      base.img = { width: 520 };
       
-      // Generous, comfortable spacing
-      base.space = { cardPad: 28 };
-      base.shadow = { card: "0 4px 16px rgba(0,0,0,.08)" };
+      // Enhanced spacing and shadows
+      base.space = { cardPad: 32 };
+      base.shadow = { card: "0 8px 32px rgba(0,0,0,.08), 0 2px 8px rgba(0,0,0,.04)" };
 
-      // Warm color palette
+      // Refined warm color palette
       base.palette = {
-        pageBg: "#fefefe",      // Warm white
-        sectionBg: "#fefefe",   // Warm white sections
-        text: "#2c2c2c",       // Warm dark text
-        muted: "#666666",       // Warm gray
+        pageBg: "#fafafa",      // Soft warm background
+        sectionBg: "#ffffff",   // Clean white sections
+        text: "#1a1a1a",       // Rich dark text
+        muted: "#6b7280",       // Sophisticated gray
         brand: tokens.brand,    // Keep brand color
         brandAlt: tokens.brandAlt || tokens.brand,
-        border: "#e8e8e8",      // Warm light border
+        border: "#e5e7eb",      // Subtle warm border
         cardBg: "#ffffff"       // Clean white cards
       };
       break;
     }
 
     case "magazine_serif": {
-      // Sophisticated serif fonts for magazine feel
+      // Premium serif fonts for sophisticated magazine feel
       base.fonts.heading = {
-        name: "Libre Baskerville",
-        hrefs: ["https://fonts.googleapis.com/css2?family=Libre+Baskerville:wght@700&display=swap"],
+        name: "Cormorant Garamond",
+        hrefs: ["https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600;700&display=swap"],
         isSerif: true
       };
       base.fonts.body = {
-        name: "Libre Baskerville",
-        hrefs: ["https://fonts.googleapis.com/css2?family=Libre+Baskerville:wght@400&display=swap"],
+        name: "Crimson Text",
+        hrefs: ["https://fonts.googleapis.com/css2?family=Crimson+Text:wght@400;500;600&display=swap"],
         isSerif: true
       };
 
-      // Elegant, sophisticated typography
-      base.h1 = { size: 42, weight: 700 };
-      base.h2 = { size: 26, weight: 700 };
-      base.bodySize = 16;
+      // Enhanced sophisticated typography
+      base.h1 = { size: 48, weight: 700 };
+      base.h2 = { size: 30, weight: 600 };
+      base.bodySize = 17;
       base.typography = { ...base.typography, h1LS: 0.02, h2LS: 0.01, capsHeadings: false };
 
-      // Elegant rounded elements
-      base.radii = { card: 8, img: 4, btn: 4 };
+      // Refined elegant elements
+      base.radii = { card: 12, img: 6, btn: 6 };
       
-      // Classic, sophisticated buttons
-      base.buttons = { ...base.buttons, variant: "outline", pad: "14px 24px", caps: false, letterSpacing: 0.02 };
+      // Enhanced sophisticated buttons
+      base.buttons = { ...base.buttons, variant: "outline", pad: "16px 28px", caps: false, letterSpacing: 0.03 };
       
-      // Traditional magazine image sizing
-      base.img = { width: 480 };
+      // Optimized magazine image sizing
+      base.img = { width: 500 };
       
-      // Structured, traditional spacing
-      base.space = { cardPad: 32 };
-      base.shadow = { card: "0 2px 8px rgba(0,0,0,.06)" };
+      // Enhanced structured spacing
+      base.space = { cardPad: 36 };
+      base.shadow = { card: "0 4px 20px rgba(0,0,0,.08), 0 1px 4px rgba(0,0,0,.04)" };
 
-      // Sophisticated color palette
+      // Enhanced sophisticated color palette
       base.palette = {
-        pageBg: "#ffffff",      // Clean white
+        pageBg: "#fefefe",      // Warm white
         sectionBg: "#ffffff",   // Clean white sections
         text: "#1a1a1a",       // Rich black text
-        muted: "#555555",       // Sophisticated gray
+        muted: "#4a5568",       // Sophisticated gray
         brand: tokens.brand,    // Keep brand color
         brandAlt: tokens.brandAlt || tokens.brand,
-        border: "#d0d0d0",      // Subtle border
+        border: "#e2e8f0",      // Subtle refined border
         cardBg: "#ffffff"       // Clean white cards
       };
       break;
     }
 
     case "pastel_soft": {
-      // Friendly, rounded font for pastel soft
+      // Enhanced friendly fonts for better readability
       base.fonts.heading = {
-        name: "Nunito",
-        hrefs: ["https://fonts.googleapis.com/css2?family=Nunito:wght@700;800&display=swap"],
+        name: "Quicksand",
+        hrefs: ["https://fonts.googleapis.com/css2?family=Quicksand:wght@600;700&display=swap"],
         isSerif: false
       };
       base.fonts.body = {
-        name: "Nunito",
-        hrefs: ["https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600&display=swap"],
+        name: "Inter",
+        hrefs: ["https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap"],
         isSerif: false
       };
 
-      // Soft, friendly typography
-      base.h1 = { size: 36, weight: 800 };
-      base.h2 = { size: 24, weight: 700 };
-      base.bodySize = 16;
+      // Enhanced soft typography
+      base.h1 = { size: 40, weight: 700 };
+      base.h2 = { size: 26, weight: 600 };
+      base.bodySize = 17;
       base.typography = { ...base.typography, h1LS: 0, h2LS: 0, capsHeadings: false };
 
-      // Very rounded, pill-like elements
-      base.radii = { card: 20, img: 16, btn: 25 };
+      // Enhanced rounded elements
+      base.radii = { card: 24, img: 20, btn: 30 };
       
-      // Soft, pill-shaped buttons
-      base.buttons = { ...base.buttons, variant: "filled", pad: "16px 24px", caps: false, letterSpacing: 0.01 };
+      // Enhanced soft buttons
+      base.buttons = { ...base.buttons, variant: "filled", pad: "18px 28px", caps: false, letterSpacing: 0.02 };
       
-      // Comfortable image sizing
-      base.img = { width: 500 };
+      // Optimized image sizing
+      base.img = { width: 520 };
       
-      // Airy, relaxed spacing
-      base.space = { cardPad: 24 };
-      base.shadow = { card: "0 6px 20px rgba(0,0,0,.06)" };
+      // Enhanced airy spacing
+      base.space = { cardPad: 28 };
+      base.shadow = { card: "0 8px 32px rgba(0,0,0,.08), 0 2px 8px rgba(0,0,0,.04)" };
 
-      // Soft, pastel color palette
+      // Enhanced soft color palette
       base.palette = {
-        pageBg: "#fafafa",      // Very light gray
+        pageBg: "#f8fafc",      // Soft light background
         sectionBg: "#ffffff",   // Clean white sections
-        text: "#333333",       // Soft dark text
-        muted: "#777777",       // Soft gray
+        text: "#1e293b",       // Rich dark text
+        muted: "#64748b",       // Soft sophisticated gray
         brand: tokens.brand,    // Keep brand color
         brandAlt: tokens.brandAlt || tokens.brand,
-        border: "#e8e8e8",      // Very light border
+        border: "#e2e8f0",      // Soft border
         cardBg: "#ffffff"       // Clean white cards
       };
       break;
     }
 
     case "minimal_clean": {
-      // Ultra-clean Inter font for minimal design
+      // Enhanced clean fonts for better readability
       base.fonts.heading = {
         name: "Inter",
-        hrefs: ["https://fonts.googleapis.com/css2?family=Inter:wght@600;700&display=swap"],
+        hrefs: ["https://fonts.googleapis.com/css2?family=Inter:wght@600;700;800&display=swap"],
         isSerif: false
       };
       base.fonts.body = {
         name: "Inter",
-        hrefs: ["https://fonts.googleapis.com/css2?family=Inter:wght@400;500&display=swap"],
+        hrefs: ["https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap"],
         isSerif: false
       };
 
-      // Clean, minimal typography
-      base.h1 = { size: 40, weight: 700 };
-      base.h2 = { size: 24, weight: 600 };
-      base.bodySize = 16;
-      base.typography = { ...base.typography, h1LS: -0.01, h2LS: 0, capsHeadings: false };
+      // Enhanced minimal typography
+      base.h1 = { size: 44, weight: 800 };
+      base.h2 = { size: 26, weight: 700 };
+      base.bodySize = 17;
+      base.typography = { ...base.typography, h1LS: -0.02, h2LS: -0.01, capsHeadings: false };
 
-      // Sharp, geometric elements (no rounding)
-      base.radii = { card: 0, img: 0, btn: 0 };
+      // Subtle rounded elements for modern feel
+      base.radii = { card: 8, img: 4, btn: 6 };
       
-      // Clean, minimal buttons
-      base.buttons = { ...base.buttons, variant: "outline", pad: "12px 20px", caps: false, letterSpacing: 0 };
+      // Enhanced minimal buttons
+      base.buttons = { ...base.buttons, variant: "outline", pad: "14px 24px", caps: false, letterSpacing: 0.01 };
       
-      // Precise image sizing
-      base.img = { width: 520 };
+      // Optimized image sizing
+      base.img = { width: 540 };
       
-      // Precise, minimal spacing
-      base.space = { cardPad: 20 };
-      base.shadow = { card: "" }; // No shadows for ultra-clean look
+      // Enhanced minimal spacing
+      base.space = { cardPad: 24 };
+      base.shadow = { card: "0 2px 8px rgba(0,0,0,.04)" }; // Subtle shadow for depth
 
-      // Ultra-clean color palette
+      // Enhanced clean color palette
       base.palette = {
         pageBg: "#ffffff",      // Pure white background
         sectionBg: "#ffffff",   // Pure white sections
-        text: "#000000",        // Pure black text
-        muted: "#666666",       // Clean gray
+        text: "#111827",        // Rich black text
+        muted: "#6b7280",       // Sophisticated gray
         brand: tokens.brand,    // Keep brand color
         brandAlt: tokens.brandAlt || tokens.brand,
-        border: "#e0e0e0",      // Subtle border
+        border: "#e5e7eb",      // Subtle refined border
         cardBg: "#ffffff"       // Pure white cards
       };
       
       base.extras.colorOverrides = true; // Enable color overrides for better contrast
+      break;
+    }
+
+    case "modern_glass": {
+      // Modern glass morphism design
+      base.fonts.heading = {
+        name: "Inter",
+        hrefs: ["https://fonts.googleapis.com/css2?family=Inter:wght@600;700;800&display=swap"],
+        isSerif: false
+      };
+      base.fonts.body = {
+        name: "Inter",
+        hrefs: ["https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap"],
+        isSerif: false
+      };
+
+      // Modern glass typography
+      base.h1 = { size: 46, weight: 800 };
+      base.h2 = { size: 28, weight: 700 };
+      base.bodySize = 17;
+      base.typography = { ...base.typography, h1LS: -0.02, h2LS: -0.01, capsHeadings: false };
+
+      // Glass morphism elements
+      base.radii = { card: 20, img: 16, btn: 12 };
+      
+      // Glass buttons
+      base.buttons = { ...base.buttons, variant: "filled", pad: "16px 28px", caps: false, letterSpacing: 0.02 };
+      
+      // Optimized image sizing
+      base.img = { width: 540 };
+      
+      // Enhanced spacing
+      base.space = { cardPad: 28 };
+      base.shadow = { card: "0 8px 32px rgba(0,0,0,.1), 0 2px 8px rgba(0,0,0,.05)" };
+
+      // Glass morphism color palette
+      base.palette = {
+        pageBg: "#f1f5f9",      // Light glass background
+        sectionBg: "rgba(255,255,255,0.8)",   // Semi-transparent sections
+        text: "#1e293b",        // Rich dark text
+        muted: "#64748b",        // Glass gray
+        brand: tokens.brand,     // Keep brand color
+        brandAlt: tokens.brandAlt || tokens.brand,
+        border: "rgba(255,255,255,0.2)",      // Glass border
+        cardBg: "rgba(255,255,255,0.9)"       // Glass cards
+      };
+      
+      base.extras.colorOverrides = true;
+      break;
+    }
+
+    case "neon_cyber": {
+      // Cyberpunk neon design
+      base.fonts.heading = {
+        name: "Orbitron",
+        hrefs: ["https://fonts.googleapis.com/css2?family=Orbitron:wght@700;800;900&display=swap"],
+        isSerif: false
+      };
+      base.fonts.body = {
+        name: "Inter",
+        hrefs: ["https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap"],
+        isSerif: false
+      };
+
+      // Cyber typography
+      base.h1 = { size: 50, weight: 900 };
+      base.h2 = { size: 30, weight: 800 };
+      base.bodySize = 16;
+      base.typography = { ...base.typography, h1LS: 0.02, h2LS: 0.01, capsHeadings: true };
+
+      // Sharp cyber elements
+      base.radii = { card: 4, img: 0, btn: 0 };
+      
+      // Neon buttons
+      base.buttons = { ...base.buttons, variant: "filled", pad: "14px 24px", caps: true, letterSpacing: 0.05 };
+      
+      // Cyber image sizing
+      base.img = { width: 580 };
+      
+      // Tight cyber spacing
+      base.space = { cardPad: 20 };
+      base.shadow = { card: "0 0 20px rgba(0,255,255,0.3), 0 0 40px rgba(0,255,255,0.1)" };
+
+      // Cyber color palette
+      base.palette = {
+        pageBg: "#0a0a0a",      // Deep black
+        sectionBg: "#111111",    // Dark sections
+        text: "#00ffff",         // Cyan text
+        muted: "#888888",        // Gray muted
+        brand: tokens.brand,     // Keep brand color
+        brandAlt: tokens.brandAlt || tokens.brand,
+        border: "#333333",       // Dark borders
+        cardBg: "#1a1a1a"        // Dark cards
+      };
+      
+      base.extras.colorOverrides = true;
       break;
     }
 

@@ -12,14 +12,17 @@ interface Step4GenerationProps {
   formData: FormData;
   updateFormData: (updates: Partial<FormData>) => void;
   onNext: () => void;
+  onBack?: () => void;
 }
 
-export const Step4Generation: React.FC<Step4GenerationProps> = ({ formData, updateFormData, onNext }) => {
+export const Step4Generation: React.FC<Step4GenerationProps> = ({ formData, updateFormData, onNext, onBack }) => {
   const { user } = useSupabaseAuth();
   const [isAdmin, setIsAdmin] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [showUpgradePrompt, setShowUpgradePrompt] = useState(false);
   const [upgradeReason, setUpgradeReason] = useState<'no_credits' | 'no_subscription' | 'trial_expired' | 'no_image_credits'>('no_credits');
+  const [showError, setShowError] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
   useEffect(() => {
     const checkAdmin = async () => {
       if (user?.id) {
@@ -58,6 +61,20 @@ export const Step4Generation: React.FC<Step4GenerationProps> = ({ formData, upda
     setShowUpgradePrompt(false);
     // Go back to previous step or restart the flow
     // For now, we'll just hide the prompt and let the user try again
+  };
+  
+  const handleErrorAndGoBack = (message: string) => {
+    setErrorMessage(message);
+    setShowError(true);
+    // Navigate back to step 1 after showing error for 3 seconds
+    setTimeout(() => {
+      if (onBack) {
+        onBack();
+      } else {
+        // Fallback: reload the page to go back to step 1
+        window.location.href = '/?step=1';
+      }
+    }, 3000);
   };
   const handleContinueWithoutImage = () => {
     setShowUpgradePrompt(false);
@@ -224,7 +241,34 @@ export const Step4Generation: React.FC<Step4GenerationProps> = ({ formData, upda
         }
         if (!generateResponse.ok) {
           const errorText = await generateResponse.text();
-          throw new Error(`HTTP ${generateResponse.status} ${generateResponse.statusText}\n${errorText.slice(0, 800)}`);
+          let errorMessage = `HTTP ${generateResponse.status} ${generateResponse.statusText}`;
+          
+          // Handle specific error types
+          if (generateResponse.status === 429) {
+            try {
+              const errorData = JSON.parse(errorText);
+              errorMessage = errorData.error || "Too many requests. Please wait a moment before trying again.";
+            } catch {
+              errorMessage = "Too many requests. Please wait a moment before trying again.";
+            }
+            stopFake();
+            setStatus("Rate limit exceeded. Please wait before trying again.");
+            throw new Error(errorMessage);
+          }
+          
+          if (generateResponse.status >= 500) {
+            try {
+              const errorData = JSON.parse(errorText);
+              errorMessage = errorData.error || "Email generator service is temporarily unavailable. Please try again later.";
+            } catch {
+              errorMessage = "Email generator service is temporarily unavailable. Please try again later.";
+            }
+            stopFake();
+            setStatus("Service temporarily unavailable. Please try again later.");
+            throw new Error(errorMessage);
+          }
+          
+          throw new Error(`${errorMessage}\n${errorText.slice(0, 800)}`);
         }
         const data = await generateResponse.json();
         const first = data?.emails?.[0];
@@ -270,6 +314,18 @@ export const Step4Generation: React.FC<Step4GenerationProps> = ({ formData, upda
             setShowUpgradePrompt(true);
             return;
           }
+          // Handle rate limit errors
+          if (err.message.includes('Too many requests') || err.message.includes('Rate limit')) {
+            setStatus("Rate limit exceeded. Please wait a moment before trying again.");
+            handleErrorAndGoBack("Too many requests. Please wait a moment before trying again.");
+            return;
+          }
+          // Handle service unavailable errors
+          if (err.message.includes('temporarily unavailable')) {
+            setStatus("Service temporarily unavailable. Please try again later.");
+            handleErrorAndGoBack("Email generator service is temporarily unavailable. Please try again later.");
+            return;
+          }
           setStatus("Error: " + err.message);
         } else { setStatus("Error: unknown"); }
     }};
@@ -285,6 +341,15 @@ export const Step4Generation: React.FC<Step4GenerationProps> = ({ formData, upda
           onUpgrade={handleUpgrade} onBack={handleBack} reason={upgradeReason}
           onContinueWithoutImage={upgradeReason === 'no_image_credits' ? handleContinueWithoutImage : undefined}
         />
+      ) : showError ? (
+        <div className="fixed inset-0 flex flex-col items-center justify-center bg-background overflow-hidden">
+          <div className="bg-red-50 border border-red-200 rounded-lg p-6 max-w-md mx-4 text-center">
+            <div className="text-red-600 text-6xl mb-4">⚠️</div>
+            <h1 className="text-xl font-semibold text-red-800 mb-2">Generation Failed</h1>
+            <p className="text-red-700 mb-4">{errorMessage}</p>
+            <p className="text-sm text-red-600">Redirecting you back to the beginning...</p>
+          </div>
+        </div>
       ) : (
         <div className="fixed inset-0 flex flex-col items-center justify-center bg-background overflow-hidden">
           <h1 className="text-2xl font-normal text-gray-100 z-10 text-center" style={{ textShadow: "0 2px 10px rgba(0, 0, 0, 0.8)" }}>Generating your email...</h1>
@@ -295,14 +360,8 @@ export const Step4Generation: React.FC<Step4GenerationProps> = ({ formData, upda
   </>;
 };
 
-function startFakeProgress({ 
-  useCustomHero, 
-  setStatus, 
-  timersRef 
-}: { 
-  useCustomHero: boolean; 
-  setStatus: (status: string) => void; 
-  timersRef: { current: number[] } 
+function startFakeProgress({ useCustomHero, setStatus, timersRef}: { 
+  useCustomHero: boolean;  setStatus: (status: string) => void;  timersRef: { current: number[] } 
 }) {
   const randInt = (min: number, max: number) => Math.floor(Math.random() * (max - min + 1)) + min;
   const addTimer = (ms: number, fn: () => void) => {
@@ -314,7 +373,6 @@ function startFakeProgress({
     for (const id of timersRef.current) clearTimeout(id);
     timersRef.current = [];
   };
-
   if (!useCustomHero) {
     const total = randInt(12_000, 30_000);
     const t0 = randInt(400, 800);

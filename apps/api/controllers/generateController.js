@@ -353,7 +353,30 @@ export async function generateEmails(req, res) {
       console.log("Generator server error code:", generatorResponse.status);
       const errorText = await generatorResponse.text().catch(() => "Unknown error");
       console.error("[generateController] Generator error:", errorText);
-      return res.status(500).json({ error: "Email generator failed", status: generatorResponse.status });
+      
+      // Handle specific error types
+      if (generatorResponse.status === 429) {
+        console.error("[generateController] Rate limit exceeded (429) - stopping generation process");
+        return res.status(429).json({ 
+          error: "Too many requests. Please wait a moment before trying again.",
+          type: "rate_limit",
+          retryAfter: generatorResponse.headers.get("retry-after") || 60
+        });
+      }
+      
+      if (generatorResponse.status >= 500) {
+        console.error("[generateController] Server error - stopping generation process");
+        return res.status(500).json({ 
+          error: "Email generator service is temporarily unavailable. Please try again later.",
+          type: "server_error"
+        });
+      }
+      
+      return res.status(500).json({ 
+        error: "Email generator failed", 
+        status: generatorResponse.status,
+        type: "generator_error"
+      });
     }
 
     console.log("🎯 [CONTROLLER] Generator response OK, parsing JSON...");

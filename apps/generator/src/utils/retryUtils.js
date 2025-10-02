@@ -61,9 +61,22 @@ export async function retryOpenAI(fn, maxRetries = 3) {
     maxRetries,
     baseDelay: 1000,
     shouldRetry: (error) => {
-      // Retry on rate limits, timeouts, and network errors
+      // Check for HTTP 429 specifically - DO NOT retry rate limits
+      if (error.status === 429 || error.statusCode === 429) {
+        console.error("❌ Rate limit exceeded (429) - stopping retries immediately");
+        return false;
+      }
+      
+      // Check for rate limit in message
+      if (error.message?.toLowerCase().includes('rate limit') || 
+          error.message?.toLowerCase().includes('too many requests') ||
+          error.message?.toLowerCase().includes('429')) {
+        console.error("❌ Rate limit detected in message - stopping retries immediately");
+        return false;
+      }
+      
+      // Retry on other errors but NOT rate limits
       const retryableErrors = [
-        'rate_limit_exceeded',
         'timeout',
         'network_error',
         'server_error',
@@ -102,6 +115,39 @@ export async function retryFileOperation(fn, maxRetries = 3) {
     },
     onRetry: (error, attempt, delay) => {
       console.warn(`⚠️ File operation attempt ${attempt} failed, retrying in ${delay}ms:`, error.message);
+    }
+  });
+}
+
+// Specific retry function for HTTP requests (handles 429 properly)
+export async function retryHttpRequest(fn, maxRetries = 3) {
+  return retryWithConditions(fn, {
+    maxRetries,
+    baseDelay: 1000,
+    shouldRetry: (error) => {
+      // NEVER retry on HTTP 429 (rate limit)
+      if (error.status === 429 || error.statusCode === 429) {
+        console.error("❌ HTTP 429 Rate limit exceeded - stopping immediately");
+        return false;
+      }
+      
+      // Check for rate limit indicators in response
+      if (error.message?.toLowerCase().includes('429') ||
+          error.message?.toLowerCase().includes('too many requests') ||
+          error.message?.toLowerCase().includes('rate limit')) {
+        console.error("❌ Rate limit detected - stopping immediately");
+        return false;
+      }
+      
+      // Retry on other HTTP errors
+      const retryableStatuses = [500, 502, 503, 504, 408, 408];
+      return retryableStatuses.includes(error.status) || retryableStatuses.includes(error.statusCode);
+    },
+    onRetry: (error, attempt, delay) => {
+      console.warn(`⚠️ HTTP request attempt ${attempt} failed, retrying in ${delay}ms:`, error.message);
+    },
+    onFinalError: (error) => {
+      console.error(`❌ HTTP request failed after all retries:`, error.message);
     }
   });
 }

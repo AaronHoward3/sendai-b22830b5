@@ -1,6 +1,6 @@
 // src/components/steps/Step2EmailType.tsx
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { ChevronDown, Pencil, Save, X, Check, Sparkles, RotateCcw, Mail } from 'lucide-react';
+import { ChevronDown, Pencil, Save, X, Check, Sparkles, Mail, Zap, Users, Briefcase, Smile, Circle, Contrast, BookOpen, Coffee, Square, Sun, Palette, Layers } from 'lucide-react';
 import { motion, easeOut } from 'framer-motion';
 
 import { GradientButton } from '../ui/gradient-button';
@@ -646,11 +646,19 @@ export const Step2EmailType: React.FC<Step2EmailTypeProps> = ({formData, updateF
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 w-full">
           {TONES.map(tn => {
             const active = tone === tn.value;
+            const getToneIcon = (toneValue: string) => {
+              switch (toneValue) {
+                case 'bold': return <Zap className="h-4 w-4" />;
+                case 'friendly': return <Users className="h-4 w-4" />;
+                case 'formal': return <Briefcase className="h-4 w-4" />;
+                case 'fun': return <Smile className="h-4 w-4" />;
+                default: return null;
+            }};
             return <GradientButton
                 key={tn.value} type="button" aria-pressed={active}
                 variant={active ? 'solid' : 'white-outline'} onClick={() => setTone(tn.value)}
-                className={`w-full px-4 py-2 rounded-xl transition ${active ? '' : unselectedSegBtn}`}
-            >{tn.label}</GradientButton>
+                className={`w-full px-4 py-2 rounded-xl transition ${active ? '' : unselectedSegBtn} flex items-center gap-2`}
+            >{getToneIcon(tn.value)}{tn.label}</GradientButton>
           })}
       </div></fieldset></motion.div>
       {/* Design Style */}
@@ -663,14 +671,28 @@ export const Step2EmailType: React.FC<Step2EmailTypeProps> = ({formData, updateF
               <ChevronDown className="w-4 h-4 opacity-70" />
             </GradientButton>
           </DropdownMenuTrigger>
-          <DropdownMenuContent className="w-[520px] max-h-[360px] overflow-auto p-2">
-            <div className="grid grid-cols-2 gap-2">
-              {DESIGN_STYLES.map(s => (
-                <DropdownMenuItem key={s.value} onClick={() => setDesignAesthetic(s.value)} className="flex flex-col items-start gap-0.5 py-3">
-                  <span className="font-medium">{s.label}</span>
+          <DropdownMenuContent className="w-[520px] max-h-[360px] overflow-auto p-2"><div className="grid grid-cols-2 gap-2">
+              {DESIGN_STYLES.map(s => {
+                const getDesignIcon = (designValue: string) => {
+                  switch (designValue) {
+                    case 'minimal_clean': return <Circle className="h-4 w-4" />;
+                    case 'bold_contrasting': return <Contrast className="h-4 w-4" />;
+                    case 'magazine_serif': return <BookOpen className="h-4 w-4" />;
+                    case 'warm_editorial': return <Coffee className="h-4 w-4" />;
+                    case 'neo_brutalist': return <Square className="h-4 w-4" />;
+                    case 'gradient_glow': return <Sun className="h-4 w-4" />;
+                    case 'pastel_soft': return <Palette className="h-4 w-4" />;
+                    case 'luxe_mono': return <Layers className="h-4 w-4" />;
+                    default: return null;
+                }};
+                return <DropdownMenuItem key={s.value} onClick={() => setDesignAesthetic(s.value)} className="flex flex-col items-start gap-0.5 py-3 cursor-pointer">
+                  <div className="flex items-center gap-2">
+                    {getDesignIcon(s.value)}
+                    <span className="font-medium">{s.label}</span>
+                  </div>
                   {s.blurb && <span className="text-xs text-muted-foreground">{s.blurb}</span>}
                 </DropdownMenuItem>
-              ))}
+              })}
       </div></DropdownMenuContent></DropdownMenu></motion.div>
 
       {/* Brand Colors */}
