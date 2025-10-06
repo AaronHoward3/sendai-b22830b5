@@ -1,7 +1,7 @@
 // src/controllers/emailController.js
 // Explicit style selection only. No styleSeed. Back-compat with designAesthetic.
 
-import { TIMEOUTS } from "../config/constants.ts";
+import { TIMEOUTS } from "../config/constants.js";
 import { generateCustomHeroAndEnrich } from "../services/heroImageService.js";
 import { processFooterTemplate } from "../services/footerService.js";
 import { processHeaderTemplate } from "../services/headerService.js";
