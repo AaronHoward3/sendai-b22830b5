@@ -1,7 +1,7 @@
 // src/controllers/emailController.js
 // Explicit style selection only. No styleSeed. Back-compat with designAesthetic.
 
-import { TIMEOUTS } from "../config/constants.js";
+import { TIMEOUTS } from "../config/constants.ts";
 import { generateCustomHeroAndEnrich } from "../services/heroImageService.js";
 import { processFooterTemplate } from "../services/footerService.js";
 import { processHeaderTemplate } from "../services/headerService.js";
@@ -28,31 +28,24 @@ function sseClose(res) {
   try { res.write("event: end\ndata: {}\n\n"); } catch {}
   try { res.end(); } catch {}
 }
-
-const normalizeStyleId = (v) =>
-  String(v || "minimal_clean").trim().toLowerCase().replace(/\s+/g, "_");
-
-export async function generateEmails(req, res) {
+const normalizeStyleId = (v) => String(v || "minimal_clean").trim().toLowerCase().replace(/\s+/g, "_");
+export async function generateEmailsFromEmailController(req, res) {
   const requestStartTime = performance.now();
   const streaming = isSse(req);
   if (streaming) sseInit(res);
-
   let hb;
   if (streaming) {
     hb = setInterval(() => { try { res.write(":hb\n\n"); } catch {} }, 15000);
     req.on("close", () => clearInterval(hb));
   }
   const send = streaming ? (e, d) => sseSend(res, e, d) : () => {};
-
   try {
     send("start", { at: Date.now() });
-
     if (!req.body) {
       const err = { error: "Request body is missing. Ensure Content-Type: application/json." };
       if (streaming) { sseSend(res, "error", err); if (hb) clearInterval(hb); sseClose(res); return; }
       return res.status(400).json(err);
     }
-
     let {
       brandData,
       emailType,
@@ -61,7 +54,6 @@ export async function generateEmails(req, res) {
       storeId,
       designAesthetic,
       styleId,
-
       // NEW: optional saved image injection
       savedHeroImageUrl, // string http(s) URL of a previously saved brand image
     } = req.body;
@@ -71,9 +63,7 @@ export async function generateEmails(req, res) {
       if (streaming) { sseSend(res, "error", err); if (hb) clearInterval(hb); sseClose(res); return; }
       return res.status(400).json(err);
     }
-
     const resolvedStyleId = normalizeStyleId(styleId || designAesthetic || "minimal_clean");
-
     const wantsMjml =
       (req.headers.accept || "").includes("text/mjml") ||
       (req.headers.accept || "").includes("application/mjml");
@@ -97,18 +87,7 @@ export async function generateEmails(req, res) {
 
     // Debug the incoming request body structure
     console.log(`🔍 [DEBUG] Generator ${jobId} received request body:`);
-    console.log("🔍 [DEBUG] hasBrandData:", !!req.body?.brandData);
-    console.log("🔍 [DEBUG] brandDataKeys:", req.body?.brandData ? Object.keys(req.body.brandData) : []);
-    console.log("🔍 [DEBUG] hasStoreName:", !!req.body?.brandData?.store_name);
-    console.log("🔍 [DEBUG] hasStoreUrl:", !!req.body?.brandData?.store_url);
-    console.log("🔍 [DEBUG] hasLogoUrl:", !!req.body?.brandData?.logo_url);
-    console.log("🔍 [DEBUG] hasProducts:", !!req.body?.brandData?.products);
-    console.log("🔍 [DEBUG] productsLength:", req.body?.brandData?.products?.length || 0);
-    console.log("🔍 [DEBUG] storeName:", req.body?.brandData?.store_name);
-    console.log("🔍 [DEBUG] storeUrl:", req.body?.brandData?.store_url);
-    console.log("🔍 [DEBUG] logoUrl:", req.body?.brandData?.logo_url);
-    console.log("🔍 [DEBUG] products preview:", req.body?.brandData?.products?.slice(0, 2));
-
+    console.log(req.body);
     // Determine which hero mode we're in:
     // 1) Generate a brand-new custom image (existing path)
     // 2) Inject a previously saved image URL (new path)
@@ -171,13 +150,8 @@ export async function generateEmails(req, res) {
     });
 
     // Wait for both to complete
-    const [finalBrandData, { layout, refinedMjml, styleUsed }] = await Promise.all([
-      heroPromise,
-      emailPromise
-    ]);
-
+    const [finalBrandData, { layout, refinedMjml, styleUsed }] = await Promise.all([ heroPromise, emailPromise ]);
     console.log("STYLE PALETTE USED:", styleUsed?.palette);
-
     saveMJML(jobId, 0, refinedMjml);
 
     // Hero replacement / header and footer stitching
@@ -317,12 +291,7 @@ export async function generateEmails(req, res) {
     }
 
     const subjectLine = await generateSubjectLine({
-      brandData: finalBrandData,
-      emailType,
-      designAesthetic: resolvedStyleId,
-      userContext,
-      refinedMjml: mjmlOut,
-      metrics: m
+      brandData: finalBrandData, emailType, designAesthetic: resolvedStyleId, userContext, refinedMjml: mjmlOut, metrics: m
     });
 
     // Costs/metrics
@@ -332,8 +301,7 @@ export async function generateEmails(req, res) {
 
     const summary = m.summary({ layout: layout?.layoutId || null });
     summary.costsUSD = {
-      text: textCosts,
-      image: imageCosts,
+      text: textCosts, image: imageCosts,
       totalUSD: Math.round((totalUSD + Number.EPSILON) * 1e5) / 1e5
     };
 

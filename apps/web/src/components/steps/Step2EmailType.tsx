@@ -26,9 +26,7 @@ import { supabase } from '@/lib/supabaseClient';
 import { sanitizeInput, validateUrl } from '@/lib/security';
 import { useSupabaseAuth } from '@/hooks/useSupabaseAuth';
 import { checkUserCredits } from '@/lib/api';
-
-const API_ROOT = '/api';
-
+import { API_ROOT } from '@/utils/constants';
 interface Step2EmailTypeProps {
   formData: FormData;
   updateFormData: (updates: Partial<FormData>) => void;
@@ -380,15 +378,13 @@ function buildImageContext(opts: {
 export const Step2EmailType: React.FC<Step2EmailTypeProps> = ({formData, updateFormData, onNext, onPrev}) => {
   const { user } = useSupabaseAuth();
   const isAuthenticated = !!user;
-  
   const [selectedEmailType, setSelectedEmailType] = useState<EmailType | null>(formData.emailType);
   const [useCustomHero, setUseCustomHero] = useState<boolean>(false);
   const [isCustomHeroEnabledToChoose, setIsCustomHeroEnabledToChoose] = useState<boolean>(true);
   const [userContext, setUserContext] = useState<string>(formData.userContext ?? '');
   const [imageContext, setImageContext] = useState<string>(formData.imageContext ?? '');
   const [tone, setTone] = useState<Tone>(formData.tone ?? 'bold');
-  const [designAesthetic, setDesignAesthetic] =
-    useState<DesignAesthetic>(formData.designAesthetic ?? 'bold_contrasting');
+  const [designAesthetic, setDesignAesthetic] = useState<DesignAesthetic>(formData.designAesthetic ?? 'bold_contrasting');
   const [isGeneratingContext, setIsGeneratingContext] = useState<boolean>(false);
   const [userCredits, setUserCredits] = useState<{
     emails_remaining: number;
@@ -436,12 +432,10 @@ export const Step2EmailType: React.FC<Step2EmailTypeProps> = ({formData, updateF
     (async () => { try {
       const { data: { session } } = await supabase.auth.getSession();
       const token = session?.access_token;
-      
       // Use appropriate endpoint based on authentication status
       const endpoint = isAuthenticated 
         ? `${API_ROOT}/images?domain=${encodeURIComponent(domain)}`
         : `${API_ROOT}/images/preview?domain=${encodeURIComponent(domain)}`;
-        
       const res = await fetch(endpoint, { headers: token ? { Authorization: `Bearer ${token}` } : {}, });
       if (res.ok) {
         const json = await res.json();
@@ -528,7 +522,9 @@ export const Step2EmailType: React.FC<Step2EmailTypeProps> = ({formData, updateF
         console.log("🔍 [DEBUG] User credits loaded:", balance);
       } catch (error) {
         console.error("🔍 [DEBUG] Failed to load user credits:", error);
-        setUserCredits(null);
+        // For anonymous users, provide default trial credits
+        setUserCredits({ emails_remaining: 3, images_remaining: 1, revisions_remaining: 2, brand_limit: 1 });
+        setIsCustomHeroEnabledToChoose(true);
       } finally { }
     };
     checkCredits();
@@ -631,13 +627,14 @@ export const Step2EmailType: React.FC<Step2EmailTypeProps> = ({formData, updateF
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 w-full">
           {EMAIL_TYPES.map(t => {
             const active = selectedEmailType === t.value;
+            const icon = t.value === 'Promotion' ? <Zap className="w-4 h-4" /> : <Mail className="w-4 h-4" />;
             return <GradientButton
               key={t.value} type="button"
               variant={active ? 'solid' : 'white-outline'}
               onClick={() => setSelectedEmailType(t.value)}
               title={t.description} aria-pressed={active}
-              className={`w-full px-4 py-2 rounded-xl transition ${active ? '' : unselectedSegBtn}`}
-            >{t.label}</GradientButton>
+              className={`w-full px-4 py-2 rounded-xl transition flex items-center justify-center gap-2 ${active ? '' : unselectedSegBtn}`}
+            >{icon}{t.label}</GradientButton>
           })}
       </div></fieldset></motion.div>
       {/* Tone */}
@@ -667,7 +664,22 @@ export const Step2EmailType: React.FC<Step2EmailTypeProps> = ({formData, updateF
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <GradientButton id="design-style-trigger" variant="white-outline" className="w-full justify-between !bg-background !text-foreground !border !border-border hover:!bg-muted">
-              <span>{selectedStyleLabel}</span>
+              <div className="flex items-center gap-2">
+                {(() => {
+                  switch (designAesthetic) {
+                    case 'minimal_clean': return <Circle className="h-4 w-4" />;
+                    case 'bold_contrasting': return <Contrast className="h-4 w-4" />;
+                    case 'magazine_serif': return <BookOpen className="h-4 w-4" />;
+                    case 'warm_editorial': return <Coffee className="h-4 w-4" />;
+                    case 'neo_brutalist': return <Square className="h-4 w-4" />;
+                    case 'gradient_glow': return <Sun className="h-4 w-4" />;
+                    case 'pastel_soft': return <Palette className="h-4 w-4" />;
+                    case 'luxe_mono': return <Layers className="h-4 w-4" />;
+                    default: return <Palette className="h-4 w-4" />;
+                  }
+                })()}
+                <span>{selectedStyleLabel}</span>
+              </div>
               <ChevronDown className="w-4 h-4 opacity-70" />
             </GradientButton>
           </DropdownMenuTrigger>
@@ -725,9 +737,9 @@ export const Step2EmailType: React.FC<Step2EmailTypeProps> = ({formData, updateF
                 className={`flex-1 ${!useCustomHero ? '' : unselectedSegBtn}`}
               >No</GradientButton>
           </div>}
-          {!isCustomHeroEnabledToChoose && <div className="mt-3 p-3 bg-amber-50 border border-amber-200 rounded-lg">
-              <p className="text-sm text-amber-800 font-medium">⚠️ No image credits remaining</p>
-              <p className="text-xs text-amber-700 mt-1">You don't have any image credits available to generate new custom hero images. You can still use saved images from previous generations.</p>
+          {!isCustomHeroEnabledToChoose && <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg">
+            <p className="text-sm text-amber-800 font-medium">⚠️ No image credits remaining</p>
+            <p className="text-xs text-amber-700 mt-1">You don't have any image credits available to generate new custom hero images. You can still use saved images from previous generations.</p>
           </div>}
       </fieldset></motion.div>
 
@@ -737,41 +749,30 @@ export const Step2EmailType: React.FC<Step2EmailTypeProps> = ({formData, updateF
           <fieldset className="space-y-3">
             <legend className="text-lg font-medium text-foreground">Use a saved hero image (optional)</legend>
           {savedImages.length === 0 ? (
-            <p className="text-sm text-muted-foreground italic">
-              No saved images yet for <span className="underline">{normalizeDomain(formData.domain || '')}</span>.
-            </p>
+            <p className="text-sm text-muted-foreground italic">No saved images yet for <span className="underline">{normalizeDomain(formData.domain || '')}</span>.</p>
           ) : (
             <>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                 {savedImages.map((img) => {
                   const active = selectedSavedUrl === img.public_url;
                   return <button
-                      type="button" key={img.id}
-                      onClick={() => setSelectedSavedUrl(active ? null : img.public_url)}
-                      className={`relative rounded-lg border transition overflow-hidden aspect-[4/3] ${active ? 'border-primary ring-2 ring-primary' : 'border-border hover:bg-muted/40'}`}
-                      aria-pressed={active}
-                    >
-                      <img
-                        src={img.public_url} alt="Saved"
-                        className="w-full h-full object-cover"
+                    type="button" key={img.id} aria-pressed={active}
+                    onClick={() => setSelectedSavedUrl(active ? null : img.public_url)}
+                    className={`relative rounded-lg border transition overflow-hidden aspect-[4/3] ${active ? 'border-primary ring-2 ring-primary' : 'border-border hover:bg-muted/40'}`}
+                  ><img
+                        src={img.public_url} alt="Saved" className="w-full h-full object-cover"
                         onError={(e) => { (e.currentTarget as HTMLImageElement).style.visibility = 'hidden'; }}
-                      />
-                      {active && (
-                        <div className="absolute top-1 right-1 bg-primary text-primary-foreground text-[11px] rounded px-1.5 py-0.5 flex items-center gap-1">
-                          <Check className="w-3 h-3" /> Selected
-                        </div>
-                      )}
+                    />
+                    {active && <div className="absolute top-1 right-1 bg-primary text-primary-foreground text-[11px] rounded px-1.5 py-0.5 flex items-center gap-1"><Check className="w-3 h-3" /> Selected</div>}
                   </button>;
                 })}
               </div>
-              {selectedSavedUrl && (
-                <div className="flex gap-2">
-                  <GradientButton
-                    variant="white-outline" onClick={() => setSelectedSavedUrl(null)}
-                    className="!bg-background !text-foreground !border !border-border hover:!bg-muted"
-                  >Clear selection</GradientButton>
-                </div>
-              )}
+              {selectedSavedUrl && <div className="flex gap-2">
+                <GradientButton
+                  variant="white-outline" onClick={() => setSelectedSavedUrl(null)}
+                  className="!bg-background !text-foreground !border !border-border hover:!bg-muted"
+                >Clear selection</GradientButton>
+              </div>}
             </>
           )}
           </fieldset>

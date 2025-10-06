@@ -8,11 +8,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
-import { useSupabaseAuth } from "@/hooks/useSupabaseAuth";
 import { supabase } from "@/lib/supabaseClient";
-
-const API_ROOT = '/api';
-
+import { API_ROOT } from "@/utils/constants";
 type FoundUser = {
   id: string;
   email: string | null;
@@ -51,7 +48,7 @@ function normalizeDomain(input: string) {
 const PER_PAGE = 50;
 
 const Admin: React.FC = () => {
-  const { user } = useSupabaseAuth();
+  // const { user } = useSupabaseAuth();
   const { toast } = useToast();
 
   // Search state (single bar)
@@ -187,17 +184,30 @@ const Admin: React.FC = () => {
     toast({ title: ban ? "User banned" : "User unbanned" });
   };
 
+  const cleanUserData = async () => {
+    if (!selected) return;
+    if (!confirm("Are you sure you want to clean all data for this user? This will remove all brands, emails, images, and other data but preserve their subscription. This action cannot be undone.")) {
+      return;
+    }
+    try {
+      const res = await fetchWithAuth(`/api/admin/users/${selected.id}/clean-data`, { method: "POST" });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json?.error || "Clean data failed");
+      await openDetail({ ...selected });
+      toast({ title: "User data cleaned successfully" });
+    } catch (err: any) {
+      toast({ title: "Clean data failed", description: err.message, variant: "destructive" });
+    }
+  };
+
   return (
     <div className="min-h-screen bg-background text-foreground">
       <Navigation />
-      <div className="pt-16 container mx-auto px-4 py-8 max-w-7xl space-y-6">
-        <div className="flex items-center justify-between">
-          <div>
+      <div className="pt-20 container mx-auto px-4 py-8 max-w-7xl space-y-6">
+        <div className="flex flex-col gap-2">
             <h1 className="text-3xl font-bold">Admin</h1>
             <p className="text-muted-foreground">Browse all users. Use search to jump faster.</p>
-          </div>
         </div>
-
         {/* Search (single bar) */}
         <Card>
           <CardHeader>
@@ -353,7 +363,7 @@ const Admin: React.FC = () => {
             <Card className="w-full max-w-5xl max-h-[85vh] overflow-y-auto">
               <CardHeader className="sticky top-0 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 z-10">
                 <div className="flex items-start justify-between gap-4">
-                  <div>
+                  <div className="flex flex-col gap-2">
                     <CardTitle>User: {selected.email || "No email"}</CardTitle>
                     <CardDescription className="break-all">{selected.id}</CardDescription>
                   </div>
@@ -361,9 +371,8 @@ const Admin: React.FC = () => {
                 </div>
               </CardHeader>
               <CardContent className="space-y-6">
-                {!snapshot ? (
-                  <div>Loading…</div>
-                ) : (
+                {!snapshot ? <div>Loading…</div>
+                : (
                   <>
                     {/* Account */}
                     <Card>
@@ -413,11 +422,8 @@ const Admin: React.FC = () => {
                                   toast({ title: "Email update failed", description: err.message, variant: "destructive" });
                                 }
                               }}
-                            >
-                              Update
-                            </Button>
+                            >Update</Button>
                           </div>
-
                           <Label>Display Name</Label>
                           <div className="flex gap-2">
                             <Input
@@ -443,6 +449,12 @@ const Admin: React.FC = () => {
                               onClick={() => setBan(!snapshot.profile?.banned)}
                             >
                               {snapshot.profile?.banned ? "Unban" : "Ban"}
+                            </Button>
+                            <Button
+                              variant="destructive"
+                              onClick={() => cleanUserData()}
+                            >
+                              Clean Data
                             </Button>
                           </div>
                         </div>

@@ -45,7 +45,6 @@ const App = () => (
                 <Route path="/dashboard" element={<Dashboard />} />
                 <Route path="/my-emails" element={<MyEmails />} />
                 <Route path="/email-editor" element={<EmailEditor />} />
-                {/* 👇 new admin route */}
                 <Route path="/admin" element={<Admin />} />
                 <Route path="*" element={<NotFound />} />
               </Routes>

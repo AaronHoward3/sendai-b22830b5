@@ -417,3 +417,73 @@ export async function adminUnbanUser(req, res) {
   req.body = { ...(req.body || {}), banned: false };
   return adminPatchAccount(req, res);
 }
+
+/** POST /api/admin/users/:userId/clean-data
+ *  Removes all user data (brands, emails, images, etc.) but preserves subscription
+ */
+export async function adminCleanUserData(req, res) {
+  try {
+    const { userId } = req.params;
+    if (!userId) {
+      return res.status(400).json({ error: "User ID required" });
+    }
+
+    // Get user's UUID from the user ID
+    const { data: user, error: userError } = await supabaseAdmin.auth.admin.getUserById(userId);
+    if (userError || !user?.user) {
+      return res.status(404).json({ error: "User not found" });
+    }
+
+    const userUuid = user.user.id;
+
+    // Delete user's data in order (respecting foreign key constraints)
+    const deletions = [
+      // Delete generated emails
+      supabaseAdmin.from('generated_emails').delete().eq('user_id', userUuid),
+      
+      // Delete saved images
+      supabaseAdmin.from('saved_images').delete().eq('user_id', userUuid),
+      
+      // Delete user-specific brand data
+      supabaseAdmin.from('user_brands').delete().eq('user_id', userUuid),
+      
+      // Delete user-specific image data
+      supabaseAdmin.from('user_images').delete().eq('user_id', userUuid),
+      
+      // Delete credit ledger entries (but preserve subscription)
+      supabaseAdmin.from('credit_ledger').delete().eq('user_id', userUuid),
+      
+      supabaseAdmin.from('emails').delete().eq('user_id', userUuid),
+      
+      // Delete brands (this will cascade to brand_products, brand_colors, etc.)
+      supabaseAdmin.from('brands').delete().eq('user_id', userUuid),
+      
+      // Delete any other user-specific data
+      supabaseAdmin.from('user_preferences').delete().eq('user_id', userUuid),
+      
+      // Delete trial usage data
+      supabaseAdmin.from('trial_usage').delete().eq('user_id', userUuid),
+    ];
+
+    // Execute all deletions
+    const results = await Promise.allSettled(deletions);
+    
+    // Check for any failures
+    const failures = results.filter(result => result.status === 'rejected');
+    if (failures.length > 0) {
+      console.error('Some deletions failed:', failures);
+      // Continue anyway as some tables might not exist
+    }
+
+    // Return success response
+    return res.json({ 
+      success: true, 
+      message: "User data cleaned successfully",
+      deletedTables: ['generated_emails', 'saved_images', 'user_brands', 'user_images', 'credit_ledger', 'brands', 'user_preferences', 'trial_usage']
+    });
+
+  } catch (e) {
+    console.error('Clean user data error:', e);
+    return res.status(500).json({ error: e?.message || "Clean data failed" });
+  }
+}

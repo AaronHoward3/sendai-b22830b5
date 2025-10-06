@@ -25,7 +25,6 @@ function safeSlice(s, max = 65536) {
   // bound the haystack so any regex scans stay linear-time in practice
   return String(s || "").slice(0, max);
 }
-
 function normalizeDomain(input) {
   const raw = String(input || "").trim().toLowerCase();
   try {
@@ -39,7 +38,6 @@ function normalizeDomain(input) {
     return slash === -1 ? noProto : noProto.slice(0, slash);
   }
 }
-
 const COLOR_KEYS = [
   "primary_color",
   "link_color",
@@ -50,13 +48,11 @@ const COLOR_KEYS = [
   "button_text_color",
   "button_border_color",
 ];
-
 function pickColors(obj = {}) {
   const out = {};
   for (const k of COLOR_KEYS) if (obj[k]) out[k] = obj[k];
   return out;
 }
-
 function resolveEffectiveColors(brandJson) {
   const bd = brandJson?.brandData || {};
   const top = pickColors(brandJson);
@@ -65,7 +61,6 @@ function resolveEffectiveColors(brandJson) {
   for (const k of COLOR_KEYS) resolved[k] = top[k] ?? under[k] ?? null;
   return { top, under, resolved };
 }
-
 // Pull a likely hero image URL from several places (MJML and compiled HTML)
 // Regexes are constant (not user-controlled) and run on bounded strings via safeSlice().
 function extractHeroUrl({ generated, headerHero, mjml, html }) {
@@ -137,12 +132,10 @@ function extractHeroUrl({ generated, headerHero, mjml, html }) {
   }
   return null;
 }
-
-export async function generateEmails(req, res) {
-  console.log("🎯 [CONTROLLER] generateEmails started");
+export async function generateEmailsController(req, res) {
+  console.log("🎯 [CONTROLLER] generate Emails started");
   const startTime = Date.now();
   const isPreviewMode = req.isPreviewMode || false;
-
   try {
     console.log("🎯 [CONTROLLER] Extracting request body...");
     const {
@@ -157,7 +150,6 @@ export async function generateEmails(req, res) {
       savedHeroImageUrl, // pass-through for reusing a saved image
       savedHeroImageId,  // reserved for future id->url resolution
     } = req.body || {};
-
     console.log("🎯 [CONTROLLER] Request data:", {
       domain,
       emailType,
@@ -170,22 +162,17 @@ export async function generateEmails(req, res) {
       hasSavedHeroImageUrl: !!savedHeroImageUrl,
       hasSavedHeroImageId: !!savedHeroImageId
     });
-
     if (!domain) {
       console.error("❌ [CONTROLLER] Domain is required");
       return res.status(400).json({ error: "Domain is required" });
     }
-
-    console.log("🎯 [CONTROLLER] Normalizing domain...");
     const normalizedDomain = normalizeDomain(domain);
     console.log("🎯 [CONTROLLER] Normalized domain:", normalizedDomain);
 
-    console.log("🎯 [CONTROLLER] Getting stored brand...");
     const existing = await getStoredBrand(normalizedDomain);
     console.log("🎯 [CONTROLLER] Brand lookup result:", !!existing?.brand);
     
     let brandJson;
-    
     if (!existing?.brand) {
       console.error("❌ [CONTROLLER] Brand info not found for domain:", normalizedDomain);
       
@@ -302,26 +289,14 @@ export async function generateEmails(req, res) {
       }
     }
 
-    // ---- Call Generator ----
     console.log("[generateController] Forwarding to Generator...");
-    
-    // Debug the final brand data structure
     console.log("🔍 [DEBUG] Final brand data structure:");
-    console.log("🔍 [DEBUG] hasStoreName:", !!brandJson.store_name);
-    console.log("🔍 [DEBUG] hasStoreUrl:", !!brandJson.store_url);
-    console.log("🔍 [DEBUG] hasLogoUrl:", !!brandJson.logo_url);
-    console.log("🔍 [DEBUG] hasProducts:", !!brandJson.products);
-    console.log("🔍 [DEBUG] productsLength:", brandJson.products?.length || 0);
-    console.log("🔍 [DEBUG] storeName:", brandJson.store_name);
-    console.log("🔍 [DEBUG] storeUrl:", brandJson.store_url);
-    console.log("🔍 [DEBUG] logoUrl:", brandJson.logo_url);
-    console.log("🔍 [DEBUG] products preview:", brandJson.products?.slice(0, 2));
+    console.log(brandJson);
     
     if (!process.env.GENERATOR_URL) {
       console.error("[generateController] GENERATOR_URL not configured");
       return res.status(500).json({ error: "Generator service not configured" });
     }
-    
     console.log("🎯 [CONTROLLER] Generator URL:", process.env.GENERATOR_URL);
     console.log("🎯 [CONTROLLER] Brand JSON payload size:", JSON.stringify(brandJson).length);
     console.log("🎯 [CONTROLLER] Sending to generator:", {
@@ -371,14 +346,12 @@ export async function generateEmails(req, res) {
           type: "server_error"
         });
       }
-      
       return res.status(500).json({ 
         error: "Email generator failed", 
         status: generatorResponse.status,
         type: "generator_error"
       });
     }
-
     console.log("🎯 [CONTROLLER] Generator response OK, parsing JSON...");
     const headerHero = generatorResponse.headers.get("x-hero-image-url-used") || null;
     let generated;
@@ -424,7 +397,6 @@ export async function generateEmails(req, res) {
         isPreviewMode,
         willSaveImage: !!(uid && normalizedDomain && urlToStore && !isPreviewMode)
       });
-
       // Only proceed if we have a user + domain + a URL to store AND not in preview mode
       if (uid && normalizedDomain && urlToStore && !isPreviewMode) {
         console.log("[generateController] Proceeding with image save - all conditions met");
@@ -449,9 +421,8 @@ export async function generateEmails(req, res) {
             .eq("public_url", extractedUrl) // use original (non-normalized) match first
             .maybeSingle();
 
-          if (existing) {
-            savedHero = existing;
-          } else {
+          if (existing) savedHero = existing;
+          else {
             // fallback: try normalized URL match
             const { data: existing2 } = await supabase
               .from("user_images")
@@ -473,10 +444,8 @@ export async function generateEmails(req, res) {
             .eq("domain", normalizedDomain)
             .eq("public_url", extractedUrl) // try exact first
             .maybeSingle();
-
-          if (existing) {
-            savedHero = existing;
-          } else {
+          if (existing) savedHero = existing;
+          else {
             const { data: existing2 } = await supabase
               .from("user_images")
               .select("id, public_url, path, created_at, width, height")
@@ -484,13 +453,9 @@ export async function generateEmails(req, res) {
               .eq("domain", normalizedDomain)
               .eq("public_url", urlToStore)
               .maybeSingle();
-
-            if (existing2) {
-              savedHero = existing2;
-            }
+            if (existing2) savedHero = existing2;
           }
         }
-
         // Still not found? Only then upload/save.
         if (!savedHero) {
           console.log("[generateController] Saving new image to user profile:", {
@@ -500,7 +465,6 @@ export async function generateEmails(req, res) {
             isDataUrl: extractedUrl.startsWith("data:"),
             isHttpUrl: /^https?:\/\//i.test(extractedUrl)
           });
-          
           if (extractedUrl.startsWith("data:")) {
             savedHero = await storeUserImageFromDataUrl({
               userId: uid,
@@ -524,9 +488,7 @@ export async function generateEmails(req, res) {
       console.warn("[generateController] Hero image save skipped:", e?.message || e);
     }
     // ================================================================
-
     console.log(`[generateController] Total request time: ${Date.now() - startTime} ms`);
-    
     const response = {
       success: true,
       subjectLine: generated.subjectLine || generated.subject || (htmlEmails[0]?.subject ?? ""),
@@ -537,18 +499,14 @@ export async function generateEmails(req, res) {
       usedImageSource: generated?.heroImageUrlUsed ? (savedHeroImageUrl ? "saved" : "generated") : null,
       debug: { colorsSent: resolveEffectiveColors(brandJson).resolved },
     };
-
     // Add preview mode indicators
     if (isPreviewMode) {
       response.isPreviewMode = true;
       response.previewMessage = "This is a preview. Subscribe to access the full email and save it to your account.";
     }
-
     return res.json(response);
   } catch (err) {
     console.error("🚨 [CONTROLLER] Generate error:", err);
-    console.error("🚨 [CONTROLLER] Error stack:", err.stack);
-    console.error("🚨 [CONTROLLER] Error message:", err.message);
     return res.status(500).json({ error: "Failed to generate emails", details: err.message });
   }
 }
