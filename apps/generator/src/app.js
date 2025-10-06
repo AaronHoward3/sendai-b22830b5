@@ -2,7 +2,7 @@ import express from "express";
 import cors from "cors";
 import emailRoutes from "./routes/emailRoutes.js";
 import brandRoutes from "./routes/brandRoutes.js";
-import { generateEmails } from "./controllers/emailController.js"; // <- alias target
+import { generateEmailsFromEmailController } from "./controllers/emailController.js"; // <- alias target
 import { requestContext, createLogger } from "./utils/logger.js";
 
 const app = express();
@@ -113,7 +113,7 @@ app.use("/api", brandRoutes);
 
 // ✅ Alias: support orchestrator calls to POST /generate
 // This directly calls the same controller used by /api/generate-emails.
-app.post("/generate", generateEmails);
+app.post("/generate", generateEmailsFromEmailController);
 
 // Extra health endpoint (JSON)
 app.get("/health", (req, res) => {

@@ -7,11 +7,12 @@ import { GradientButton } from '@/components/ui/gradient-button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 
-import { Pencil, X, Check, Copy, Sun, Moon, LogOut } from 'lucide-react';
+import { Pencil, X, Check, Copy, Sun, Moon, LogOut, Mail, Image, Building2 } from 'lucide-react';
 import { useTheme } from '@/hooks/useTheme';
 import { supabase } from '@/lib/supabaseClient';
 import { useSupabaseAuth } from '@/hooks/useSupabaseAuth';
 import { useToast } from '@/hooks/use-toast';
+import { API_ROOT, SYS_PLANS } from '@/utils/constants';
 
 /* --- Small pill switch (no external deps) --- */
 function ThemeSwitch({
@@ -54,28 +55,6 @@ type SavedImage = {
   height?: number | null;
 };
 
-const API_ROOT = '/api';
-
-// ---- Plan definitions ----
-const PLANS = [
-  { key: 'PAYG', title: 'Pay As You Go', priceLabel: '$9 one-time', blurb: 'Simple credits pack. No renewal.',
-    priceId: import.meta.env.VITE_STRIPE_PRICE_PAYG as string | undefined,
-    bullets: ['10 emails', '1 image', '20 revisions', '1 brand'],
-    quotas: { emails: 10, images: 1, revisions: 20, brands: 1 } },
-  { key: 'STARTER', title: 'Starter', priceLabel: '$19 / mo', blurb: 'For getting started with regular campaigns.',
-    priceId: import.meta.env.VITE_STRIPE_PRICE_STARTER as string | undefined,
-    bullets: ['30 emails', '5 images', '60 revisions', '2 brands'],
-    quotas: { emails: 30, images: 5, revisions: 60, brands: 2 } },
-  { key: 'GROWTH', title: 'Growth', priceLabel: '$49 / mo', blurb: 'For growing teams and higher volume.',
-    priceId: import.meta.env.VITE_STRIPE_PRICE_GROWTH as string | undefined,
-    bullets: ['120 emails', '25 images', '300 revisions', '5 brands'],
-    quotas: { emails: 300/2, images: 25, revisions: 300, brands: 5 } },
-  { key: 'SCALE', title: 'Scale', priceLabel: '$99 / mo', blurb: 'For scale and frequent iterations.',
-    priceId: import.meta.env.VITE_STRIPE_PRICE_SCALE as string | undefined,
-    bullets: ['300 emails', '75 images', '900 revisions', '15 brands'],
-    quotas: { emails: 300, images: 75, revisions: 900, brands: 15 } },
-];
-
 function normalizeDomain(input: string) {
   return String(input || '')
     .trim()
@@ -83,7 +62,6 @@ function normalizeDomain(input: string) {
     .replace(/^https?:\/\//, '')
     .replace(/\/.*$/, '');
 }
-
 const priceToPlanKey: Record<string, 'PAYG' | 'STARTER' | 'GROWTH' | 'SCALE'> = {
   [import.meta.env.VITE_STRIPE_PRICE_PAYG || '']: 'PAYG',
   [import.meta.env.VITE_STRIPE_PRICE_STARTER || '']: 'STARTER',
@@ -93,7 +71,7 @@ const priceToPlanKey: Record<string, 'PAYG' | 'STARTER' | 'GROWTH' | 'SCALE'> = 
 
 function quotasFor(key: 'PAYG' | 'STARTER' | 'GROWTH' | 'SCALE' | 'FREE') {
   if (key === 'FREE') return { emails: 0, images: 0, revisions: 0, brands: 0 };
-  const found = PLANS.find(p => p.key === key);
+  const found = SYS_PLANS.find(p => p.key === key);
   return found?.quotas ?? { emails: 0, images: 0, revisions: 0, brands: 0 };
 }
 
@@ -103,41 +81,39 @@ function pct(rem: number, total: number) {
   return Math.round(v * 100);
 }
 
-const Bar: React.FC<{ label: string; remaining: number; total: number; className?: string }> = ({ label, remaining, total, className }) => {
+const Bar: React.FC<{ label: string; remaining: number; total: number; className?: string; icon?: React.ReactNode }> = ({ label, remaining, total, className, icon }) => {
   // Handle loading state - if remaining is undefined/null and total is 0, show skeleton
   if (remaining === undefined || remaining === null || total === 0) {
-    return (
-      <div className={className}>
-        <div className="mb-2 flex items-center justify-between">
-          <span className="text-sm font-medium">{label}</span>
-          <div className="h-3 w-12 animate-pulse rounded bg-muted"></div>
-        </div>
-        <div className="h-2 w-full overflow-hidden rounded bg-muted">
-          <div className="h-2 animate-pulse bg-muted"></div>
-        </div>
-      </div>
-    );
-  }
-
-  const used = total > 0 ? total - remaining : 0;
-  const percent = total > 0 ? Math.max(0, Math.min(1, used / total)) * 100 : 0;
-  return (
-    <div className={className}>
+    return <div className={className}>
       <div className="mb-2 flex items-center justify-between">
-        <span className="text-sm font-medium">{label}</span>
-        {total > 0 ? (
-          <span className="text-xs text-muted-foreground">{used} / {total}</span>
-        ) : (
-          <span className="text-xs text-muted-foreground">{used} used</span>
-        )}
+        <div className="flex items-center gap-2">
+          {icon && <span className="text-muted-foreground">{icon}</span>}
+          <span className="text-sm font-medium">{label}</span>
+        </div>
+        <div className="h-3 w-12 animate-pulse rounded bg-muted"></div>
       </div>
       <div className="h-2 w-full overflow-hidden rounded bg-muted">
-        <div className="h-2 bg-primary transition-all" style={{ width: `${percent}%` }} />
+        <div className="h-2 animate-pulse bg-muted"></div>
       </div>
     </div>
-  );
+  }
+  const used = total > 0 ? total - remaining : 0;
+  const percent = total > 0 ? Math.max(0, Math.min(1, used / total)) * 100 : 0;
+  return <div className={className}>
+    <div className="mb-2 flex items-center justify-between">
+      <div className="flex items-center gap-2">
+        {icon && <span className="text-muted-foreground">{icon}</span>}
+        <span className="text-sm font-medium">{label}</span>
+      </div>
+      {total > 0 
+        ? <span className="text-xs text-muted-foreground">{used} / {total}</span>
+        : <span className="text-xs text-muted-foreground">{used} used</span>
+    }</div>
+    <div className="h-2 w-full overflow-hidden rounded bg-muted">
+      <div className="h-2 bg-primary transition-all" style={{ width: `${percent}%` }} />
+    </div>
+  </div>;
 };
-
 const Dashboard: React.FC = () => {
   const { user, loading, signOut } = useSupabaseAuth();
   const { toast } = useToast();
@@ -473,7 +449,7 @@ const Dashboard: React.FC = () => {
               </Card>
 
               <Card>
-                <CardHeader>
+                <CardHeader className="pb-4">
                   <CardTitle>Subscription</CardTitle>
                   <CardDescription>Your current subscription and usage.</CardDescription>
                   {!sub && !currentPlan ? (
@@ -484,7 +460,7 @@ const Dashboard: React.FC = () => {
                       <div className="mt-2 inline-flex items-center gap-2">
                         <span className="inline-flex items-center rounded-md bg-gradient-to-r from-[#00ffc3] to-[#a3f2d9] px-2 py-2 text-xs font-semibold text-black shadow-sm">
                           <svg className="mr-1 h-3 w-3" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" /></svg>
-                          {PLANS.find(p => p.key === currentPlan)?.title || 'Unknown'}
+                          {SYS_PLANS.find(p => p.key === currentPlan)?.title || 'Unknown'}
                       </span></div>
                     ) : sub?.status === 'active' ? (
                       <div className="mt-2 inline-flex items-center gap-2">
@@ -495,11 +471,12 @@ const Dashboard: React.FC = () => {
                     ) : null}
                 </CardHeader>
                 <CardContent className="space-y-6">
-                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                    <Bar label="Emails" remaining={credits?.emails_remaining ?? 0} total={totals.emails} />
-                    <Bar label="Images" remaining={credits?.images_remaining ?? 0} total={totals.images} />
-                    <Bar label="Revisions" remaining={credits?.revisions_remaining ?? 0} total={totals.revisions} />
-                    <Bar label="Brands" total={totals.brands} remaining={(credits?.brand_limit ?? 0) - (brandCount ?? 0) >= 0 ? (credits?.brand_limit ?? 0) - (brandCount ?? 0) : 0} />
+                  <div className="flex flex-col gap-3">
+                    <Bar label="Emails" remaining={credits?.emails_remaining ?? 0} total={totals.emails} icon={<Mail className="w-4 h-4" />} />
+                    <Bar label="Images" remaining={credits?.images_remaining ?? 0} total={totals.images} icon={<Image className="w-4 h-4" />} />
+                    {/* NOT USED YET - for a second release */}
+                    {/* <Bar label="Revisions" remaining={credits?.revisions_remaining ?? 0} total={totals.revisions} /> */}
+                    <Bar label="Brands" total={totals.brands} remaining={(credits?.brand_limit ?? 0) - (brandCount ?? 0) >= 0 ? (credits?.brand_limit ?? 0) - (brandCount ?? 0) : 0} icon={<Building2 className="w-4 h-4" />} />
                   </div>
                   <div className="flex gap-3">
                     {sub?.status === 'active' ? (
@@ -679,7 +656,7 @@ const Dashboard: React.FC = () => {
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
-                {PLANS.map((p) => {
+                {SYS_PLANS.map((p) => {
                   const disabled = !p.priceId;
                   const isCurrentPlan = currentPlan === p.key;
                   return (

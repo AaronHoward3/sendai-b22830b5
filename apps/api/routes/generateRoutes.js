@@ -3,7 +3,7 @@ import { Router } from "express";
 import rateLimit from "express-rate-limit";
 import { requireAuth } from "../middleware/requireAuth.js";
 import { requireEmailCredit } from "../middleware/credits.js";
-import { generateEmails } from "../controllers/generateController.js";
+import { generateEmailsController } from "../controllers/generateController.js";
 import { maybeConsumeImageCredit } from "../middleware/credits.js";
 import { validateRequest, generateEmailSchema } from "../middleware/validation.js";
 import { checkTrialUsage, markTrialUsed } from "../middleware/trialTracking.js";
@@ -99,14 +99,14 @@ router.post("/",
   },
   (req, res, next) => {
     try {
-      console.log("🎯 [CONTROLLER] About to call generateEmails controller");
+      console.log("🎯 [CONTROLLER] About to call generate Emails controller");
       next();
     } catch (err) {
       console.error("❌ [CONTROLLER] Error before controller:", err);
       next(err);
     }
   },
-  generateEmails
+  generateEmailsController,
 );
 
 // POST /api/generate/preview - Anonymous endpoint (preview only, no credits required)
@@ -145,7 +145,7 @@ router.post("/preview",
   },
   (req, res, next) => {
     try {
-      console.log("🎯 [CONTROLLER] About to call generateEmails controller (preview mode)");
+      console.log("🎯 [CONTROLLER] About to call generate Emails controller (preview mode)");
       // Mark this as preview mode for the controller
       req.isPreviewMode = true;
       next();
@@ -154,7 +154,7 @@ router.post("/preview",
       next(err);
     }
   },
-  generateEmails,
+  generateEmailsController,
   markTrialUsed // Mark IP as having used free trial after successful generation
 );
 

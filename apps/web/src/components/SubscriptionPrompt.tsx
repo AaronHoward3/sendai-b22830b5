@@ -3,24 +3,12 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/
 import { GradientButton } from './ui/gradient-button';
 import { Check } from 'lucide-react';
 import { supabase } from '@/lib/supabaseClient';
+import { SYS_PLANS } from '@/utils/constants';
 
 interface SubscriptionPromptProps {
   onSubscribe: () => void;
   onSignIn: () => void;
 }
-
-// Use the same plans as Dashboard page
-const PLANS = [
-  { key: 'PAYG', title: 'Pay As You Go', priceLabel: '$9 one-time', blurb: 'Simple credits pack. No renewal.',
-    bullets: ['10 emails', '1 image', '20 revisions', '1 brand'] },
-  { key: 'STARTER', title: 'Starter', priceLabel: '$19 / mo', blurb: 'For getting started with regular campaigns.',
-    bullets: ['30 emails', '5 images', '60 revisions', '2 brands'] },
-  { key: 'GROWTH', title: 'Growth', priceLabel: '$49 / mo', blurb: 'For growing teams and higher volume.',
-    bullets: ['120 emails', '25 images', '300 revisions', '5 brands'] },
-  { key: 'SCALE', title: 'Scale', priceLabel: '$99 / mo', blurb: 'For scale and frequent iterations.',
-    bullets: ['300 emails', '75 images', '900 revisions', '15 brands'] },
-];
-
 export const SubscriptionPrompt: React.FC<SubscriptionPromptProps> = ({ onSubscribe, onSignIn }) => {
   const [email, setEmail] = useState('');
   const [sent, setSent] = useState(false);
@@ -57,7 +45,7 @@ export const SubscriptionPrompt: React.FC<SubscriptionPromptProps> = ({ onSubscr
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4 mb-8">
-            {PLANS.map((p) => (
+            {SYS_PLANS.map((p) => (
               <Card key={p.key} className="flex flex-col bg-card border-border">
                 <CardHeader>
                   <CardTitle className="text-xl text-foreground">{p.title}</CardTitle>

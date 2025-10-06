@@ -9,6 +9,7 @@ import {
   adminPatchAccount,
   adminBanUser,
   adminUnbanUser,
+  adminCleanUserData,
 } from "../controllers/adminController.js";
 
 const router = express.Router();
@@ -31,5 +32,8 @@ router.patch("/users/:userId/account", adminPatchAccount);
 // Ban / Unban
 router.post("/users/:userId/ban", adminBanUser);
 router.post("/users/:userId/unban", adminUnbanUser);
+
+// Clean user data
+router.post("/users/:userId/clean-data", adminCleanUserData);
 
 export default router;
