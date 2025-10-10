@@ -5,7 +5,6 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { ThemeProvider } from "@/contexts/ThemeContext";
 import { TrialGuard } from "@/components/TrialGuard";
-import Index from "./pages/Index";
 import Dashboard from "./pages/Dashboard";
 import MyEmails from "./pages/MyEmails";
 import EmailEditor from "./pages/EmailEditor";
@@ -15,6 +14,7 @@ import NotFound from "./pages/NotFound";
 import ScrollToTop from "@/components/ScrollToTop";
 // 👇 add this import
 import Admin from "./pages/Admin";
+import EmailGenerator from "./components/EmailGenerator";
 
 const queryClient = new QueryClient();
 
@@ -39,7 +39,7 @@ const App = () => (
             <BrowserRouter>
               <ScrollToTop />
               <Routes>
-                <Route path="/" element={<Index />} />
+                <Route path="/" element={<EmailGenerator />} />
                 <Route path="/signup" element={<Signup />} />
                 <Route path="/signin" element={<Signin />} />
                 <Route path="/dashboard" element={<Dashboard />} />
