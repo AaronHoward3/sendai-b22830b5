@@ -29,4 +29,8 @@ export const SYS_PLANS = [
         emails: 300, images: 75, revisions: 900, brands: 15 } 
       },
 ];
+export const SYS_COMPANY = {
+  name: 'Irios',
+  email_contact: 'contact@irios.ai'
+}
 export const API_ROOT = '/api';

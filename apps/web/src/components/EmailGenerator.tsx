@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import Navigation from './Navigation';
+import Footer from './Footer';
 import { Step1Domain } from './steps/Step1Domain';
 import { Step2EmailType } from './steps/Step2EmailType';
 import { Step4Generation } from './steps/Step4Generation';
@@ -188,13 +189,16 @@ const EmailGenerator: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background flex flex-col">
       <Navigation onHomeClick={handleHomeClick} />
-      <div className="container mx-auto px-4 py-8">
-        <div className="max-w-2xl mx-auto">
-          {renderStep()}
+      <div className="flex-1 relative">
+        <div className="container mx-auto px-4 py-8">
+          <div className="max-w-2xl mx-auto">
+            {renderStep()}
+          </div>
         </div>
       </div>
+      {currentStep === 1 && <div className="relative z-10"><Footer /></div>}
     </div>
   );
 };

@@ -314,9 +314,7 @@ export const Step1Domain: React.FC<{
   };
   const handleContinue = async (skipValidation = false, skipBrandCheck = false) => {
     // Validate domain before proceeding (skip for saved domains)
-    if (!skipValidation && !validateDomain(domain)) {
-      return;
-    }
+    if (!skipValidation && !validateDomain(domain)) return;
     
     const trimmed = normalizeDomain(domain);
     setIsLoading(true);
@@ -386,9 +384,9 @@ export const Step1Domain: React.FC<{
   return (<>
       {showUpgradePrompt 
       ? <SubscriptionUpgradePrompt onUpgrade={handleUpgrade} onBack={handleBack} reason={upgradeReason} />
-      : (<div className="fixed inset-0 z-0 bg-transparent">
-          <Background variant="blobs" />
-      <div className="relative z-10 h-screen flex items-center justify-center px-4 overflow-hidden">
+      : (<div className="relative z-0 bg-transparent overflow-hidden">
+      <div className="absolute inset-0"><Background variant="blobs" /></div>
+       <div className="relative z-10 h-[calc(100vh-12rem)] flex items-center justify-center px-4">
         <motion.div className="text-center max-w-lg w-full" variants={containerVariants} initial="hidden" animate="show">
           <motion.div className="space-y-2" variants={fadeInUp}>
             <h1 className="text-4xl font-semibold text-foreground tracking-tight">Let's create amazing emails</h1>
@@ -465,19 +463,15 @@ export const Step1Domain: React.FC<{
       )}
       
       {/* Domain validation error modal */}
-      {domainErrorModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm">
-          <div className="w-full max-w-md rounded-2xl bg-background border border-border shadow-xl p-6 space-y-2">
-            <h3 className="text-lg font-semibold">Invalid Domain</h3>
-            <p className="text-sm text-muted-foreground">{domainErrorMessage}</p>
-            <div className="flex pt-2 justify-end gap-2">
-              <button onClick={() => setDomainErrorModal(false)}
-                className="btn px-4 py-2 bg-secondary text-secondary-foreground hover:bg-secondary/90 hover:text-secondary-foreground transition-colors border border-border" 
-              >Try Again</button>
-            </div>
-          </div>
-        </div>
-      )}
+      {domainErrorModal && <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm">
+        <div className="w-full max-w-md rounded-2xl bg-background border border-border shadow-xl p-6 space-y-2">
+          <h3 className="text-lg font-semibold">Invalid Domain</h3>
+          <p className="text-sm text-muted-foreground">{domainErrorMessage}</p>
+          <div className="flex pt-2 justify-end gap-2">
+            <button onClick={() => setDomainErrorModal(false)}
+              className="btn px-4 py-2 bg-secondary text-secondary-foreground hover:bg-secondary/90 hover:text-secondary-foreground transition-colors border border-border" 
+            >Try Again</button>
+      </div></div></div>}
       
       <style>{`
         @keyframes gradient-sweep {
