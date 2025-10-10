@@ -449,8 +449,7 @@ export const Step1Domain: React.FC<{
             </>}
       </motion.div></motion.div></div>
       {/* Upgrade modal */}
-      {noBrandsOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm">
+      {noBrandsOpen && <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm">
           <div className="w-full max-w-md rounded-2xl bg-background border border-border shadow-xl p-6">
             <h3 className="text-lg font-semibold">No more brand slots</h3>
             <p className="mt-2 text-sm text-muted-foreground">You’ve reached your plan’s brand limit. Upgrade your plan to add more brands.</p>
@@ -459,8 +458,7 @@ export const Step1Domain: React.FC<{
                 className="btn px-4 py-2 bg-secondary text-secondary-foreground hover:bg-secondary/90 hover:text-secondary-foreground transition-colors border border-border" 
               >Close</button>
               <button className="btn" onClick={() => { setNoBrandsOpen(false); window.location.href = '/dashboard?plan=1'; }}>Upgrade</button>
-        </div></div></div>
-      )}
+      </div></div></div>}
       
       {/* Domain validation error modal */}
       {domainErrorModal && <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm">

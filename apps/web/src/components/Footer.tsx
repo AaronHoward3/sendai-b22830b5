@@ -17,6 +17,10 @@ const Footer = () => {
               to="/about" 
               className="text-foreground hover:text-muted-foreground transition-colors text-sm font-medium"
             >About Us</Link>
+            <Link 
+              to="/pricing" 
+              className="text-foreground hover:text-muted-foreground transition-colors text-sm font-medium"
+            >Pricing</Link>
             <a 
               href={`mailto:${SYS_COMPANY.email_contact}`}
               className="text-foreground hover:text-muted-foreground transition-colors text-sm font-medium"
