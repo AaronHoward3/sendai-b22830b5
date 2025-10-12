@@ -10,6 +10,7 @@ import { saveMJML, updateMJML, getMJML, deleteMJML } from "../utils/inMemoryStor
 import { runTwoPassGeneration } from "../pipeline/twoPassGenerator.js";
 import { newMetrics, setLastMetrics } from "../utils/metrics.js";
 import { computeTextCostUSD } from "../utils/pricing.js";
+import { buildBrandStyleManifest } from "../services/brandStyleBuilder.js";
 
 function isSse(req) {
   return (req.headers.accept || "").includes("text/event-stream") || String(req.query.stream) === "1";
@@ -133,6 +134,16 @@ export async function generateEmailsFromEmailController(req, res) {
         })
       : Promise.resolve(brandData);
 
+      try {
+        const siteUrl = brandData?.store_url || brandData?.domain || brandData?.website || "";
+        const manifest = await buildBrandStyleManifest(brandData, siteUrl);
+        // attach for tokens/skins to consume
+        brandData._styleManifest = manifest;
+      } catch (e) {
+        console.warn("[GEN] Brand style manifest failed:", e.message);
+      }
+       
+
     const emailPromise = runTwoPassGeneration({
       emailType,
       designAesthetic: resolvedStyleId,
@@ -175,14 +186,39 @@ export async function generateEmailsFromEmailController(req, res) {
       footerPreview: footerMjml?.substring(0, 100) || 'EMPTY'
     });
 
-    const fontHead = `
-      <mj-head>
-        <mj-attributes>
-          <mj-text font-family="Helvetica Neue, Helvetica, Arial, sans-serif"></mj-text>
-          <mj-button font-family="Helvetica Neue, Helvetica, Arial, sans-serif"></mj-button>
-        </mj-attributes>
-      </mj-head>
-    `;
+    // Build font head using brand fonts from style manifest
+    const buildFontHead = (brandData) => {
+      const manifest = brandData?._styleManifest;
+      if (!manifest?.fonts) {
+        // Fallback to Inter if no brand fonts available
+        return `
+          <mj-head>
+            <mj-attributes>
+              <mj-text font-family="Inter, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif"></mj-text>
+              <mj-button font-family="Inter, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif"></mj-button>
+            </mj-attributes>
+          </mj-head>
+        `;
+      }
+
+      const { heading, body } = manifest.fonts;
+      const serifFallback = `Georgia, 'Times New Roman', Times, serif`;
+      const sansFallback = `system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif`;
+      
+      const headingFont = heading?.name || "Inter";
+      const bodyFont = body?.name || "Inter";
+      const headingFallback = heading?.isSerif ? serifFallback : sansFallback;
+      const bodyFallback = body?.isSerif ? serifFallback : sansFallback;
+
+      return `
+        <mj-head>
+          <mj-attributes>
+            <mj-text font-family="${bodyFont}, ${bodyFallback}"></mj-text>
+            <mj-button font-family="${bodyFont}, ${bodyFallback}"></mj-button>
+          </mj-attributes>
+        </mj-head>
+      `;
+    };
 
     let heroImageUrlUsed = null; // NEW: expose the actual url used back to caller
 
@@ -249,6 +285,7 @@ export async function generateEmailsFromEmailController(req, res) {
       }
 
       if (!updated.includes("<mj-head>")) {
+        const fontHead = buildFontHead(finalBrandData);
         updated = updated.replace("<mjml>", `<mjml>${fontHead}`);
       }
 

@@ -1,16 +1,11 @@
 // src/theme/applyTheme.js
-// Deterministic theming with wrapper-only gradient for gradient skin:
-// - head injection
-// - body wrapper gradient via data-URI (no url(...))
-// - sections transparent under gradient (no bg-color / bg-url)
-// - bold_contrasting slabs kept for that skin only
-// - auto-contrast for text/buttons
+// Brand-first theming with optional gradient wrapper.
+// Skins no longer hard-overwrite fonts/colors; they inherit from tokens (brand-first).
 
 import { buildBrandTokens, contrastRatio } from "./tokens.js";
 import { makeSkin } from "./skins.js";
 
 function attrs(obj) { return Object.entries(obj).map(([k, v]) => `${k}="${String(v)}"`).join(" "); }
-function stripAttr(tag, patterns) { let out = tag; for (const p of patterns) out = out.replace(p, ""); return out; }
 function addOrReplaceAttr(tag, name, value) {
   const re = new RegExp(`\\s${name}="[^"]*"`, "i");
   if (re.test(tag)) return tag.replace(re, ` ${name}="${value}"`);
@@ -36,44 +31,13 @@ function hexToRgb(hex) {
 function _lin(v) { v /= 255; return v <= 0.04045 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4); }
 function _L(hex) { const { r, g, b } = hexToRgb(hex); return 0.2126 * _lin(r) + 0.7152 * _lin(g) + 0.0722 * _lin(b); }
 function contrast(bg, fg) { const a = _L(bg), b = _L(fg); const [hi, lo] = a > b ? [a, b] : [b, a]; return (hi + 0.05) / (lo + 0.05); }
-function bestTextOn(bg) { 
+function bestTextOn(bg) {
   const whiteContrast = contrast(bg, "#ffffff");
   const blackContrast = contrast(bg, "#111111");
-  
-  // Ensure minimum contrast ratio of 4.5 for accessibility
-  if (whiteContrast >= 4.5 && blackContrast >= 4.5) {
-    return whiteContrast >= blackContrast ? "#ffffff" : "#111111";
-  } else if (whiteContrast >= 4.5) {
-    return "#ffffff";
-  } else if (blackContrast >= 4.5) {
-    return "#111111";
-  } else {
-    // If neither meets minimum contrast, choose the better one
-    return whiteContrast >= blackContrast ? "#ffffff" : "#111111";
-  }
-}
-
-// SVG data-URI gradient (NO url(...) wrapper). MJML expects raw string in background-url.
-function svgGradientDataUri(angleDeg, c1, c2) {
-  // Convert angle to SVG gradient coordinates
-  const ang = (Number(angleDeg) || 0) % 360;
-  const rad = (ang - 90) * Math.PI / 180;
-  const x = Math.cos(rad), y = Math.sin(rad);
-  const x1 = (0.5 - x / 2).toFixed(3), y1 = (0.5 - y / 2).toFixed(3);
-  const x2 = (0.5 + x / 2).toFixed(3), y2 = (0.5 + y / 2).toFixed(3);
-
-  const svg = encodeURIComponent(
-    `<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="800">
-      <defs>
-        <linearGradient id="g" x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}">
-          <stop offset="0%" stop-color="${c1}"/>
-          <stop offset="100%" stop-color="${c2}"/>
-        </linearGradient>
-      </defs>
-      <rect fill="url(#g)" x="0" y="0" width="1200" height="800" />
-    </svg>`
-  );
-  return `data:image/svg+xml;utf8,${svg}`;
+  if (whiteContrast >= 4.5 && blackContrast >= 4.5) return whiteContrast >= blackContrast ? "#ffffff" : "#111111";
+  if (whiteContrast >= 4.5) return "#ffffff";
+  if (blackContrast >= 4.5) return "#111111";
+  return whiteContrast >= blackContrast ? "#ffffff" : "#111111";
 }
 
 function buildHead(skin) {
@@ -93,7 +57,7 @@ function buildHead(skin) {
     "border-radius": `${skin.radii.btn}px`
   };
 
-  // Enhanced button variants with modern styling
+  // button CSS variants
   let btnCss = "";
   if (skin.buttons.variant === "filled") {
     btnCss = `.btn a{background-color:${skin.palette.brand};color:#ffffff;border:0;transition:all 0.2s ease;box-shadow:0 2px 8px rgba(0,0,0,0.1);}` +
@@ -116,7 +80,9 @@ function buildHead(skin) {
     `.btn-secondary a:hover{transform:translateY(-1px);box-shadow:0 4px 12px rgba(0,0,0,0.15);}` +
     `${btnCss}${capsCss}` +
     (skin.shadow?.card ? `.card{box-shadow:${skin.shadow.card};transition:box-shadow 0.2s ease;}` : "") +
-    `.card:hover{box-shadow:${skin.shadow?.card ? skin.shadow.card.replace('0.08', '0.12').replace('0.04', '0.08') : '0 4px 20px rgba(0,0,0,0.1)'};}`;
+    `.card:hover{box-shadow:${skin.shadow?.card ? skin.shadow.card.replace('0.08', '0.12').replace('0.04', '0.08') : '0 4px 20px rgba(0,0,0,0.1)'};}` +
+    `.hero-title{font-family:${H?.name || "Inter"}, ${(H?.isSerif ? serifFallback : sansFallback)} !important;}` +
+    `.hero-subtitle{font-family:${B?.name || "Inter"}, ${(B?.isSerif ? serifFallback : sansFallback)} !important;}`;
 
   const cardAttrs = {
     "background-color": skin.palette.cardBg,
@@ -137,9 +103,8 @@ function buildHead(skin) {
       <mj-class name="h1" font-family="${H?.name || "Inter"}, ${(H?.isSerif ? serifFallback : sansFallback)}" font-weight="${skin.h1.weight}" font-size="${skin.h1.size}px" line-height="1.2" text-transform="${skin.typography?.capsHeadings ? "uppercase" : "none"}" letter-spacing="${(skin.typography?.h1LS ?? 0)}em" color="${skin.palette.text}"></mj-class>
       <mj-class name="h2" font-family="${H?.name || "Inter"}, ${(H?.isSerif ? serifFallback : sansFallback)}" font-weight="${skin.h2.weight}" font-size="${skin.h2.size}px" line-height="1.3" text-transform="${skin.typography?.capsHeadings ? "uppercase" : "none"}" letter-spacing="${(skin.typography?.h2LS ?? 0)}em" color="${skin.palette.text}"></mj-class>
 
-      <!-- Thick title helpers (used esp. by bold_contrasting) -->
-      <mj-class name="title" font-family="${H?.name || "Inter"}, ${(H?.isSerif ? serifFallback : sansFallback)}" font-weight="900" font-size="${skin.id === 'gradient_glow' ? Math.max(36, skin.h1.size) : Math.max(24, skin.h2.size)}px" line-height="1.2" color="${skin.palette.text}" letter-spacing="${skin.id === 'gradient_glow' ? '-0.02em' : '0em'}"></mj-class>
-      <mj-class name="product-title" font-family="${H?.name || "Inter"}, ${(H?.isSerif ? serifFallback : sansFallback)}" font-weight="900" font-size="${skin.id === 'gradient_glow' ? Math.max(28, skin.h2.size) : Math.max(20, Math.round(skin.h2.size * 0.9))}px" line-height="1.25" color="${skin.palette.text}" letter-spacing="${skin.id === 'gradient_glow' ? '-0.01em' : '0em'}"></mj-class>
+      <mj-class name="title" font-family="${H?.name || "Inter"}, ${(H?.isSerif ? serifFallback : sansFallback)}" font-weight="900" font-size="${Math.max(36, skin.h1.size)}px" line-height="1.2" color="${skin.palette.text}" letter-spacing="${skin.id === 'gradient_glow' ? '-0.02em' : '0em'}"></mj-class>
+      <mj-class name="product-title" font-family="${H?.name || "Inter"}, ${(H?.isSerif ? serifFallback : sansFallback)}" font-weight="900" font-size="${Math.max(20, Math.round(skin.h2.size * 0.9))}px" line-height="1.25" color="${skin.palette.text}" letter-spacing="${skin.id === 'gradient_glow' ? '-0.01em' : '0em'}"></mj-class>
       <mj-class name="no-pad" padding="0"></mj-class>
 
       <mj-class name="muted" color="${skin.palette.muted}"></mj-class>
@@ -153,28 +118,16 @@ function buildHead(skin) {
 }
 
 // Public API
-// mjml: string MJML source
-// payloadBrand: object with brand colors (primary/link/etc.)
-// skinIdRaw: string skin id or alias (e.g., "bold_contrasting", "gradient_glow", "pastel_soft"...)
 export function applyTheme(mjml, payloadBrand, skinIdRaw) {
   const tokens = buildBrandTokens(payloadBrand);
-  const skin = makeSkin(tokens, skinIdRaw);
+  const skin = makeSkin(tokens, skinIdRaw, payloadBrand._styleManifest);
 
-  // 0) Replace any existing head with our head
   let out = String(mjml || "");
-  console.log("🔍 [DEBUG] applyTheme input MJML:", {
-    hasMjml: out.includes("<mjml>"),
-    hasMjBody: out.includes("<mj-body>"),
-    hasMjBodyClose: out.includes("</mj-body>"),
-    length: out.length,
-    preview: out.substring(0, 200)
-  });
-  
   out = out.replace(/<mj-head[\s\S]*?<\/mj-head>/gi, "");
   const head = buildHead(skin);
   out = out.includes("<mjml>") ? out.replace("<mjml>", `<mjml>\n${head}\n`) : `<mjml>\n${head}\n${out}`;
 
-  // 1) Body background + optional gradient wrapper (SVG data-URI, no url(...))
+  // Body background + optional gradient wrapper
   const gradientActive = !!(skin.pattern && skin.pattern.kind === "linear" && skin.extras.globalGradient);
   const g1 = skin.pattern?.grad1 || tokens.gradient.from;
   const g2 = skin.pattern?.grad2 || tokens.gradient.to;
@@ -186,67 +139,31 @@ export function applyTheme(mjml, payloadBrand, skinIdRaw) {
   const bodyTag = hasBody ? out.match(bodyRe)[0] : "<mj-body>";
 
   let newBody = bodyTag;
-
-  // Always set base background-color
   newBody = addOrReplaceAttr(newBody, "background-color", tokens.pageBg);
 
-  // If gradient skin, set a global background using CSS gradient
   if (gradientActive) {
-    // Use CSS gradient for better MJML compatibility
     const cssGradient = `linear-gradient(${ang}deg, ${g1}, ${g2})`;
-    
-    // Add CSS gradient to the style section
     const gradientCss = `.gradient-bg { background: ${cssGradient} !important; }`;
-    
-    // Insert gradient CSS into the existing style tag
-    out = out.replace(
-      /(<mj-style>)([\s\S]*?)(<\/mj-style>)/i,
-      `$1$2${gradientCss}$3`
-    );
-    
-    // Set the body to use the gradient class
+    out = out.replace(/(<mj-style>)([\s\S]*?)(<\/mj-style>)/i, `$1$2${gradientCss}$3`);
     newBody = addOrReplaceAttr(newBody, "css-class", "gradient-bg");
   } else {
-    // No gradient: ensure clean base
     newBody = newBody.replace(/\sbackground-url="[^"]*"/i, "");
   }
 
   out = hasBody ? out.replace(bodyTag, newBody) : `<mjml>\n${newBody}\n${out.replace(/^<mjml>\s*/i, "")}\n</mj-body>\n</mjml>`;
 
-  console.log("🔍 [DEBUG] applyTheme after body processing:", {
-    hasMjml: out.includes("<mjml>"),
-    hasMjBody: out.includes("<mj-body>"),
-    hasMjBodyClose: out.includes("</mj-body>"),
-    length: out.length,
-    preview: out.substring(0, 200)
-  });
-
-  // 2) Section processing
+  // Section normalization (contrast-aware)
   out = out.replace(/<mj-section\b[^>]*>[\s\S]*?<\/mj-section>/gi, (section) => {
     let s = section;
 
-    // When gradient is active: make sections fully transparent—no bg-color, no bg-url.
     if (gradientActive) {
       s = s
         .replace(/(<mj-section\b[^>]*?)\s+background-color="[^"]*"/gi, "$1")
         .replace(/(<mj-section\b[^>]*?)\s+background-url="[^"]*"/gi, "$1");
-      
-      // Explicitly set sections to be transparent when gradient is active
       if (!/\sbackground-color="[^"]*"/i.test(s)) {
         s = s.replace(/<mj-section\b/i, `<mj-section background-color="transparent"`);
       }
-    }
-    // Bold-contrasting slabs (only when NOT gradient)
-    else if (skin.extras.slabMode === "dark") {
-      const hasBgColor = /\sbackground-color="[^"]*"/i.test(s);
-      const hasBgUrl = /\sbackground-url="[^"]*"/i.test(s);
-      if (!hasBgColor && !hasBgUrl) {
-        const slab = skin.extras.slabColor || "#111111";
-        s = s.replace(/<mj-section\b/i, `<mj-section background-color="${slab}"`);
-      }
-    }
-    // Default: ensure section background exists if none (but NOT when gradient is active)
-    else if (!gradientActive) {
+    } else {
       const hasBgColor = /\sbackground-color="[^"]*"/i.test(s);
       const hasBgUrl = /\sbackground-url="[^"]*"/i.test(s);
       if (!hasBgColor && !hasBgUrl) {
@@ -254,60 +171,43 @@ export function applyTheme(mjml, payloadBrand, skinIdRaw) {
       }
     }
 
-    // Compute bg for text contrast logic
     const bgMatch = s.match(/\sbackground-color="([^"]*)"/i);
     const bg = (bgMatch && bgMatch[1]) || (gradientActive ? gradMid : skin.palette.sectionBg);
 
-    // TEXT: normalize color for contrast if colorOverrides enabled
-    if (skin.extras.colorOverrides) {
-      s = s.replace(/<mj-text\b([^>]*)>/gi, (m, attrsStr) => {
-        const hasColorMatch = /\scolor="/i.test(attrsStr);
-        const cur = (attrsStr.match(/\scolor="([^"]*)"/i) || [])[1] || skin.palette.text;
-        
-        // Check if current color has sufficient contrast
-        const currentContrast = contrast(bg, cur);
-        const desired = currentContrast >= 4.5 ? cur : bestTextOn(bg);
-        
-        let t = m;
-        if (hasColorMatch) t = t.replace(/\scolor="[^"]*"/i, ` color="${desired}"`);
-        else t = `<mj-text${attrsStr} color="${desired}">`;
-        return t;
-      });
-    }
+    // text contrast normalize
+    s = s.replace(/<mj-text\b([^>]*)>/gi, (m, attrsStr) => {
+      const hasColorMatch = /\scolor="/i.test(attrsStr);
+      const cur = (attrsStr.match(/\scolor="([^"]*)"/i) || [])[1] || skin.palette.text;
+      const desired = contrast(bg, cur) >= 4.5 ? cur : bestTextOn(bg);
+      let t = m;
+      if (hasColorMatch) t = t.replace(/\scolor="[^"]*"/i, ` color="${desired}"`);
+      else t = `<mj-text${attrsStr} color="${desired}">`;
+      return t;
+    });
 
-    // BUTTONS: ensure class + let head CSS handle look; for filled/gradient we still ensure good contrast when overriding
+    // buttons
     s = s.replace(/<mj-button\b[^>]*>/gi, (tag) => {
       let t = tag;
       if (!/mj-class=/i.test(t)) t = t.replace(/<mj-button/i, `<mj-button mj-class="btn"`);
-      if (skin.extras.colorOverrides) {
-        if (skin.buttons.variant === "filled" || skin.buttons.variant === "gradient") {
-          // Choose button background color based on contrast with section background
-          const brandContrast = contrast(bg, skin.palette.brand);
-          const brandAltContrast = contrast(bg, skin.palette.brandAlt);
-          
-          // Use the color that provides better contrast with the section background
-          const bgBtn = brandContrast >= brandAltContrast ? skin.palette.brand : skin.palette.brandAlt;
-          
-          // Ensure text color contrasts well with button background
-          const txt = bestTextOn(bgBtn);
-          
-          t = addOrReplaceAttr(t, "background-color", bgBtn);
-          t = addOrReplaceAttr(t, "color", txt);
-          t = addOrReplaceAttr(t, "border", "0");
-        } else if (skin.buttons.variant === "outline") {
-          // For outline buttons, use text color that contrasts with section background
-          const txt = bestTextOn(bg);
-          t = addOrReplaceAttr(t, "background-color", "transparent");
-          t = addOrReplaceAttr(t, "color", txt);
-          t = addOrReplaceAttr(t, "border", `1px solid ${txt}`);
-        } else {
-          // Ghost buttons - use brand color but ensure it contrasts with background
-          const brandContrast = contrast(bg, skin.palette.brand);
-          const txt = brandContrast >= 4.5 ? skin.palette.brand : bestTextOn(bg);
-          t = addOrReplaceAttr(t, "background-color", "transparent");
-          t = addOrReplaceAttr(t, "color", txt);
-          t = addOrReplaceAttr(t, "border", "0");
-        }
+      if (skin.buttons.variant === "filled" || skin.buttons.variant === "gradient") {
+        const brandContrast = contrast(bg, skin.palette.brand);
+        const brandAltContrast = contrast(bg, skin.palette.brandAlt);
+        const bgBtn = brandContrast >= brandAltContrast ? skin.palette.brand : skin.palette.brandAlt;
+        const txt = bestTextOn(bgBtn);
+        t = addOrReplaceAttr(t, "background-color", bgBtn);
+        t = addOrReplaceAttr(t, "color", txt);
+        t = addOrReplaceAttr(t, "border", "0");
+      } else if (skin.buttons.variant === "outline") {
+        const txt = bestTextOn(bg);
+        t = addOrReplaceAttr(t, "background-color", "transparent");
+        t = addOrReplaceAttr(t, "color", txt);
+        t = addOrReplaceAttr(t, "border", `1px solid ${txt}`);
+      } else {
+        const brandContrast = contrast(bg, skin.palette.brand);
+        const txt = brandContrast >= 4.5 ? skin.palette.brand : bestTextOn(bg);
+        t = addOrReplaceAttr(t, "background-color", "transparent");
+        t = addOrReplaceAttr(t, "color", txt);
+        t = addOrReplaceAttr(t, "border", "0");
       }
       return t;
     });
@@ -315,72 +215,44 @@ export function applyTheme(mjml, payloadBrand, skinIdRaw) {
     return s;
   });
 
-   // --- Bold Contrasting: force hero title thick + zero image padding everywhere ---
+  // Bold contrasting tweak: thicken first title + strip image padding
   if (skin.id === "bold_contrasting") {
-    // A) First hero title: make it thick & large automatically.
-    // Try <mj-hero> first; if not present, apply to first <mj-section>.
-    const thickenFirstText = (sec) => {
-      let applied = false;
-      const outSec = sec.replace(/<mj-text\b([^>]*)>/i, (m, attrs) => {
-        applied = true;
-        let t = m;
-        // ensure it gets our title class
-        if (!/mj-class="/i.test(t)) t = t.replace(/<mj-text/i, `<mj-text mj-class="title"`);
-        else t = t.replace(/mj-class="([^"]*)"/i, (mm, val) => `mj-class="${val} title"`);
-        // hard enforce size/weight in case inline attrs exist
-        t = addOrReplaceAttr(t, "font-weight", "900");
-        t = addOrReplaceAttr(t, "font-size", `${skin.h1.size}px`);
-        return t;
-      });
-      return applied ? outSec : sec;
-    };
-
-    // Try <mj-hero> block
     let replaced = false;
     const nextOut = out.replace(/<mj-hero\b[^>]*>[\s\S]*?<\/mj-hero>/i, (blk) => {
       replaced = true;
-      return thickenFirstText(blk);
+      return blk.replace(/<mj-text\b([^>]*)>/i, (m, attrs) => {
+        let t = m;
+        if (!/mj-class="/i.test(t)) t = t.replace(/<mj-text/i, `<mj-text mj-class="title"`);
+        else t = t.replace(/mj-class="([^"]*)"/i, (mm, val) => `mj-class="${val} title"`);
+        t = addOrReplaceAttr(t, "font-weight", "900");
+        return t;
+      });
     });
     out = nextOut;
-
-    // If no <mj-hero>, apply to the very first <mj-section>
     if (!replaced) {
-      out = out.replace(/<mj-section\b[^>]*>[\s\S]*?<\/mj-section>/i, (sec) => thickenFirstText(sec));
+      out = out.replace(/<mj-section\b[^>]*>[\s\S]*?<\/mj-section>/i, (sec) =>
+        sec.replace(/<mj-text\b([^>]*)>/i, (m, attrs) => {
+          let t = m;
+          if (!/mj-class="/i.test(t)) t = t.replace(/<mj-text/i, `<mj-text mj-class="title"`);
+          else t = t.replace(/mj-class="([^"]*)"/i, (mm, val) => `mj-class="${val} title"`);
+          t = addOrReplaceAttr(t, "font-weight", "900");
+          return t;
+        })
+      );
     }
-
-    // B) Strip padding from all images to keep visuals tight
     out = out.replace(/<mj-image\b[^>]*>/gi, (tag) => addOrReplaceAttr(tag, "padding", "0"));
   }
-  
-  // 3) Color overrides: swap hardcoded colors to brand tones or black/white for luxe_mono
+
+  // Color overrides for hardcoded block colors (keep brand tones)
   if (skin.extras.colorOverrides) {
-    let swaps = [];
-    
-    if (skin.id === "luxe_mono") {
-      // Luxe mono: force everything to black and white
-      swaps = [
-        // Convert any color to black
-        { re: /color="#[0-9a-fA-F]{6}"/gi, repl: `color="${skin.palette.text}"` },
-        { re: /color="#[0-9a-fA-F]{3}"/gi, repl: `color="${skin.palette.text}"` },
-        // Convert any background-color to white or black based on context
-        { re: /background-color="#[0-9a-fA-F]{6}"/gi, repl: `background-color="${skin.palette.pageBg}"` },
-        { re: /background-color="#[0-9a-fA-F]{3}"/gi, repl: `background-color="${skin.palette.pageBg}"` },
-        // Convert borders to black
-        { re: /border-color="#[0-9a-fA-F]{6}"/gi, repl: `border-color="${skin.palette.border}"` },
-        { re: /border-color="#[0-9a-fA-F]{3}"/gi, repl: `border-color="${skin.palette.border}"` }
-      ];
-    } else {
-      // Other skins: swap common hardcoded colors to brand tones
-      swaps = [
-        { re: /color="#ffd700"/gi, repl: `color="${skin.palette.brand}"` },
-        { re: /color="#ffb400"/gi, repl: `color="${skin.palette.brand}"` },
-        { re: /color="#ff4d4d"/gi, repl: `color="${skin.palette.brandAlt}"` },
-        { re: /background-color="#ffd700"/gi, repl: `background-color="${skin.palette.brand}"` },
-        { re: /background-color="#ffb400"/gi, repl: `background-color="${skin.palette.brand}"` },
-        { re: /background-color="#ff4d4d"/gi, repl: `background-color="${skin.palette.brandAlt}"` }
-      ];
-    }
-    
+    const swaps = [
+      { re: /color="#ffd700"/gi, repl: `color="${skin.palette.brand}"` },
+      { re: /color="#ffb400"/gi, repl: `color="${skin.palette.brand}"` },
+      { re: /color="#ff4d4d"/gi, repl: `color="${skin.palette.brandAlt}"` },
+      { re: /background-color="#ffd700"/gi, repl: `background-color="${skin.palette.brand}"` },
+      { re: /background-color="#ffb400"/gi, repl: `background-color="${skin.palette.brand}"` },
+      { re: /background-color="#ff4d4d"/gi, repl: `background-color="${skin.palette.brandAlt}"` }
+    ];
     for (const { re, repl } of swaps) out = out.replace(re, repl);
   }
 

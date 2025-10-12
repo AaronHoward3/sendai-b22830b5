@@ -356,10 +356,10 @@ export async function runTwoPassGeneration({
     // 3) Deterministic theming (NO LLM)
     const skinId = resolveSkinId(styleId || designAesthetic || "minimal_clean");
     // Compute the actual skin pack so we can return it for logging/metrics
-    const tokens = buildBrandTokens({ brandData });
-    const skin = makeSkin(tokens, skinId);
+    const tokens = buildBrandTokens(brandData);
+    const skin = makeSkin(tokens, skinId, brandData._styleManifest);
 
-    const themedMjml = applyTheme(refinedMjml, { brandData }, skinId);
+    const themedMjml = applyTheme(refinedMjml, brandData, skinId);
 
     // 4) Pretty format
     const prettyMjml = await formatMjml(themedMjml, {

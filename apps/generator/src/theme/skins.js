@@ -37,20 +37,55 @@ function rgbToHex({ r, g, b }) { const to2 = v => Math.round(v).toString(16).pad
 function lighten(hex, t) { const { r, g, b } = hexToRgb(hex); t = clamp01(t); return rgbToHex({ r: r + (255 - r) * t, g: g + (255 - g) * t, b: b + (255 - b) * t }); }
 function darken(hex, t) { const { r, g, b } = hexToRgb(hex); t = clamp01(t); return rgbToHex({ r: r * (1 - t), g: g * (1 - t), b: b * (1 - t) }); }
 
-export function makeSkin(tokens, skinIdRaw) {
+export function makeSkin(tokens, skinIdRaw, brandStyleManifest = null) {
   const skinId = resolveSkinId(skinIdRaw);
+
+  // Use brand fonts from style manifest if available, otherwise use defaults
+  const getBrandFonts = () => {
+    if (brandStyleManifest?.fonts) {
+      return {
+        heading: brandStyleManifest.fonts.heading || { name: "Inter", hrefs: ["https://fonts.googleapis.com/css2?family=Inter:wght@700;800&display=swap"] },
+        body: brandStyleManifest.fonts.body || { name: "Inter", hrefs: ["https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap"] }
+      };
+    }
+    return {
+      heading: { name: "Inter", hrefs: ["https://fonts.googleapis.com/css2?family=Inter:wght@700;800&display=swap"] },
+      body: { name: "Inter", hrefs: ["https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap"] }
+    };
+  };
+
+  const brandFonts = getBrandFonts();
+
+  // Helper function to get fonts for a skin, respecting brand fonts
+  const getSkinFonts = (headingOverride, bodyOverride) => {
+    if (brandStyleManifest?.fonts) {
+      // Use brand fonts as base, but allow skin-specific overrides for style (except name and hrefs)
+      return {
+        heading: {
+          ...brandFonts.heading,
+          ...headingOverride,
+          name: brandFonts.heading.name, // Always use brand font name
+          hrefs: brandFonts.heading.hrefs // Always use brand font hrefs
+        },
+        body: {
+          ...brandFonts.body,
+          ...bodyOverride,
+          name: brandFonts.body.name, // Always use brand font name
+          hrefs: brandFonts.body.hrefs // Always use brand font hrefs
+        }
+      };
+    }
+    // No brand fonts, use skin defaults
+    return {
+      heading: headingOverride || brandFonts.heading,
+      body: bodyOverride || brandFonts.body
+    };
+  };
 
   // Base defaults shared by most skins
   const base = {
     id: skinId,
-    fonts: {
-      heading: { name: "Inter", hrefs: [
-        "https://fonts.googleapis.com/css2?family=Inter:wght@700;800&display=swap"
-      ] },
-      body: { name: "Inter", hrefs: [
-        "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap"
-      ] }
-    },
+    fonts: brandFonts,
     palette: {
       pageBg: tokens.pageBg,
       sectionBg: tokens.sectionBg,
@@ -96,18 +131,21 @@ export function makeSkin(tokens, skinIdRaw) {
   // EXEMPT skins keep their own stark rules
   if (EXEMPT.has(skinId)) {
     if (skinId === "luxe_mono") {
-      base.fonts.heading = {
-        name: "Playfair Display",
-        hrefs: [
-          "https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&display=swap"
-        ],
-        isSerif: true
-      };
-      base.fonts.body = {
-        name: "Georgia",
-        hrefs: [],
-        isSerif: true
-      };
+      // Only override fonts if no brand fonts are provided
+      if (!brandStyleManifest?.fonts) {
+        base.fonts.heading = {
+          name: "Playfair Display",
+          hrefs: [
+            "https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&display=swap"
+          ],
+          isSerif: true
+        };
+        base.fonts.body = {
+          name: "Georgia",
+          hrefs: [],
+          isSerif: true
+        };
+      }
       
       // Override palette to pure black and white
       base.palette = {
@@ -136,17 +174,19 @@ export function makeSkin(tokens, skinIdRaw) {
   // Per-skin definitions
   switch (skinId) {
     case "bold_contrasting": {
-      // Modern, bold fonts for high impact
-      base.fonts.heading = {
-        name: "Poppins",
-        hrefs: ["https://fonts.googleapis.com/css2?family=Poppins:wght@700;800;900&display=swap"],
-        isSerif: false
-      };
-      base.fonts.body = {
-        name: "Inter",
-        hrefs: ["https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap"],
-        isSerif: false
-      };
+      // Modern, bold fonts for high impact - respect brand fonts
+      base.fonts = getSkinFonts(
+        {
+          name: "Poppins",
+          hrefs: ["https://fonts.googleapis.com/css2?family=Poppins:wght@700;800;900&display=swap"],
+          isSerif: false
+        },
+        {
+          name: "Inter",
+          hrefs: ["https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap"],
+          isSerif: false
+        }
+      );
 
       // Enhanced typography with better hierarchy
       base.h1 = { size: 64, weight: 900 };
@@ -188,17 +228,19 @@ export function makeSkin(tokens, skinIdRaw) {
     }
 
     case "gradient_glow": {
-      // Modern gradient fonts for better readability
-      base.fonts.heading = {
-        name: "Montserrat",
-        hrefs: ["https://fonts.googleapis.com/css2?family=Montserrat:wght@700;800;900&display=swap"],
-        isSerif: false
-      };
-      base.fonts.body = {
-        name: "Inter",
-        hrefs: ["https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap"],
-        isSerif: false
-      };
+      // Modern gradient fonts for better readability - respect brand fonts
+      base.fonts = getSkinFonts(
+        {
+          name: "Montserrat",
+          hrefs: ["https://fonts.googleapis.com/css2?family=Montserrat:wght@700;800;900&display=swap"],
+          isSerif: false
+        },
+        {
+          name: "Inter",
+          hrefs: ["https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap"],
+          isSerif: false
+        }
+      );
 
       // Enhanced gradient typography
       base.h1 = { size: 52, weight: 900 };
@@ -229,17 +271,19 @@ export function makeSkin(tokens, skinIdRaw) {
     }
 
     case "warm_editorial": {
-      // Enhanced editorial fonts for better readability
-      base.fonts.heading = {
-        name: "Playfair Display",
-        hrefs: ["https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700;800&display=swap"],
-        isSerif: true
-      };
-      base.fonts.body = {
-        name: "Source Serif Pro",
-        hrefs: ["https://fonts.googleapis.com/css2?family=Source+Serif+Pro:wght@400;500;600&display=swap"],
-        isSerif: true
-      };
+      // Enhanced editorial fonts for better readability - respect brand fonts
+      base.fonts = getSkinFonts(
+        {
+          name: "Playfair Display",
+          hrefs: ["https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700;800&display=swap"],
+          isSerif: true
+        },
+        {
+          name: "Source Serif Pro",
+          hrefs: ["https://fonts.googleapis.com/css2?family=Source+Serif+Pro:wght@400;500;600&display=swap"],
+          isSerif: true
+        }
+      );
 
       // Enhanced editorial typography
       base.h1 = { size: 44, weight: 800 };
@@ -367,17 +411,19 @@ export function makeSkin(tokens, skinIdRaw) {
     }
 
     case "minimal_clean": {
-      // Enhanced clean fonts for better readability
-      base.fonts.heading = {
-        name: "Inter",
-        hrefs: ["https://fonts.googleapis.com/css2?family=Inter:wght@600;700;800&display=swap"],
-        isSerif: false
-      };
-      base.fonts.body = {
-        name: "Inter",
-        hrefs: ["https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap"],
-        isSerif: false
-      };
+      // Enhanced clean fonts for better readability - respect brand fonts
+      base.fonts = getSkinFonts(
+        {
+          name: "Inter",
+          hrefs: ["https://fonts.googleapis.com/css2?family=Inter:wght@600;700;800&display=swap"],
+          isSerif: false
+        },
+        {
+          name: "Inter",
+          hrefs: ["https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap"],
+          isSerif: false
+        }
+      );
 
       // Enhanced minimal typography
       base.h1 = { size: 44, weight: 800 };

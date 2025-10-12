@@ -20,7 +20,6 @@
           transform: translateX(-50%);
           color: #ffffff;
           text-align: center;
-          font-family: Helvetica, Arial, sans-serif;
           width: 100%;
           padding: 0 20px;
         ">
@@ -33,7 +32,7 @@
               font-weight: bold;
               line-height: 1.2;
               margin: 0;
-            ">
+            " class="hero-title">
               Your Headline Text Here
             </div>
             <div style="
@@ -41,7 +40,7 @@
               margin-top: 10px;
               line-height: 1.4;
               margin: 0;
-            ">
+            " class="hero-subtitle">
               Your Subheadline Text Here
             </div>
           </div>
