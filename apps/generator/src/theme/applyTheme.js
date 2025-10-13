@@ -42,8 +42,9 @@ function bestTextOn(bg) {
 
 function buildHead(skin) {
   const H = skin.fonts.heading, B = skin.fonts.body;
-  const serifFallback = `Georgia, 'Times New Roman', Times, serif`;
-  const sansFallback  = `system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif`;
+  // NO fallback fonts - use ONLY the scraped brand fonts
+  const serifFallback = ``;
+  const sansFallback  = ``;
 
   const fontTags = []
     .concat((H?.hrefs || []).map(h => `<mj-font name="${H.name}" href="${h}"></mj-font>`))

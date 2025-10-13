@@ -156,10 +156,14 @@ async function analyzeCssForFonts(cssSources) {
   // Analyze and categorize fonts
   const analysis = analyzeFontUsage(fontFaces, resolvedFontFamilies, googleFonts);
   
+  // Analyze button styles
+  const buttonAnalysis = analyzeButtonStyles(allCss, cssVariables);
+
   return {
     headingFont: analysis.heading,
     bodyFont: analysis.body,
     fontUrls: [...new Set(googleFonts)],
+    buttonStyles: buttonAnalysis,
     confidence: analysis.confidence,
     method: 'css-scraping',
     details: {
@@ -167,7 +171,8 @@ async function analyzeCssForFonts(cssSources) {
       fontFamilies: fontFamilies.length,
       googleFonts: googleFonts.length,
       topFonts: analysis.topFonts,
-      cssVariables: cssVariables.size
+      cssVariables: cssVariables.size,
+      buttonStyles: buttonAnalysis
     }
   };
 }
@@ -297,6 +302,7 @@ export async function enhanceFontDetectionWithCss(url, existingHints = {}) {
       headingFontGuess: cssResult.headingFont,
       bodyFontGuess: cssResult.bodyFont,
       fontUrls: cssResult.fontUrls,
+      buttonStyles: cssResult.buttonStyles,
       confidence: cssResult.confidence,
       method: 'css-scraping',
       details: cssResult.details
@@ -321,4 +327,82 @@ export async function enhanceFontDetectionWithCss(url, existingHints = {}) {
     method: 'default',
     confidence: 0.3
   };
+}
+
+/**
+ * Analyze button styles from CSS
+ */
+function analyzeButtonStyles(css, cssVariables) {
+  const buttonStyles = {
+    variant: "filled", // filled | outline | ghost | gradient
+    pad: "14px 22px",
+    caps: false,
+    letterSpacing: 0
+  };
+
+  // Look for button-related CSS selectors
+  const buttonSelectors = [
+    /button[^{]*\{[^}]*\}/gi,
+    /\.btn[^{]*\{[^}]*\}/gi,
+    /\.button[^{]*\{[^}]*\}/gi,
+    /\[class\*="btn"\]\s*\{[^}]*\}/gi,
+    /input\[type="button"\][^{]*\{[^}]*\}/gi,
+    /input\[type="submit"\][^{]*\{[^}]*\}/gi
+  ];
+
+  const buttonRules = [];
+  buttonSelectors.forEach(selector => {
+    const matches = css.match(selector) || [];
+    buttonRules.push(...matches);
+  });
+
+  // Analyze button rules for common patterns
+  for (const rule of buttonRules) {
+    // Check for padding
+    const paddingMatch = rule.match(/padding\s*:\s*([^;]+)/i);
+    if (paddingMatch) {
+      const padding = paddingMatch[1].trim();
+      // Convert common padding patterns to our format
+      if (padding.includes('px')) {
+        buttonStyles.pad = padding;
+      }
+    }
+
+    // Check for text-transform (uppercase/lowercase)
+    const textTransformMatch = rule.match(/text-transform\s*:\s*([^;]+)/i);
+    if (textTransformMatch) {
+      const transform = textTransformMatch[1].trim().toLowerCase();
+      buttonStyles.caps = transform === 'uppercase';
+    }
+
+    // Check for letter-spacing
+    const letterSpacingMatch = rule.match(/letter-spacing\s*:\s*([^;]+)/i);
+    if (letterSpacingMatch) {
+      const spacing = letterSpacingMatch[1].trim();
+      // Convert to em units if needed
+      if (spacing.includes('px')) {
+        const pxValue = parseFloat(spacing);
+        buttonStyles.letterSpacing = pxValue / 16; // Convert px to em (assuming 16px base)
+      } else if (spacing.includes('em')) {
+        buttonStyles.letterSpacing = parseFloat(spacing);
+      }
+    }
+
+    // Check for border styles to determine variant
+    const borderMatch = rule.match(/border\s*:\s*([^;]+)/i);
+    const backgroundMatch = rule.match(/background\s*:\s*([^;]+)/i);
+    
+    if (borderMatch && !backgroundMatch) {
+      // Has border but no background = outline
+      buttonStyles.variant = "outline";
+    } else if (backgroundMatch && backgroundMatch[1].includes('transparent')) {
+      // Transparent background = ghost
+      buttonStyles.variant = "ghost";
+    } else if (backgroundMatch && backgroundMatch[1].includes('gradient')) {
+      // Gradient background = gradient
+      buttonStyles.variant = "gradient";
+    }
+  }
+
+  return buttonStyles;
 }

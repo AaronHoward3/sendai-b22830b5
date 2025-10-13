@@ -308,6 +308,7 @@ function normalizeShape({ radii, buttons, spacing, shadows }) {
   };
   const b = {
     variant: buttons?.variant || "filled",
+    pad: buttons?.pad || "14px 22px",
     caps: !!buttons?.caps,
     letterSpacing: Number.isFinite(buttons?.letterSpacing) ? buttons.letterSpacing : 0
   };
@@ -393,8 +394,12 @@ export async function buildBrandStyleManifest(brandPayload = {}, siteUrl = "") {
   const palette = normalizePalette(llm?.palette || p);
   const fonts = normalizeFonts(llm?.fonts || fontsGuess, finalHints.fontUrls || []);
   const shape = normalizeShape({
-    radii: llm?.radii || (hints.radiusAvg ? { card: hints.radiusAvg, img: Math.max(4, Math.round(hints.radiusAvg*0.75)) } : {}),
-    buttons: llm?.buttons || {},
+    radii: llm?.radii || (hints.radiusAvg ? { 
+      card: hints.radiusAvg, 
+      img: Math.max(4, Math.round(hints.radiusAvg*0.75)),
+      btn: hints.radiusAvg // Use scraped radius for buttons too
+    } : {}),
+    buttons: llm?.buttons || (hints.buttonStyles || {}),
     spacing: llm?.spacing || {},
     shadows: llm?.shadows || {}
   });

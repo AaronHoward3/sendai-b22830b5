@@ -44,43 +44,57 @@ export function makeSkin(tokens, skinIdRaw, brandStyleManifest = null) {
   const getBrandFonts = () => {
     if (brandStyleManifest?.fonts) {
       return {
-        heading: brandStyleManifest.fonts.heading || { name: "Inter", hrefs: ["https://fonts.googleapis.com/css2?family=Inter:wght@700;800&display=swap"] },
-        body: brandStyleManifest.fonts.body || { name: "Inter", hrefs: ["https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap"] }
+        heading: brandStyleManifest.fonts.heading || { name: "Inter", hrefs: ["https://fonts.googleapis.com/css2?family=Inter:wght@700;800&display=swap"], isSerif: false },
+        body: brandStyleManifest.fonts.body || { name: "Inter", hrefs: ["https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap"], isSerif: false }
       };
     }
+    
+    // If no brand style manifest, check if we have brand data with fonts
+    // This handles cases where CSS scraping fails but brand data has fonts
+    if (tokens?.brandData?.fonts) {
+      const brandFonts = tokens.brandData.fonts;
+      return {
+        heading: { 
+          name: brandFonts.heading || brandFonts.title || "Inter", 
+          hrefs: brandFonts.font_urls || [], 
+          isSerif: false 
+        },
+        body: { 
+          name: brandFonts.body || "Inter", 
+          hrefs: brandFonts.font_urls || [], 
+          isSerif: false 
+        }
+      };
+    }
+    
     return {
-      heading: { name: "Inter", hrefs: ["https://fonts.googleapis.com/css2?family=Inter:wght@700;800&display=swap"] },
-      body: { name: "Inter", hrefs: ["https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap"] }
+      heading: { name: "Inter", hrefs: ["https://fonts.googleapis.com/css2?family=Inter:wght@700;800&display=swap"], isSerif: false },
+      body: { name: "Inter", hrefs: ["https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap"], isSerif: false }
     };
   };
 
   const brandFonts = getBrandFonts();
 
-  // Helper function to get fonts for a skin, respecting brand fonts
-  const getSkinFonts = (headingOverride, bodyOverride) => {
-    if (brandStyleManifest?.fonts) {
-      // Use brand fonts as base, but allow skin-specific overrides for style (except name and hrefs)
+  // NO hardcoded font overrides - ALWAYS use brand fonts
+  // Skins should NEVER override fonts - only scraped CSS fonts should be used
+
+  // Helper function to get radii for a skin, respecting brand radii
+  const getSkinRadii = (skinRadii) => {
+    if (brandStyleManifest?.radii) {
+      // Use brand radii as base, but allow skin-specific overrides
       return {
-        heading: {
-          ...brandFonts.heading,
-          ...headingOverride,
-          name: brandFonts.heading.name, // Always use brand font name
-          hrefs: brandFonts.heading.hrefs // Always use brand font hrefs
-        },
-        body: {
-          ...brandFonts.body,
-          ...bodyOverride,
-          name: brandFonts.body.name, // Always use brand font name
-          hrefs: brandFonts.body.hrefs // Always use brand font hrefs
-        }
+        card: brandStyleManifest.radii.card || skinRadii?.card || 8,
+        img: brandStyleManifest.radii.img || skinRadii?.img || 6,
+        btn: brandStyleManifest.radii.btn || skinRadii?.btn || 6
       };
     }
-    // No brand fonts, use skin defaults
-    return {
-      heading: headingOverride || brandFonts.heading,
-      body: bodyOverride || brandFonts.body
-    };
+    
+    // No brand radii, use skin defaults
+    return skinRadii || { card: 8, img: 6, btn: 6 };
   };
+
+  // NO hardcoded button style overrides - ALWAYS use brand button styles
+  // Skins should NEVER override button styles - only scraped CSS button styles should be used
 
   // Base defaults shared by most skins
   const base = {
@@ -103,9 +117,9 @@ export function makeSkin(tokens, skinIdRaw, brandStyleManifest = null) {
     typography: { h1LS: 0, h2LS: 0, capsHeadings: false }, // em letter-spacing + uppercase
     border: { width: 1, style: "solid" },
     // Shape
-    radii: { card: 0, img: 0, btn: 0 },
-    // Buttons
-    buttons: {
+    radii: getSkinRadii({ card: 0, img: 0, btn: 0 }),
+    // Buttons - ALWAYS use brand button styles, NO hardcoded overrides
+    buttons: brandStyleManifest?.buttons || {
       variant: "filled",                 // filled | outline | ghost | gradient
       pad: "14px 22px",
       caps: false,
@@ -159,13 +173,13 @@ export function makeSkin(tokens, skinIdRaw, brandStyleManifest = null) {
         cardBg: "#000000"       // Black cards
       };
       
-      base.radii = { card: 0, img: 0, btn: 0 };
-      base.buttons.variant = "outline";
+      base.radii = getSkinRadii({ card: 0, img: 0, btn: 0 });
+      // NO button overrides - use brand button styles only
       base.extras.colorOverrides = true; // Enable color overrides for black/white enforcement
     }
     if (skinId === "neo_brutalist") {
-      base.radii = { card: 0, img: 0, btn: 0 };
-      base.buttons.variant = "ghost";
+      base.radii = getSkinRadii({ card: 0, img: 0, btn: 0 });
+      // NO button overrides - use brand button styles only
       base.extras.colorOverrides = false;
     }
     return base;
@@ -174,19 +188,7 @@ export function makeSkin(tokens, skinIdRaw, brandStyleManifest = null) {
   // Per-skin definitions
   switch (skinId) {
     case "bold_contrasting": {
-      // Modern, bold fonts for high impact - respect brand fonts
-      base.fonts = getSkinFonts(
-        {
-          name: "Poppins",
-          hrefs: ["https://fonts.googleapis.com/css2?family=Poppins:wght@700;800;900&display=swap"],
-          isSerif: false
-        },
-        {
-          name: "Inter",
-          hrefs: ["https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap"],
-          isSerif: false
-        }
-      );
+      // NO font overrides - ALWAYS use brand fonts from CSS scraping
 
       // Enhanced typography with better hierarchy
       base.h1 = { size: 64, weight: 900 };
@@ -195,10 +197,9 @@ export function makeSkin(tokens, skinIdRaw, brandStyleManifest = null) {
       base.typography = { ...base.typography, h1LS: -0.03, h2LS: -0.02, capsHeadings: false };
 
       // Modern rounded elements with subtle shadows
-      base.radii = { card: 20, img: 12, btn: 8 };
+      base.radii = getSkinRadii({ card: 20, img: 12, btn: 8 });
 
-      // Enhanced button styling
-      base.buttons = { ...base.buttons, variant: "filled", pad: "18px 32px", caps: false, letterSpacing: 0.03 };
+      // NO button overrides - use brand button styles only
 
       // Optimized image sizing
       base.img = { width: 600 };
@@ -228,26 +229,14 @@ export function makeSkin(tokens, skinIdRaw, brandStyleManifest = null) {
     }
 
     case "gradient_glow": {
-      // Modern gradient fonts for better readability - respect brand fonts
-      base.fonts = getSkinFonts(
-        {
-          name: "Montserrat",
-          hrefs: ["https://fonts.googleapis.com/css2?family=Montserrat:wght@700;800;900&display=swap"],
-          isSerif: false
-        },
-        {
-          name: "Inter",
-          hrefs: ["https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap"],
-          isSerif: false
-        }
-      );
+      // NO font overrides - ALWAYS use brand fonts from CSS scraping
 
       // Enhanced gradient typography
       base.h1 = { size: 52, weight: 900 };
       base.h2 = { size: 32, weight: 800 };
       base.bodySize = 17;
-      base.radii = { card: 24, img: 20, btn: 50 };
-      base.buttons = { ...base.buttons, variant: "gradient", pad: "16px 28px", caps: true, letterSpacing: 0.05 };
+      base.radii = getSkinRadii({ card: 24, img: 20, btn: 50 });
+      // NO button overrides - use brand button styles only
       base.img = { width: 560 };
       base.space = { cardPad: 32 };
       base.shadow = { card: "0 16px 40px rgba(0,0,0,.15), 0 4px 12px rgba(0,0,0,.1)" };
@@ -271,19 +260,7 @@ export function makeSkin(tokens, skinIdRaw, brandStyleManifest = null) {
     }
 
     case "warm_editorial": {
-      // Enhanced editorial fonts for better readability - respect brand fonts
-      base.fonts = getSkinFonts(
-        {
-          name: "Playfair Display",
-          hrefs: ["https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700;800&display=swap"],
-          isSerif: true
-        },
-        {
-          name: "Source Serif Pro",
-          hrefs: ["https://fonts.googleapis.com/css2?family=Source+Serif+Pro:wght@400;500;600&display=swap"],
-          isSerif: true
-        }
-      );
+      // NO font overrides - ALWAYS use brand fonts from CSS scraping
 
       // Enhanced editorial typography
       base.h1 = { size: 44, weight: 800 };
@@ -292,10 +269,9 @@ export function makeSkin(tokens, skinIdRaw, brandStyleManifest = null) {
       base.typography = { ...base.typography, h1LS: 0.01, h2LS: 0.01, capsHeadings: false };
 
       // Refined rounded elements
-      base.radii = { card: 16, img: 12, btn: 24 };
+      base.radii = getSkinRadii({ card: 16, img: 12, btn: 24 });
       
-      // Enhanced warm buttons
-      base.buttons = { ...base.buttons, variant: "filled", pad: "16px 28px", caps: false, letterSpacing: 0.02 };
+      // NO button overrides - use brand button styles only
       
       // Optimized image sizing
       base.img = { width: 520 };
@@ -319,17 +295,7 @@ export function makeSkin(tokens, skinIdRaw, brandStyleManifest = null) {
     }
 
     case "magazine_serif": {
-      // Premium serif fonts for sophisticated magazine feel
-      base.fonts.heading = {
-        name: "Cormorant Garamond",
-        hrefs: ["https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600;700&display=swap"],
-        isSerif: true
-      };
-      base.fonts.body = {
-        name: "Crimson Text",
-        hrefs: ["https://fonts.googleapis.com/css2?family=Crimson+Text:wght@400;500;600&display=swap"],
-        isSerif: true
-      };
+      // NO font overrides - ALWAYS use brand fonts from CSS scraping
 
       // Enhanced sophisticated typography
       base.h1 = { size: 48, weight: 700 };
@@ -338,10 +304,9 @@ export function makeSkin(tokens, skinIdRaw, brandStyleManifest = null) {
       base.typography = { ...base.typography, h1LS: 0.02, h2LS: 0.01, capsHeadings: false };
 
       // Refined elegant elements
-      base.radii = { card: 12, img: 6, btn: 6 };
+      base.radii = getSkinRadii({ card: 12, img: 6, btn: 6 });
       
-      // Enhanced sophisticated buttons
-      base.buttons = { ...base.buttons, variant: "outline", pad: "16px 28px", caps: false, letterSpacing: 0.03 };
+      // NO button overrides - use brand button styles only
       
       // Optimized magazine image sizing
       base.img = { width: 500 };
@@ -365,17 +330,7 @@ export function makeSkin(tokens, skinIdRaw, brandStyleManifest = null) {
     }
 
     case "pastel_soft": {
-      // Enhanced friendly fonts for better readability
-      base.fonts.heading = {
-        name: "Quicksand",
-        hrefs: ["https://fonts.googleapis.com/css2?family=Quicksand:wght@600;700&display=swap"],
-        isSerif: false
-      };
-      base.fonts.body = {
-        name: "Inter",
-        hrefs: ["https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap"],
-        isSerif: false
-      };
+      // NO font overrides - ALWAYS use brand fonts from CSS scraping
 
       // Enhanced soft typography
       base.h1 = { size: 40, weight: 700 };
@@ -384,10 +339,9 @@ export function makeSkin(tokens, skinIdRaw, brandStyleManifest = null) {
       base.typography = { ...base.typography, h1LS: 0, h2LS: 0, capsHeadings: false };
 
       // Enhanced rounded elements
-      base.radii = { card: 24, img: 20, btn: 30 };
+      base.radii = getSkinRadii({ card: 24, img: 20, btn: 30 });
       
-      // Enhanced soft buttons
-      base.buttons = { ...base.buttons, variant: "filled", pad: "18px 28px", caps: false, letterSpacing: 0.02 };
+      // NO button overrides - use brand button styles only
       
       // Optimized image sizing
       base.img = { width: 520 };
@@ -411,19 +365,7 @@ export function makeSkin(tokens, skinIdRaw, brandStyleManifest = null) {
     }
 
     case "minimal_clean": {
-      // Enhanced clean fonts for better readability - respect brand fonts
-      base.fonts = getSkinFonts(
-        {
-          name: "Inter",
-          hrefs: ["https://fonts.googleapis.com/css2?family=Inter:wght@600;700;800&display=swap"],
-          isSerif: false
-        },
-        {
-          name: "Inter",
-          hrefs: ["https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap"],
-          isSerif: false
-        }
-      );
+      // NO font overrides - ALWAYS use brand fonts from CSS scraping
 
       // Enhanced minimal typography
       base.h1 = { size: 44, weight: 800 };
@@ -432,10 +374,9 @@ export function makeSkin(tokens, skinIdRaw, brandStyleManifest = null) {
       base.typography = { ...base.typography, h1LS: -0.02, h2LS: -0.01, capsHeadings: false };
 
       // Subtle rounded elements for modern feel
-      base.radii = { card: 8, img: 4, btn: 6 };
+      base.radii = getSkinRadii({ card: 8, img: 4, btn: 6 });
       
-      // Enhanced minimal buttons
-      base.buttons = { ...base.buttons, variant: "outline", pad: "14px 24px", caps: false, letterSpacing: 0.01 };
+      // NO button overrides - use brand button styles only
       
       // Optimized image sizing
       base.img = { width: 540 };
@@ -480,10 +421,9 @@ export function makeSkin(tokens, skinIdRaw, brandStyleManifest = null) {
       base.typography = { ...base.typography, h1LS: -0.02, h2LS: -0.01, capsHeadings: false };
 
       // Glass morphism elements
-      base.radii = { card: 20, img: 16, btn: 12 };
+      base.radii = getSkinRadii({ card: 20, img: 16, btn: 12 });
       
-      // Glass buttons
-      base.buttons = { ...base.buttons, variant: "filled", pad: "16px 28px", caps: false, letterSpacing: 0.02 };
+      // NO button overrides - use brand button styles only
       
       // Optimized image sizing
       base.img = { width: 540 };
@@ -528,10 +468,9 @@ export function makeSkin(tokens, skinIdRaw, brandStyleManifest = null) {
       base.typography = { ...base.typography, h1LS: 0.02, h2LS: 0.01, capsHeadings: true };
 
       // Sharp cyber elements
-      base.radii = { card: 4, img: 0, btn: 0 };
+      base.radii = getSkinRadii({ card: 4, img: 0, btn: 0 });
       
-      // Neon buttons
-      base.buttons = { ...base.buttons, variant: "filled", pad: "14px 24px", caps: true, letterSpacing: 0.05 };
+      // NO button overrides - use brand button styles only
       
       // Cyber image sizing
       base.img = { width: 580 };
@@ -558,8 +497,8 @@ export function makeSkin(tokens, skinIdRaw, brandStyleManifest = null) {
 
     default: {
       // unknown → gentle defaults
-      base.radii = { card: 0, img: 0, btn: 0 };
-      base.buttons.variant = "filled";
+      base.radii = getSkinRadii({ card: 0, img: 0, btn: 0 });
+      // NO button overrides - use brand button styles only
     }
   }
 
