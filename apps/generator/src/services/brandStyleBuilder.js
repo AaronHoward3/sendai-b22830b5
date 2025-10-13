@@ -322,9 +322,9 @@ export async function buildBrandStyleManifest(brandPayload = {}, siteUrl = "") {
   // scrape hints
   const hints = await scrapeSiteHints(siteUrl || brandPayload?.store_url || brandPayload?.domain || "");
   
-  // Enhanced font detection using CSS scraping
-  const { enhanceFontDetectionWithCss } = await import('./enhancedCssScraper.js');
-  const enhancedHints = await enhanceFontDetectionWithCss(
+  // Enhanced font detection using Google Fonts matching
+  const { enhanceFontDetectionWithGoogleMatching } = await import('./googleFontMatcher.js');
+  const enhancedHints = await enhanceFontDetectionWithGoogleMatching(
     siteUrl || brandPayload?.store_url || brandPayload?.domain || "",
     hints
   );
@@ -361,13 +361,17 @@ export async function buildBrandStyleManifest(brandPayload = {}, siteUrl = "") {
   console.log("🔍 [DEBUG] finalHints.headingFontGuess:", finalHints.headingFontGuess);
   console.log("🔍 [DEBUG] finalHints.bodyFontGuess:", finalHints.bodyFontGuess);
   
-  // Prioritize CSS scraping results over hardcoded brand payload fonts
+  // Use Google Fonts matching results with proper URLs
   const fontsGuess = {
     heading: {
-      name: finalHints.headingFontGuess || "Inter"
+      name: finalHints.headingFontGuess || "Inter",
+      hrefs: finalHints.headingFontUrl ? [finalHints.headingFontUrl] : ["https://fonts.googleapis.com/css2?family=Inter:wght@600;700;800;900&display=swap"],
+      isSerif: false
     },
     body: {
-      name: finalHints.bodyFontGuess || "Inter"
+      name: finalHints.bodyFontGuess || "Inter",
+      hrefs: finalHints.bodyFontUrl ? [finalHints.bodyFontUrl] : ["https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap"],
+      isSerif: false
     }
   };
   

@@ -4,7 +4,7 @@
     <mj-group>
       <mj-column>
         <mj-image mj-class="img" src="{{product_1_image_url}}" alt="{{product_1_title}}" padding="0px"></mj-image>
-        <mj-text font-size="18px" padding-top="10px" mj-class="product-title">{{product_1_title}}</mj-text>
+        <mj-text padding-top="10px" mj-class="product-title">{{product_1_title}}</mj-text>
         <mj-text>{{product_1_price}}</mj-text>
         <mj-button mj-class="btn" href="{{product_1_url}}">
           {{product_1_button_label}}
@@ -12,7 +12,7 @@
       </mj-column>
       <mj-column>
         <mj-image mj-class="img" src="{{product_2_image_url}}" alt="{{product_2_title}}" padding="0px"></mj-image>
-        <mj-text font-size="18px" padding-top="10px" mj-class="product-title">{{product_2_title}}</mj-text>
+        <mj-text padding-top="10px" mj-class="product-title">{{product_2_title}}</mj-text>
         <mj-text>{{product_2_price}}</mj-text>
         <mj-button mj-class="btn" href="{{product_2_url}}">
           {{product_2_button_label}}

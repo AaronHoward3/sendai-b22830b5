@@ -4,7 +4,7 @@
     <mj-image src="https://via.placeholder.com/300x400" alt="Product" padding="0"></mj-image>
   </mj-column>
   <mj-column width="50%" padding="40px" vertical-align="middle" background-color="#f9f9f9">
-    <mj-text font-size="28px" font-weight="bold" padding="0 0 15px" mj-class="h2">New Arrivals</mj-text>
+    <mj-text  padding="0 0 15px" mj-class="h2">New Arrivals</mj-text>
     <mj-text font-size="16px" line-height="1.6" padding="0 0 20px">
       Discover our latest collection designed for comfort and style. Perfect for everyday wear with premium materials.
     </mj-text>
@@ -15,7 +15,7 @@
   
   <!-- Row 2 - Image Right -->
   <mj-column width="50%" padding="40px" vertical-align="middle" background-color="#f0f0f0">
-    <mj-text font-size="28px" font-weight="bold" padding="0 0 15px" mj-class="h2">Summer Essentials</mj-text>
+    <mj-text  padding="0 0 15px" mj-class="h2">Summer Essentials</mj-text>
     <mj-text font-size="16px" line-height="1.6" padding="0 0 20px">
       Lightweight fabrics and breezy designs to keep you cool all season long. Mix and match for endless possibilities.
     </mj-text>

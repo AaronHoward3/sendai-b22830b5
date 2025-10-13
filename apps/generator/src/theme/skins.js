@@ -78,19 +78,23 @@ export function makeSkin(tokens, skinIdRaw, brandStyleManifest = null) {
   // NO hardcoded font overrides - ALWAYS use brand fonts
   // Skins should NEVER override fonts - only scraped CSS fonts should be used
 
-  // Helper function to get radii for a skin, respecting brand radii
+  // Helper function to get radii for a skin, prioritizing skin-specific overrides
   const getSkinRadii = (skinRadii) => {
     if (brandStyleManifest?.radii) {
-      // Use brand radii as base, but allow skin-specific overrides
-      return {
-        card: brandStyleManifest.radii.card || skinRadii?.card || 8,
-        img: brandStyleManifest.radii.img || skinRadii?.img || 6,
-        btn: brandStyleManifest.radii.btn || skinRadii?.btn || 6
+      // Use skin-specific overrides first, then brand radii, then defaults
+      const result = {
+        card: skinRadii?.card ?? brandStyleManifest.radii.card ?? 8,
+        img: skinRadii?.img ?? brandStyleManifest.radii.img ?? 6,
+        btn: skinRadii?.btn ?? brandStyleManifest.radii.btn ?? 6
       };
+      console.log(`🔘 [RADII DEBUG] Skin: ${skinId}, Brand radii:`, brandStyleManifest.radii, `Skin radii:`, skinRadii, `Final:`, result);
+      return result;
     }
     
     // No brand radii, use skin defaults
-    return skinRadii || { card: 8, img: 6, btn: 6 };
+    const result = skinRadii || { card: 8, img: 6, btn: 6 };
+    console.log(`🔘 [RADII DEBUG] Skin: ${skinId}, No brand radii, using:`, result);
+    return result;
   };
 
   // NO hardcoded button style overrides - ALWAYS use brand button styles
@@ -126,7 +130,7 @@ export function makeSkin(tokens, skinIdRaw, brandStyleManifest = null) {
       letterSpacing: 0                   // em
     },
     // Imagery
-    img: { width: 520 },
+    img: { width: 520, padding: 0 },
     // Spacing
     space: { cardPad: 24 },
     // Visual accents
@@ -374,12 +378,12 @@ export function makeSkin(tokens, skinIdRaw, brandStyleManifest = null) {
       base.typography = { ...base.typography, h1LS: -0.02, h2LS: -0.01, capsHeadings: false };
 
       // Subtle rounded elements for modern feel
-      base.radii = getSkinRadii({ card: 8, img: 4, btn: 6 });
+      base.radii = getSkinRadii({ card: 8, img: 12, btn: 50 });
       
       // NO button overrides - use brand button styles only
       
       // Optimized image sizing
-      base.img = { width: 540 };
+      base.img = { width: 540, padding: 10 };
       
       // Enhanced minimal spacing
       base.space = { cardPad: 24 };

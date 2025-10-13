@@ -3,14 +3,14 @@
   <!-- Tagline Section -->
   <mj-section padding="40px 20px">
     <mj-column>
-      <mj-text align="center" font-size="22px" padding="0px" mj-class="h2">{{tagline}}</mj-text>
+      <mj-text align="center" padding="0px" mj-class="h2">{{tagline}}</mj-text>
     </mj-column>
   </mj-section>
   <!-- Product 1 -->
   <mj-section padding="40px 20px 20px">
     <mj-column>
       <mj-image mj-class="img" src="{{product1_image}}" alt="{{product1_name}}" padding="0px"></mj-image>
-      <mj-text align="center" font-size="18px" padding-top="15px" mj-class="product-title">{{product1_name}}</mj-text>
+      <mj-text align="center" padding-top="15px" mj-class="product-title">{{product1_name}}</mj-text>
       <mj-button mj-class="btn" href="{{product1_url}}">
         {{product1_cta}}
       </mj-button>
@@ -20,7 +20,7 @@
   <mj-section padding="20px 20px 60px">
     <mj-column>
       <mj-image mj-class="img" src="{{product2_image}}" alt="{{product2_name}}" padding="0px"></mj-image>
-      <mj-text align="center" font-size="18px" padding-top="15px" mj-class="product-title">{{product2_name}}</mj-text>
+      <mj-text align="center" padding-top="15px" mj-class="product-title">{{product2_name}}</mj-text>
       <mj-button mj-class="btn" href="{{product2_url}}">
         {{product2_cta}}
       </mj-button>

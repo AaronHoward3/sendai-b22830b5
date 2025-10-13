@@ -15,10 +15,10 @@
   <mj-column>
     <mj-text 
       align="center" 
-      font-size="15px" 
       color="[[text_color]]" 
       padding="0"
-      line-height="1.5">
+      line-height="1.5"
+      mj-class="body">
       <a href="[[store_url]]" style="color: [[link_color]]; text-decoration: none; margin: 0 15px;">Home</a>
       <a href="[[store_url]]/products" style="color: [[link_color]]; text-decoration: none; margin: 0 15px;">Products</a>
       <a href="[[store_url]]/about" style="color: [[link_color]]; text-decoration: none; margin: 0 15px;">About</a>

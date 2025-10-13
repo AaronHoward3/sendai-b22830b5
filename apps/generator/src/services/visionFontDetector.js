@@ -53,7 +53,13 @@ export async function detectFontsWithVision(url) {
 async function takeScreenshot(url) {
   try {
     // Import puppeteer dynamically to avoid issues if not installed
-    const puppeteer = await import('puppeteer');
+    let puppeteer;
+    try {
+      puppeteer = await import('puppeteer');
+    } catch (importError) {
+      console.log('⚠️  Puppeteer not available, skipping screenshot-based font detection');
+      return null;
+    }
     
     const browser = await puppeteer.default.launch({
       headless: true,
@@ -107,17 +113,31 @@ async function analyzeScreenshotWithVision(screenshotPath) {
           content: [
             {
               type: "text",
-              text: `Analyze this website screenshot and identify the fonts being used. Focus on:
+              text: `Analyze this website screenshot and identify the fonts being used. You are a typography expert with deep knowledge of web fonts.
 
-1. **Heading/Title fonts** - Look for large, prominent text like headers, titles, navigation, hero sections
-2. **Body/Paragraph fonts** - Look for smaller text in paragraphs, descriptions, product details
+FOCUS ON:
+1. **Heading/Title fonts** - Look for large, prominent text like headers, titles, navigation, hero sections, logos
+2. **Body/Paragraph fonts** - Look for smaller text in paragraphs, descriptions, product details, buttons
+
+ANALYSIS CRITERIA:
+- Character shapes (rounded vs angular, serif vs sans-serif)
+- Letter spacing and proportions
+- Font weight and style variations
+- Overall visual characteristics
+- Brand personality (modern, classic, playful, etc.)
+
+COMMON FONT PATTERNS:
+- Modern brands often use: Inter, Poppins, Montserrat, Roboto
+- Luxury brands often use: Playfair Display, Merriweather, Lora
+- Tech brands often use: Inter, Source Sans Pro, Fira Sans
+- Fashion brands often use: Playfair Display, Montserrat, Raleway
 
 Please respond with a JSON object in this exact format:
 {
   "heading": "Font Name (e.g., Inter, Poppins, Playfair Display)",
   "body": "Font Name (e.g., Inter, Poppins, Source Sans Pro)",
   "confidence": 0.85,
-  "reasoning": "Brief explanation of what you observed"
+  "reasoning": "Detailed explanation of what you observed, including character shapes, brand personality, and why you chose these fonts"
 }
 
 If you cannot clearly identify a font, use "Inter" as the default. Confidence should be between 0.0 and 1.0 based on how certain you are about the font identification.`

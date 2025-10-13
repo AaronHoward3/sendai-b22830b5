@@ -141,15 +141,73 @@ function getContentGuidelines(emailType) {
 - Include BACKGROUND information and behind-the-scenes content`;
   } else {
     return `CONTENT GUIDELINES FOR PROMOTION:
-- Write CONCISE, IMPACTFUL headlines (3-8 words max)
-- Use SHORT, CLEAR subheadings (5-15 words max)
-- Focus on BENEFITS, not features
-- Use ACTION-ORIENTED language
-- Avoid lengthy explanations in headers
-- Create SCANNABLE, QUICK-READ content
-- Use URGENT, COMPELLING language
+- Write CREATIVE, IMPACTFUL headlines (2-12 words - vary length for different effects)
+- Use ENGAGING subheadings (3-30 words - be flexible with length)
+- Focus on BENEFITS and EMOTIONAL CONNECTION
+- Use ACTION-ORIENTED and CONVERSATIONAL language
+- Vary tone: urgent, playful, sophisticated, or friendly based on brand
+- Create SCANNABLE but also ENGAGING content
+- Experiment with different approaches: questions, statements, commands
+- Be CREATIVE with word choice and phrasing
 - Focus on CONVERSION and SALES`;
   }
+}
+
+/**
+ * Post-process MJML to ensure font classes are preserved
+ */
+function preserveFontClasses(refinedMjml, baseMjml) {
+  console.log("🔧 [DEBUG] Starting font class preservation...");
+  
+  // Extract all mj-class attributes from the original base MJML
+  const baseClassMatches = baseMjml.match(/mj-class="([^"]+)"/g) || [];
+  const baseClasses = new Set(baseClassMatches.map(match => match.match(/mj-class="([^"]+)"/)[1]));
+  
+  console.log("🔧 [DEBUG] Base MJML font classes found:", Array.from(baseClasses));
+  
+  // Find text elements in refined MJML that should have font classes
+  const textElements = refinedMjml.match(/<mj-text[^>]*>.*?<\/mj-text>/gs) || [];
+  
+  console.log("🔧 [DEBUG] Found", textElements.length, "text elements to check");
+  
+  let fixedMjml = refinedMjml;
+  
+  textElements.forEach(textElement => {
+    // Check if this text element has a placeholder (indicating it should have a font class)
+    const hasPlaceholder = /\{\{[^}]+\}\}/.test(textElement);
+    
+    if (hasPlaceholder) {
+      // Extract the placeholder to determine what font class it should have
+      const placeholderMatch = textElement.match(/\{\{([^}]+)\}\}/);
+      if (placeholderMatch) {
+        const placeholder = placeholderMatch[1];
+        let expectedClass = null;
+        
+        // Map placeholders to expected font classes
+        if (placeholder.includes('hero_title') || placeholder.includes('cta_title') || placeholder.includes('story_title')) {
+          expectedClass = 'h1';
+        } else if (placeholder.includes('hero_subtitle') || placeholder.includes('cta_subtitle') || placeholder.includes('story_content')) {
+          expectedClass = 'h2';
+        } else if (placeholder.includes('P1_TITLE') || placeholder.includes('P2_TITLE') || placeholder.includes('P3_TITLE') || placeholder.includes('P4_TITLE')) {
+          expectedClass = 'product-title';
+        } else if (placeholder.includes('P1_PRICE') || placeholder.includes('P2_PRICE') || placeholder.includes('P3_PRICE') || placeholder.includes('P4_PRICE')) {
+          expectedClass = 'body';
+        }
+        
+        // If we have an expected class and the element doesn't have it, add it
+        if (expectedClass && !textElement.includes(`mj-class="${expectedClass}"`)) {
+          const fixedElement = textElement.replace(
+            /(<mj-text[^>]*)(>)/,
+            `$1 mj-class="${expectedClass}"$2`
+          );
+          fixedMjml = fixedMjml.replace(textElement, fixedElement);
+          console.log(`🔧 Fixed missing font class: ${placeholder} -> mj-class="${expectedClass}"`);
+        }
+      }
+    }
+  });
+  
+  return fixedMjml;
 }
 
 function buildRefinerPrompt({ baseMjml, emailType, designAesthetic, brandData, userContext }) {
@@ -168,17 +226,27 @@ TASK:
 - Do not change structure or add/remove blocks.
 - Do NOT attempt to change colors or add new styles. Styling is handled later.
 
-STRICT RULES:
+CRITICAL FONT RULES - DO NOT VIOLATE:
+- NEVER remove mj-class attributes from ANY text element
+- NEVER add inline font-family styles to text elements
+- If you see mj-class="h1", mj-class="h2", mj-class="h3", mj-class="body", mj-class="title", or mj-class="product-title" - KEEP IT EXACTLY AS IS
+- The mj-class system is how brand fonts are applied - removing it breaks the font system
+- ONLY replace placeholder text content, never modify the mj-class attributes
+
+OTHER RULES:
 - Keep all MJML tags and block structure as-is.
 - Do NOT modify header or footer sections (marked with <!-- Blockfile: header-block --> and <!-- Blockfile: footer-block -->).
 - Do NOT remove <!-- Blockfile: ... --> markers inside <mj-raw>.
 - Preserve https://CUSTOMHEROIMAGE.COM if present.
 - All <mj-image> must be open+close tags; no self-closing.
 - No font-family on MJML tags. Keep valid MJML.
+- BE CREATIVE with content while maintaining structure - vary tone, length, and approach
+- Experiment with different emotional appeals and messaging styles
+- Consider the brand personality when crafting content
 
 PLACEHOLDER REPLACEMENT RULES:
-- {{hero_title}}: Replace with compelling headline (3-8 words for promotions, 5-12 words for newsletters)
-- {{hero_subtitle}}: Replace with descriptive subheading (5-15 words for promotions, 10-25 words for newsletters)
+- {{hero_title}}: Replace with compelling headline (2-12 words - be creative with length based on impact)
+- {{hero_subtitle}}: Replace with descriptive subheading (3-30 words - vary length for different effects)
 - {{cta_url}}: Replace with appropriate brand URL (homepage, products, or specific collection)
 - {{cta_button_label}}: Replace with action-oriented button text (Shop Now, Learn More, View Collection, etc.)
 - {{social_proof_title}}: Replace with testimonial headline (e.g., "What Our Customers Say", "Join Thousands of Happy Customers")
@@ -188,6 +256,24 @@ PLACEHOLDER REPLACEMENT RULES:
 - {{story_content}}: Replace with detailed story content (for newsletters)
 - {{story_conclusion}}: Replace with story conclusion (for newsletters)
 - {{P1_TITLE}}, {{P1_SUBTITLE}}, {{P1_IMAGE_URL}}: Replace with actual product data from brandData.products
+
+FONT CLASS PRESERVATION:
+- ALWAYS preserve mj-class attributes on text elements
+- If you see mj-class="h1", keep it - this applies the brand's heading font
+- If you see mj-class="product-title", keep it - this applies the brand's product title font
+- Do NOT add inline font-family styles that override the mj-class
+- The mj-class system is how brand fonts are applied to the email
+
+CRITICAL EXAMPLES:
+
+✅ CORRECT - Keep mj-class attributes:
+<mj-text align="center" font-size="20px" color="#ffffff" padding="10px 20px" background-color="rgba(0,0,0,0.4)" border-radius="8px" mj-class="h2">{{hero_subtitle}}</mj-text>
+
+❌ WRONG - Removing mj-class breaks fonts:
+<mj-text align="center" font-size="20px" color="#ffffff" padding="10px 20px" background-color="rgba(0,0,0,0.4)" border-radius="8px">{{hero_subtitle}}</mj-text>
+
+❌ WRONG - Adding inline font-family overrides mj-class:
+<mj-text align="center" font-size="20px" color="#ffffff" padding="10px 20px" background-color="rgba(0,0,0,0.4)" border-radius="8px" font-family="Arial" mj-class="h2">{{hero_subtitle}}</mj-text>
 
 ${contentGuidelines}
 
@@ -345,7 +431,7 @@ export async function runTwoPassGeneration({
     const resp = await retryOpenAI(async () =>
       openai.chat.completions.create({
         model: process.env.REFINE_MODEL || "gpt-3.5-turbo",
-        temperature: 0.3,
+        temperature: parseFloat(process.env.CREATIVITY_TEMPERATURE) || 0.7,
         messages: [{ role: "system", content: sys }, { role: "user", content: prompt }]
       })
     );
@@ -354,7 +440,17 @@ export async function runTwoPassGeneration({
     m.recordApiCall?.({ step: "refine", model: resp.model || process.env.REFINE_MODEL || "gpt-3.5-turbo", usage: resp.usage });
 
     const raw = resp.choices?.[0]?.message?.content || "";
-    const refinedMjml = raw.replace(/^\s*```mjml/i, "").replace(/```[\s\n\r]*$/g, "").trim();
+    let refinedMjml = raw.replace(/^\s*```mjml/i, "").replace(/```[\s\n\r]*$/g, "").trim();
+    
+    // Post-process to ensure font classes are preserved
+    console.log("🔍 [DEBUG] Before font class preservation:");
+    console.log("Base MJML has font classes:", baseMjml.includes('mj-class='));
+    console.log("Refined MJML has font classes:", refinedMjml.includes('mj-class='));
+    
+    refinedMjml = preserveFontClasses(refinedMjml, baseMjml);
+    
+    console.log("🔍 [DEBUG] After font class preservation:");
+    console.log("Final MJML has font classes:", refinedMjml.includes('mj-class='));
 
     try { const ot = await countTokens(refinedMjml); m.addLocalUsage?.({ output: ot }); } catch {}
 

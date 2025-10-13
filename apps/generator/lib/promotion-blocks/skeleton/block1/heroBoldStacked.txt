@@ -7,8 +7,8 @@
   </mj-section>
   <mj-section padding="60px 20px" background-color="#000000">
     <mj-column>
-      <mj-text align="center" font-size="56px" font-weight="900" color="#ffffff" padding-bottom="20px" line-height="1.1" text-transform="uppercase" letter-spacing="2px" mj-class="h1">{{hero_title}}</mj-text>
-      <mj-text align="center" font-size="24px" color="#ffffff" padding-bottom="40px" line-height="1.3">{{hero_subtitle}}</mj-text>
+      <mj-text align="center" color="#ffffff" padding-bottom="20px" line-height="1.1" text-transform="uppercase" letter-spacing="2px" mj-class="h1">{{hero_title}}</mj-text>
+      <mj-text align="center" color="#ffffff" padding-bottom="40px" line-height="1.3" mj-class="h2">{{hero_subtitle}}</mj-text>
       <mj-button href="{{cta_url}}" background-color="#ffffff" color="#000000" border-radius="0px" padding="18px 40px" font-weight="900" text-transform="uppercase" letter-spacing="1px">
         {{cta_button_label}}
       </mj-button>

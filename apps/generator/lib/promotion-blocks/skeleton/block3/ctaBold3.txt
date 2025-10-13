@@ -7,8 +7,8 @@
   </mj-section>
   <mj-section padding="50px 20px">
     <mj-column>
-      <mj-text align="center" font-size="22px" padding-bottom="10px">{{cta_title}}</mj-text>
-      <mj-text align="center" font-size="16px" padding-bottom="20px">{{cta_subtitle}}</mj-text>
+      <mj-text align="center" padding-bottom="10px" mj-class="h2">{{cta_title}}</mj-text>
+      <mj-text align="center" padding-bottom="20px" mj-class="body">{{cta_subtitle}}</mj-text>
       <mj-button mj-class="btn" href="{{cta_url}}">
         {{cta_button_label}}
       </mj-button>

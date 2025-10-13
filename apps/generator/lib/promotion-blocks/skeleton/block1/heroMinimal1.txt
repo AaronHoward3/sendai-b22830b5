@@ -9,8 +9,8 @@
   padding-bottom="300px"
   >
   <mj-column padding="100px">
-    <mj-text align="center" font-size="40px" padding-bottom="10px" mj-class="h1">{{hero_title}}</mj-text>
-    <mj-text align="center">{{hero_subtitle}}</mj-text>
+    <mj-text align="center" padding-bottom="10px" mj-class="h1">{{hero_title}}</mj-text>
+    <mj-text align="center" mj-class="h2">{{hero_subtitle}}</mj-text>
   </mj-column>
 </mj-section>
 </mj-wrapper>

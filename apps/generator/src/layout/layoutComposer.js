@@ -12,6 +12,23 @@ import { getCachedTemplate, setCachedTemplate } from "../utils/templateCache.js"
 
 const pick = (arr) => arr[Math.floor(Math.random() * arr.length)];
 
+// Enhanced randomization with weighted selection for more variation
+const pickWeighted = (arr, weights = []) => {
+  if (!weights.length || weights.length !== arr.length) {
+    return pick(arr); // Fallback to random if no weights provided
+  }
+  
+  const totalWeight = weights.reduce((sum, w) => sum + w, 0);
+  let random = Math.random() * totalWeight;
+  
+  for (let i = 0; i < arr.length; i++) {
+    random -= weights[i];
+    if (random <= 0) return arr[i];
+  }
+  
+  return arr[arr.length - 1]; // Fallback
+};
+
 /**
  * Smart block selection based on content type and context
  */
@@ -93,11 +110,14 @@ function selectSmartBlocks(availableBlocks, analysis, blockType) {
     availableBlocks.some(available => available.includes(block))
   );
   
-  // Return preferred block if available, otherwise random
-  if (availablePreferred.length > 0) {
+  // Add more randomization - sometimes use preferred, sometimes explore
+  const usePreferred = Math.random() < 0.9; // 70% chance to use preferred blocks
+  
+  if (availablePreferred.length > 0 && usePreferred) {
     return pick(availablePreferred);
   }
   
+  // 30% chance to explore all available blocks for more variation
   return pick(availableBlocks);
 }
 
@@ -199,8 +219,11 @@ function determineBlockOrder(analysis, emailType) {
  */
 export async function composeBaseMjml(emailType, aesthetic, layout, brandData = {}) {
   const dividerNames = await listDividerFiles(); // filenames only
+  // Add more variation in divider selection - sometimes use different dividers, sometimes same
+  const useDifferentDividers = Math.random() < 0.6; // 60% chance for different dividers
   const dividerName1 = dividerNames.length ? pick(dividerNames) : null;
-  const dividerName2 = dividerNames.length ? pick(dividerNames) : null;
+  const dividerName2 = dividerNames.length ? 
+    (useDifferentDividers ? pick(dividerNames.filter(d => d !== dividerName1)) : dividerName1) : null;
 
   // Generate header and footer blocks with brand data
   const [headerBlock, footerBlock] = await Promise.all([

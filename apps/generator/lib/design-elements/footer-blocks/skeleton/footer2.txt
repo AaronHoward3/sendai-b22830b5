@@ -2,7 +2,7 @@
 <mj-section background-color="[[body_color]]" padding="35px 20px" text-align="center">
   <mj-column>
     <mj-image align="center" padding-bottom="15px" width="140px" src="[[logo_url]]" alt="[[store_name]]" href="[[store_url]]"></mj-image>
-    <mj-text color="[[text_color]]" padding-top="15px" line-height="1.5" css-class="mj-text-break">
+    <mj-text color="[[text_color]]" padding-top="15px" line-height="1.5" css-class="mj-text-break" mj-class="body">
       <p style="line-height: 1.5; text-align: center;">
         <span style="font-size:16px;">[[store_name]]</span>
       </p>
@@ -17,7 +17,7 @@
 </mj-section>
 <mj-section background-color="[[body_color]]" padding-bottom="0" padding-top="15px" text-align="center">
   <mj-column>
-    <mj-text color="[[text_color]]" padding-bottom="2px" padding-left="0px" padding-right="0px" line-height="1.4" css-class="mj-text-break">
+    <mj-text color="[[text_color]]" padding-bottom="2px" padding-left="0px" padding-right="0px" line-height="1.4" css-class="mj-text-break" mj-class="body">
       <p style="line-height: 1.4; text-align: center;">
         <span style="font-size:12px;">To unsubscribe from all future communications, click&nbsp;[[unsubscribe]]</span>
       </p>

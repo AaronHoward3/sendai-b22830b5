@@ -40,11 +40,53 @@ function bestTextOn(bg) {
   return whiteContrast >= blackContrast ? "#ffffff" : "#111111";
 }
 
+// Map Google Fonts to web-safe email equivalents
+function mapFontToEmailSafe(fontName) {
+  const fontMap = {
+    // Sans-serif fonts
+    'Poppins': 'Arial, Helvetica, sans-serif',
+    'Inter': 'Arial, Helvetica, sans-serif',
+    'Roboto': 'Arial, Helvetica, sans-serif',
+    'Open Sans': 'Arial, Helvetica, sans-serif',
+    'Lato': 'Arial, Helvetica, sans-serif',
+    'Montserrat': 'Arial, Helvetica, sans-serif',
+    'Nunito': 'Arial, Helvetica, sans-serif',
+    'Source Sans Pro': 'Arial, Helvetica, sans-serif',
+    'Ubuntu': 'Arial, Helvetica, sans-serif',
+    'Raleway': 'Arial, Helvetica, sans-serif',
+    'PT Sans': 'Arial, Helvetica, sans-serif',
+    'Work Sans': 'Arial, Helvetica, sans-serif',
+    'Fira Sans': 'Arial, Helvetica, sans-serif',
+    'Noto Sans': 'Arial, Helvetica, sans-serif',
+    'Dosis': 'Arial, Helvetica, sans-serif',
+    'Oswald': 'Arial, Helvetica, sans-serif',
+    'Playfair Display': 'Georgia, Times New Roman, serif',
+    'Merriweather': 'Georgia, Times New Roman, serif',
+    'Lora': 'Georgia, Times New Roman, serif',
+    'Crimson Text': 'Georgia, Times New Roman, serif',
+    'Libre Baskerville': 'Georgia, Times New Roman, serif',
+    'PT Serif': 'Georgia, Times New Roman, serif',
+    'Source Serif Pro': 'Georgia, Times New Roman, serif',
+    'Cormorant Garamond': 'Georgia, Times New Roman, serif',
+    'Playfair Display SC': 'Georgia, Times New Roman, serif'
+  };
+  
+  return fontMap[fontName] || 'Arial, Helvetica, sans-serif';
+}
+
 function buildHead(skin) {
   const H = skin.fonts.heading, B = skin.fonts.body;
-  // NO fallback fonts - use ONLY the scraped brand fonts
-  const serifFallback = ``;
-  const sansFallback  = ``;
+  // Use web-safe fonts that work in email clients
+  const serifFallback = `Georgia, 'Times New Roman', Times, serif`;
+  const sansFallback = `Arial, Helvetica, sans-serif`;
+  
+  // Map detected fonts to email-safe equivalents
+  const headingFont = mapFontToEmailSafe(H?.name || 'Inter');
+  const bodyFont = mapFontToEmailSafe(B?.name || 'Inter');
+  
+  console.log(`🎨 [FONT MAPPING] Detected heading font: "${H?.name}" -> Email-safe: "${headingFont}"`);
+  console.log(`🎨 [FONT MAPPING] Detected body font: "${B?.name}" -> Email-safe: "${bodyFont}"`);
+  console.log(`🔘 [BUTTON STYLES] Skin: ${skin.id}, Border radius: ${skin.radii.btn}px, Variant: ${skin.buttons?.variant}, Padding: ${skin.buttons?.pad}`);
 
   const fontTags = []
     .concat((H?.hrefs || []).map(h => `<mj-font name="${H.name}" href="${h}"></mj-font>`))
@@ -97,23 +139,26 @@ function buildHead(skin) {
   <mj-head>
     ${fontTags}
     <mj-attributes>
-      <mj-all font-family="${B?.name || "Inter"}, ${(B?.isSerif ? serifFallback : sansFallback)}"></mj-all>
-      <mj-text color="${skin.palette.text}" font-size="${skin.bodySize}px" line-height="1.6" font-weight="400"></mj-text>
-      <mj-button ${attrs(buttonBase)} font-family="${H?.name || "Inter"}, ${(H?.isSerif ? serifFallback : sansFallback)}" mj-class="btn"></mj-button>
-      <mj-image border-radius="${skin.radii.img}px" padding="0" width="${(skin.img?.width ?? 520)}px"></mj-image>
+      <!-- mj-all removed to allow individual font classes to work properly -->
+      <mj-text color="${skin.palette.text}" font-size="${skin.bodySize}px" line-height="1.6" font-weight="400" font-family="${bodyFont}"></mj-text>
+      <mj-button ${attrs(buttonBase)} font-family="${headingFont}" mj-class="btn"></mj-button>
+      <mj-image border-radius="${skin.radii.img}px" padding="${skin.img?.padding ?? 0}" width="${(skin.img?.width ?? 520)}px"></mj-image>
       <mj-divider border-color="${skin.palette.border}" border-width="${skin.border.width}px" border-style="${skin.border.style}"></mj-divider>
-      <mj-class name="h1" font-family="${H?.name || "Inter"}, ${(H?.isSerif ? serifFallback : sansFallback)}" font-weight="${skin.h1.weight}" font-size="${skin.h1.size}px" line-height="1.2" text-transform="${skin.typography?.capsHeadings ? "uppercase" : "none"}" letter-spacing="${(skin.typography?.h1LS ?? 0)}em" color="${skin.palette.text}"></mj-class>
-      <mj-class name="h2" font-family="${H?.name || "Inter"}, ${(H?.isSerif ? serifFallback : sansFallback)}" font-weight="${skin.h2.weight}" font-size="${skin.h2.size}px" line-height="1.3" text-transform="${skin.typography?.capsHeadings ? "uppercase" : "none"}" letter-spacing="${(skin.typography?.h2LS ?? 0)}em" color="${skin.palette.text}"></mj-class>
-      <mj-class name="h3" font-family="${H?.name || "Inter"}, ${(H?.isSerif ? serifFallback : sansFallback)}" font-weight="${skin.h3?.weight || 600}" font-size="${skin.h3?.size || Math.round(skin.h2.size * 0.85)}px" line-height="1.4" text-transform="${skin.typography?.capsHeadings ? "uppercase" : "none"}" letter-spacing="${(skin.typography?.h3LS ?? 0)}em" color="${skin.palette.text}"></mj-class>
+      <mj-class name="h1" font-family="${headingFont}" font-weight="${skin.h1.weight}" font-size="${skin.h1.size}px" line-height="1.2" text-transform="${skin.typography?.capsHeadings ? "uppercase" : "none"}" letter-spacing="${(skin.typography?.h1LS ?? 0)}em" color="${skin.palette.text}"></mj-class>
+      <mj-class name="h2" font-family="${headingFont}" font-weight="${skin.h2.weight}" font-size="${skin.h2.size}px" line-height="1.3" text-transform="${skin.typography?.capsHeadings ? "uppercase" : "none"}" letter-spacing="${(skin.typography?.h2LS ?? 0)}em" color="${skin.palette.text}"></mj-class>
+      <mj-class name="h3" font-family="${headingFont}" font-weight="${skin.h3?.weight || 600}" font-size="${skin.h3?.size || Math.round(skin.h2.size * 0.85)}px" line-height="1.4" text-transform="${skin.typography?.capsHeadings ? "uppercase" : "none"}" letter-spacing="${(skin.typography?.h3LS ?? 0)}em" color="${skin.palette.text}"></mj-class>
+      <mj-class name="body" font-family="${bodyFont}" font-weight="400" font-size="${skin.bodySize}px" line-height="1.6" color="${skin.palette.text}"></mj-class>
 
-      <mj-class name="title" font-family="${H?.name || "Inter"}, ${(H?.isSerif ? serifFallback : sansFallback)}" font-weight="900" font-size="${Math.max(36, skin.h1.size)}px" line-height="1.2" color="${skin.palette.text}" letter-spacing="${skin.id === 'gradient_glow' ? '-0.02em' : '0em'}"></mj-class>
-      <mj-class name="product-title" font-family="${H?.name || "Inter"}, ${(H?.isSerif ? serifFallback : sansFallback)}" font-weight="900" font-size="${Math.max(20, Math.round(skin.h2.size * 0.9))}px" line-height="1.25" color="${skin.palette.text}" letter-spacing="${skin.id === 'gradient_glow' ? '-0.01em' : '0em'}"></mj-class>
+      <mj-class name="title" font-family="${headingFont}" font-weight="900" font-size="${Math.max(36, skin.h1.size)}px" line-height="1.2" color="${skin.palette.text}" letter-spacing="${skin.id === 'gradient_glow' ? '-0.02em' : '0em'}"></mj-class>
+      <mj-class name="product-title" font-family="${headingFont}" font-weight="900" font-size="${Math.max(20, Math.round(skin.h2.size * 0.9))}px" line-height="1.25" color="${skin.palette.text}" letter-spacing="${skin.id === 'gradient_glow' ? '-0.01em' : '0em'}"></mj-class>
+      <mj-class name="product-desc" font-family="${bodyFont}" font-weight="400" font-size="${Math.max(14, Math.round(skin.bodySize * 0.85))}px" line-height="1.5" color="${skin.palette.muted}"></mj-class>
+      <mj-class name="product-price" font-family="${bodyFont}" font-weight="600" font-size="${Math.max(16, Math.round(skin.bodySize * 1.1))}px" line-height="1.4" color="${skin.palette.text}"></mj-class>
       <mj-class name="no-pad" padding="0"></mj-class>
 
       <mj-class name="muted" color="${skin.palette.muted}"></mj-class>
       <mj-class name="btn"></mj-class>
       <mj-class name="btn-secondary"></mj-class>
-      <mj-class name="img" padding="0" border-radius="${skin.radii.img}px"></mj-class>
+      <mj-class name="img" padding="${skin.img?.padding ?? 0}" border-radius="${skin.radii.img}px"></mj-class>
       <mj-class name="card" ${attrs(cardAttrs)}></mj-class>
     </mj-attributes>
     <mj-style>${css}</mj-style>
@@ -192,6 +237,10 @@ export function applyTheme(mjml, payloadBrand, skinIdRaw) {
     s = s.replace(/<mj-button\b[^>]*>/gi, (tag) => {
       let t = tag;
       if (!/mj-class=/i.test(t)) t = t.replace(/<mj-button/i, `<mj-button mj-class="btn"`);
+      
+      // Always ensure border radius is applied from skin
+      t = addOrReplaceAttr(t, "border-radius", `${skin.radii.btn}px`);
+      
       if (skin.buttons.variant === "filled" || skin.buttons.variant === "gradient") {
         const brandContrast = contrast(bg, skin.palette.brand);
         const brandAltContrast = contrast(bg, skin.palette.brandAlt);

@@ -1,7 +1,7 @@
 // src/utils/templateCache.js
 
 const templateCache = new Map();
-const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+const CACHE_TTL = 0; // Disable caching for debugging
 
 export function getCachedTemplate(key) {
   const cached = templateCache.get(key);
