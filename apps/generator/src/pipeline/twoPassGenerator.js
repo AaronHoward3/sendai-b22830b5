@@ -295,6 +295,7 @@ export async function runTwoPassGeneration({
   
   if ((emailType === "Promotion") && Array.isArray(brandData?.products)) {
     m.start("productSection");
+    console.log("🔍 [DEBUG] Starting product section generation...");
     const productHtml = await buildProductSectionWithFallbacks({
       emailType, products: brandData.products, designAesthetic, seed: layout.layoutId, analysis: layout.analysis
     });
@@ -303,10 +304,18 @@ export async function runTwoPassGeneration({
       productHtmlLength: productHtml?.length || 0,
       productHtmlPreview: productHtml?.substring(0, 200) || 'EMPTY'
     });
-    baseMjml = injectProductSectionIntoMjml(baseMjml, productHtml);
+    
+    if (productHtml) {
+      console.log("🔍 [DEBUG] Injecting product section into MJML");
+      baseMjml = injectProductSectionIntoMjml(baseMjml, productHtml);
+      console.log("🔍 [DEBUG] Product section injected successfully");
+    } else {
+      console.log("🔍 [DEBUG] No product HTML generated, removing PRODUCT_SECTION token");
+      baseMjml = baseMjml.replace(/\[\[\s*PRODUCT_SECTION\s*\]\]/gi, "");
+    }
     m.end("productSection");
   } else {
-    console.log("🔍 [DEBUG] Removing PRODUCT_SECTION token");
+    console.log("🔍 [DEBUG] Removing PRODUCT_SECTION token - not a promotion or no products");
     baseMjml = baseMjml.replace(/\[\[\s*PRODUCT_SECTION\s*\]\]/gi, "");
   }
 

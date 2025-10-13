@@ -48,29 +48,88 @@ function mix(a,b,t=0.5){
   return `#${to2(r)}${to2(g)}${to2(b_)}`;
 }
 
+// Extract font name from Google Fonts URL
+export function extractFontNameFromGoogleUrl(url) {
+  const match = url.match(/family=([^&:]+)/);
+  if (match) {
+    return match[1].replace(/\+/g, ' ').trim();
+  }
+  return null;
+}
+
 // Map a brand font to an email-safe family + optional Google Font hrefs
-export function mapFontToEmailSafe(name = "") {
+export function mapFontToEmailSafe(name = "", googleFontUrls = []) {
   const n = String(name || "").toLowerCase();
 
-  // quick known mappings
-  const MAP = [
-    { match: /inter|system-ui|ui-sans|segoe|roboto|helvetica|arial/, name: "Inter", hrefs: [
-      "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap"
-    ], isSerif: false },
-    { match: /poppins|montserrat|manrope|nunito|dm sans|plus jakarta/, name: "Poppins", hrefs: [
-      "https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;800;900&display=swap"
-    ], isSerif: false },
-    { match: /circular|gt america|proxima|sohne|graphik|sf pro|avenir|gotham|futura/, name: "Inter", hrefs: [
-      "https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap"
-    ], isSerif: false },
-    { match: /playfair|cormorant|garamond|bodoni|didot|times|georgia|serif/, name: "Playfair Display", hrefs: [
-      "https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700;800;900&display=swap"
-    ], isSerif: true },
-    { match: /quicksand|rubik|mulish|work sans|urbanist/, name: "Quicksand", hrefs: [
-      "https://fonts.googleapis.com/css2?family=Quicksand:wght@600;700&display=swap"
-    ], isSerif: false },
-  ];
-  for (const m of MAP) if (m.match.test(n)) return { name: m.name, hrefs: m.hrefs, isSerif: m.isSerif };
+  // First, try to find matching Google Font URL
+  for (const url of googleFontUrls) {
+    const fontName = extractFontNameFromGoogleUrl(url);
+    if (fontName && n.includes(fontName.toLowerCase().replace(/\s+/g, ''))) {
+      return {
+        name: fontName,
+        hrefs: [url],
+        isSerif: /serif|display|playfair|cormorant|garamond|bodoni|didot|times|georgia/i.test(fontName)
+      };
+    }
+  }
+
+  // If we have a specific font name that's not a generic system font, preserve it
+  if (name && name.length > 2 && 
+      !n.includes('serif') && 
+      !n.includes('sans-serif') && 
+      !n.includes('monospace') &&
+      !n.includes('inherit') &&
+      !n.includes('initial') &&
+      !n.includes('unset') &&
+      n !== 'system-ui' &&
+      n !== 'ui-sans-serif' &&
+      n !== 'ui-serif' &&
+      n !== 'ui-monospace') {
+    
+    // Check if it's a known Google Font that we can map
+    const MAP = [
+      { match: /inter|system-ui|ui-sans|segoe|roboto|helvetica|arial/, name: "Inter", hrefs: [
+        "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap"
+      ], isSerif: false },
+      { match: /poppins|montserrat|manrope|nunito|dm sans|plus jakarta/, name: "Poppins", hrefs: [
+        "https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;800;900&display=swap"
+      ], isSerif: false },
+      { match: /circular|gt america|proxima|sohne|graphik|sf pro|avenir|gotham|futura/, name: "Inter", hrefs: [
+        "https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap"
+      ], isSerif: false },
+      { match: /playfair|cormorant|garamond|bodoni|didot|times|georgia|serif/, name: "Playfair Display", hrefs: [
+        "https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700;800;900&display=swap"
+      ], isSerif: true },
+      { match: /quicksand|rubik|mulish|work sans|urbanist/, name: "Quicksand", hrefs: [
+        "https://fonts.googleapis.com/css2?family=Quicksand:wght@600;700&display=swap"
+      ], isSerif: false },
+    ];
+    
+    for (const m of MAP) {
+      if (m.match.test(n)) {
+        return { name: m.name, hrefs: m.hrefs, isSerif: m.isSerif };
+      }
+    }
+    
+    // If it's a custom font (like "Blunt Wide"), preserve the name but use system fallbacks
+    return {
+      name: name, // Keep the original font name
+      hrefs: [], // No Google Font URL available
+      isSerif: /serif|display|playfair|cormorant|garamond|bodoni|didot|times|georgia/i.test(name)
+    };
+  }
+
+  // If we have Google Font URLs but no match, try to use the first one
+  if (googleFontUrls.length > 0) {
+    const fontName = extractFontNameFromGoogleUrl(googleFontUrls[0]);
+    if (fontName) {
+      return {
+        name: fontName,
+        hrefs: [googleFontUrls[0]],
+        isSerif: /serif|display|playfair|cormorant|garamond|bodoni|didot|times|georgia/i.test(fontName)
+      };
+    }
+  }
 
   // default to Inter stack
   return {
@@ -210,15 +269,21 @@ function normalizePalette(p) {
   return { brand, brandAlt, pageBg, sectionBg, text, muted, border };
 }
 
-function normalizeFonts(f) {
-  // try to map provided names to email-safe stacks
-  const h = mapFontToEmailSafe(f?.heading?.name || f?.heading || "");
-  const b = mapFontToEmailSafe(f?.body?.name || f?.body || "");
+function normalizeFonts(f, googleFontUrls = []) {
+  console.log("🔍 [DEBUG] normalizeFonts input:", f);
+  console.log("🔍 [DEBUG] normalizeFonts googleFontUrls:", googleFontUrls);
+  
+  // try to map provided names to email-safe stacks, using Google Font URLs if available
+  const h = mapFontToEmailSafe(f?.heading?.name || f?.heading || "", googleFontUrls);
+  const b = mapFontToEmailSafe(f?.body?.name || f?.body || "", googleFontUrls);
+  
+  console.log("🔍 [DEBUG] normalizeFonts mapped fonts:", { h, b });
+  
   // prefer provided hrefs if appear to be google fonts
   const isGF = (href) => /fonts\.googleapis\.com/i.test(href);
   const safeHrefs = (arr=[]) => arr.filter(isGF).slice(0, 3);
 
-  return {
+  const result = {
     heading: {
       name: f?.heading?.name || h.name,
       isSerif: !!(f?.heading?.isSerif ?? h.isSerif),
@@ -230,6 +295,9 @@ function normalizeFonts(f) {
       hrefs: safeHrefs(f?.body?.hrefs || []).length ? safeHrefs(f?.body?.hrefs || []) : b.hrefs
     }
   };
+  
+  console.log("🔍 [DEBUG] normalizeFonts result:", result);
+  return result;
 }
 
 function normalizeShape({ radii, buttons, spacing, shadows }) {
@@ -252,6 +320,19 @@ function normalizeShape({ radii, buttons, spacing, shadows }) {
 export async function buildBrandStyleManifest(brandPayload = {}, siteUrl = "") {
   // scrape hints
   const hints = await scrapeSiteHints(siteUrl || brandPayload?.store_url || brandPayload?.domain || "");
+  
+  // Enhanced font detection using CSS scraping
+  const { enhanceFontDetectionWithCss } = await import('./enhancedCssScraper.js');
+  const enhancedHints = await enhanceFontDetectionWithCss(
+    siteUrl || brandPayload?.store_url || brandPayload?.domain || "",
+    hints
+  );
+  
+  // Merge enhanced hints with existing hints
+  const finalHints = {
+    ...hints,
+    ...enhancedHints
+  };
 
   // naive palette guess from payload + hints
   const p = {
@@ -261,34 +342,41 @@ export async function buildBrandStyleManifest(brandPayload = {}, siteUrl = "") {
       brandPayload?.link_color,
       brandPayload?.linkColor,
       (brandPayload?.colors || [])[0],
-      (hints.colorHexes || [])[0]
+      (finalHints.colorHexes || [])[0]
     ),
     brandAlt:
       firstHex(
         brandPayload?.link_color,
         brandPayload?.linkColor,
         (brandPayload?.colors || [])[1],
-        (hints.colorHexes || [])[1]
+        (finalHints.colorHexes || [])[1]
       ) || null,
     pageBg: firstHex(brandPayload?.page_bg, "#ffffff"),
     sectionBg: firstHex(brandPayload?.section_bg, brandPayload?.page_bg, "#ffffff"),
     text: null, muted: null, border: null
   };
 
+  console.log("🔍 [DEBUG] finalHints:", finalHints);
+  console.log("🔍 [DEBUG] finalHints.headingFontGuess:", finalHints.headingFontGuess);
+  console.log("🔍 [DEBUG] finalHints.bodyFontGuess:", finalHints.bodyFontGuess);
+  
+  // Prioritize CSS scraping results over hardcoded brand payload fonts
   const fontsGuess = {
-    heading: brandPayload?.fonts?.heading || {
-      name: hints.headingFontGuess || brandPayload?.heading_font || "Inter"
+    heading: {
+      name: finalHints.headingFontGuess || "Inter"
     },
-    body: brandPayload?.fonts?.body || {
-      name: hints.bodyFontGuess || brandPayload?.body_font || "Inter"
+    body: {
+      name: finalHints.bodyFontGuess || "Inter"
     }
   };
+  
+  console.log("🔍 [DEBUG] fontsGuess:", fontsGuess);
 
   // call LLM to reconcile (if key set)
   const llm = await llmStyleCompletion(
     {
-      colors: hints.colorHexes,
-      radiusAvg: hints.radiusAvg,
+      colors: finalHints.colorHexes,
+      radiusAvg: finalHints.radiusAvg,
       headingFontGuess: fontsGuess.heading,
       bodyFontGuess: fontsGuess.body
     },
@@ -303,7 +391,7 @@ export async function buildBrandStyleManifest(brandPayload = {}, siteUrl = "") {
 
   // compose final manifest
   const palette = normalizePalette(llm?.palette || p);
-  const fonts = normalizeFonts(llm?.fonts || fontsGuess);
+  const fonts = normalizeFonts(llm?.fonts || fontsGuess, finalHints.fontUrls || []);
   const shape = normalizeShape({
     radii: llm?.radii || (hints.radiusAvg ? { card: hints.radiusAvg, img: Math.max(4, Math.round(hints.radiusAvg*0.75)) } : {}),
     buttons: llm?.buttons || {},

@@ -14,6 +14,7 @@
       align="left"
       padding="0 0 10px 0"
       line-height="1.2"
+      mj-class="h2"
     >
       Product Name
     </mj-text>

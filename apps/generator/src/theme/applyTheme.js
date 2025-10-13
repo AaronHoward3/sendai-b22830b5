@@ -82,7 +82,8 @@ function buildHead(skin) {
     (skin.shadow?.card ? `.card{box-shadow:${skin.shadow.card};transition:box-shadow 0.2s ease;}` : "") +
     `.card:hover{box-shadow:${skin.shadow?.card ? skin.shadow.card.replace('0.08', '0.12').replace('0.04', '0.08') : '0 4px 20px rgba(0,0,0,0.1)'};}` +
     `.hero-title{font-family:${H?.name || "Inter"}, ${(H?.isSerif ? serifFallback : sansFallback)} !important;}` +
-    `.hero-subtitle{font-family:${B?.name || "Inter"}, ${(B?.isSerif ? serifFallback : sansFallback)} !important;}`;
+    `.hero-subtitle{font-family:${B?.name || "Inter"}, ${(B?.isSerif ? serifFallback : sansFallback)} !important;}` +
+    `.btn a{font-family:${H?.name || "Inter"}, ${(H?.isSerif ? serifFallback : sansFallback)} !important;}`;
 
   const cardAttrs = {
     "background-color": skin.palette.cardBg,
@@ -97,11 +98,12 @@ function buildHead(skin) {
     <mj-attributes>
       <mj-all font-family="${B?.name || "Inter"}, ${(B?.isSerif ? serifFallback : sansFallback)}"></mj-all>
       <mj-text color="${skin.palette.text}" font-size="${skin.bodySize}px" line-height="1.6" font-weight="400"></mj-text>
-      <mj-button ${attrs(buttonBase)} font-family="${B?.name || "Inter"}, ${(B?.isSerif ? serifFallback : sansFallback)}" mj-class="btn"></mj-button>
+      <mj-button ${attrs(buttonBase)} font-family="${H?.name || "Inter"}, ${(H?.isSerif ? serifFallback : sansFallback)}" mj-class="btn"></mj-button>
       <mj-image border-radius="${skin.radii.img}px" padding="0" width="${(skin.img?.width ?? 520)}px"></mj-image>
       <mj-divider border-color="${skin.palette.border}" border-width="${skin.border.width}px" border-style="${skin.border.style}"></mj-divider>
       <mj-class name="h1" font-family="${H?.name || "Inter"}, ${(H?.isSerif ? serifFallback : sansFallback)}" font-weight="${skin.h1.weight}" font-size="${skin.h1.size}px" line-height="1.2" text-transform="${skin.typography?.capsHeadings ? "uppercase" : "none"}" letter-spacing="${(skin.typography?.h1LS ?? 0)}em" color="${skin.palette.text}"></mj-class>
       <mj-class name="h2" font-family="${H?.name || "Inter"}, ${(H?.isSerif ? serifFallback : sansFallback)}" font-weight="${skin.h2.weight}" font-size="${skin.h2.size}px" line-height="1.3" text-transform="${skin.typography?.capsHeadings ? "uppercase" : "none"}" letter-spacing="${(skin.typography?.h2LS ?? 0)}em" color="${skin.palette.text}"></mj-class>
+      <mj-class name="h3" font-family="${H?.name || "Inter"}, ${(H?.isSerif ? serifFallback : sansFallback)}" font-weight="${skin.h3?.weight || 600}" font-size="${skin.h3?.size || Math.round(skin.h2.size * 0.85)}px" line-height="1.4" text-transform="${skin.typography?.capsHeadings ? "uppercase" : "none"}" letter-spacing="${(skin.typography?.h3LS ?? 0)}em" color="${skin.palette.text}"></mj-class>
 
       <mj-class name="title" font-family="${H?.name || "Inter"}, ${(H?.isSerif ? serifFallback : sansFallback)}" font-weight="900" font-size="${Math.max(36, skin.h1.size)}px" line-height="1.2" color="${skin.palette.text}" letter-spacing="${skin.id === 'gradient_glow' ? '-0.02em' : '0em'}"></mj-class>
       <mj-class name="product-title" font-family="${H?.name || "Inter"}, ${(H?.isSerif ? serifFallback : sansFallback)}" font-weight="900" font-size="${Math.max(20, Math.round(skin.h2.size * 0.9))}px" line-height="1.25" color="${skin.palette.text}" letter-spacing="${skin.id === 'gradient_glow' ? '-0.01em' : '0em'}"></mj-class>

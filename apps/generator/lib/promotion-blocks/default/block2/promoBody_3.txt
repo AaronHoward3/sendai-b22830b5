@@ -4,8 +4,8 @@
     <mj-text font-size="14px" color="#555555" align="center" padding="10px 20px 20px">
       Featured Product Name
     </mj-text>
-    <mj-text font-size="35px" font-weight="bold" color="#111111" align="center" padding="0 20px 12px" line-height="1.4">
-      Here’s What’s Inside
+    <mj-text font-size="35px" font-weight="bold" color="#111111" align="center" padding="0 20px 12px" line-height="1.4" mj-class="h1">
+      Here's What's Inside
     </mj-text>
     <mj-text font-size="16px" color="#555555" align="center" padding="0 20px 20px" line-height="1.5">
       Enjoy up to 30% off on select items in our summer collection. Whether you're looking for lightweight essentials or bold statement pieces, this offer has something for everyone.

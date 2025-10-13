@@ -7,7 +7,7 @@
   height="400px"
 >
   <mj-column background-color="rgba(0,0,0,0.4)" padding="40px" vertical-align="middle">
-    <mj-text align="center" color="#ffffff" font-size="40px" font-weight="bold">
+    <mj-text align="center" color="#ffffff" font-size="40px" font-weight="bold" mj-class="h1">
       The Sale Starts Now
     </mj-text>
     <mj-text align="center" color="#ffffff" font-size="16px" padding="10px 25px">

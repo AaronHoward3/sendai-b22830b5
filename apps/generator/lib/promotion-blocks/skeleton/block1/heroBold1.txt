@@ -12,6 +12,7 @@
     align="center"
     font-size="36px"
     padding-bottom="10px"
+    mj-class="h1"
     >{{hero_title}}</mj-text>
     <mj-text
     align="center"

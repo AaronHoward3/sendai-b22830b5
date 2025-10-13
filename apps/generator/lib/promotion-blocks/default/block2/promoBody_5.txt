@@ -1,6 +1,6 @@
 <mj-section background-color="#ffffff" padding="40px 0">
   <mj-column>
-    <mj-text font-size="38px" font-weight="bold" color="#111111" align="center" padding="0 20px 12px" line-height="1.4">
+    <mj-text font-size="38px" font-weight="bold" color="#111111" align="center" padding="0 20px 12px" line-height="1.4" mj-class="h1">
       Save Big on Outdoor Gear
     </mj-text>
     <mj-text font-size="16px" color="#555555" align="center" padding="0 20px 20px" line-height="1.5">

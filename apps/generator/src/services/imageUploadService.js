@@ -4,8 +4,12 @@
 //   import { uploadImage } from "./imageUploadService.js";
 //   const url = await uploadImage(imageBuffer, `hero-${Date.now()}.png`, storeSlug);
 
+import dotenv from "dotenv";
 import { createClient } from "@supabase/supabase-js";
 import crypto from "node:crypto";
+
+// Load environment variables
+dotenv.config();
 
 const BUCKET = process.env.SUPABASE_IMAGES_BUCKET || "image-hosting-braanddev";
 const DEFAULT_SIGN_SECONDS = 60 * 60 * 24 * 365; // 1 year

@@ -188,6 +188,7 @@ export function renderProductSection(emailType, aesthetic, products, seed = "def
   let baseRoot = root1;
   let counts = counts1;
   console.log(`🔍 [DEBUG] Skeleton root: ${root1}, counts: ${counts1}`);
+  console.log(`🔍 [DEBUG] Skeleton root exists:`, root1 ? fs.existsSync(root1) : false);
 
   // 2) Fallback: legacy per-aesthetic location
   if (!counts.length) {
@@ -196,6 +197,7 @@ export function renderProductSection(emailType, aesthetic, products, seed = "def
     baseRoot = root2;
     counts = counts2;
     console.log(`🔍 [DEBUG] Legacy root: ${root2}, counts: ${counts2}`);
+    console.log(`🔍 [DEBUG] Legacy root exists:`, root2 ? fs.existsSync(root2) : false);
   }
 
   if (!baseRoot || !counts.length) {

@@ -85,7 +85,7 @@ function buildSocialElements(brandData) {
 function replaceBasicPlaceholders(footerTemplate, brandData, aesthetic = "minimal_clean") {
   // Build brand tokens and skin for full theming
   const tokens = buildBrandTokens(brandData);
-  const skin = makeSkin(tokens, aesthetic);
+  const skin = makeSkin(tokens, aesthetic, brandData._styleManifest);
   
   return footerTemplate
     .replace(/\[\[logo_url\]\]/g, brandData.logo_url || '')

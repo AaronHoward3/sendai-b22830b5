@@ -39,7 +39,7 @@ function cleanBrandUrls(brandData) {
 function replaceHeaderPlaceholders(headerTemplate, brandData, aesthetic = "minimal_clean") {
   // Build brand tokens and skin for full theming
   const tokens = buildBrandTokens(brandData);
-  const skin = makeSkin(tokens, aesthetic);
+  const skin = makeSkin(tokens, aesthetic, brandData._styleManifest);
   
   // Determine if we should show logo or text
   const hasLogo = brandData.logo_url || brandData.logo;

@@ -119,6 +119,17 @@ export async function generateEmailsFromEmailController(req, res) {
         : brandData.logo_url || "";
 
     // Generate hero and email content in parallel for faster processing
+    // Build brand style manifest FIRST, before starting any promises
+    try {
+      const siteUrl = brandData?.store_url || brandData?.domain || brandData?.website || "";
+      const manifest = await buildBrandStyleManifest(brandData, siteUrl);
+      // attach for tokens/skins to consume
+      brandData._styleManifest = manifest;
+      console.log("✅ Brand style manifest created with fonts:", manifest?.fonts?.heading?.name, manifest?.fonts?.body?.name);
+    } catch (e) {
+      console.warn("[GEN] Brand style manifest failed:", e.message);
+    }
+
     if (wantsCustomHero) send("hero:start", {});
     send("refine:start", {});
     
@@ -133,16 +144,6 @@ export async function generateEmailsFromEmailController(req, res) {
           return brandData;
         })
       : Promise.resolve(brandData);
-
-      try {
-        const siteUrl = brandData?.store_url || brandData?.domain || brandData?.website || "";
-        const manifest = await buildBrandStyleManifest(brandData, siteUrl);
-        // attach for tokens/skins to consume
-        brandData._styleManifest = manifest;
-      } catch (e) {
-        console.warn("[GEN] Brand style manifest failed:", e.message);
-      }
-       
 
     const emailPromise = runTwoPassGeneration({
       emailType,
@@ -163,6 +164,13 @@ export async function generateEmailsFromEmailController(req, res) {
     // Wait for both to complete
     const [finalBrandData, { layout, refinedMjml, styleUsed }] = await Promise.all([ heroPromise, emailPromise ]);
     console.log("STYLE PALETTE USED:", styleUsed?.palette);
+    
+    // Ensure finalBrandData has the style manifest
+    if (!finalBrandData._styleManifest && brandData._styleManifest) {
+      finalBrandData._styleManifest = brandData._styleManifest;
+      console.log("✅ Restored _styleManifest to finalBrandData");
+    }
+    
     saveMJML(jobId, 0, refinedMjml);
 
     // Hero replacement / header and footer stitching
@@ -173,7 +181,9 @@ export async function generateEmailsFromEmailController(req, res) {
       hasStoreName: !!finalBrandData.store_name,
       hasStoreUrl: !!finalBrandData.store_url,
       hasProducts: !!finalBrandData.products,
-      productsLength: finalBrandData.products?.length || 0
+      productsLength: finalBrandData.products?.length || 0,
+      hasStyleManifest: !!finalBrandData._styleManifest,
+      styleManifestFonts: finalBrandData._styleManifest?.fonts
     });
     
     const headerMjml = await processHeaderTemplate(finalBrandData);
@@ -189,7 +199,11 @@ export async function generateEmailsFromEmailController(req, res) {
     // Build font head using brand fonts from style manifest
     const buildFontHead = (brandData) => {
       const manifest = brandData?._styleManifest;
+      console.log("🔍 [DEBUG] buildFontHead - brandData has _styleManifest:", !!manifest);
+      console.log("🔍 [DEBUG] buildFontHead - manifest fonts:", manifest?.fonts);
+      
       if (!manifest?.fonts) {
+        console.log("❌ [DEBUG] buildFontHead - No brand fonts available, using Inter fallback");
         // Fallback to Inter if no brand fonts available
         return `
           <mj-head>
@@ -209,6 +223,8 @@ export async function generateEmailsFromEmailController(req, res) {
       const bodyFont = body?.name || "Inter";
       const headingFallback = heading?.isSerif ? serifFallback : sansFallback;
       const bodyFallback = body?.isSerif ? serifFallback : sansFallback;
+
+      console.log("✅ [DEBUG] buildFontHead - Using brand fonts:", { headingFont, bodyFont });
 
       return `
         <mj-head>
@@ -236,11 +252,12 @@ export async function generateEmailsFromEmailController(req, res) {
         mjmlContainsPlaceholder: updated.includes("CUSTOMHEROIMAGE.COM")
       });
       
+      // More flexible condition: if we have a valid hero image URL and the MJML contains the placeholder, replace it
       if (
-        finalBrandData.customHeroImage === true &&
         finalBrandData.hero_image_url &&
         finalBrandData.hero_image_url.includes("http") &&
-        !finalBrandData.hero_image_url.includes("CUSTOMHEROIMAGE")
+        !finalBrandData.hero_image_url.includes("CUSTOMHEROIMAGE") &&
+        updated.includes("CUSTOMHEROIMAGE.COM")
       ) {
         console.log("🔍 [DEBUG] Replacing CUSTOMHEROIMAGE with:", finalBrandData.hero_image_url);
         // More flexible regex to handle additional attributes after src

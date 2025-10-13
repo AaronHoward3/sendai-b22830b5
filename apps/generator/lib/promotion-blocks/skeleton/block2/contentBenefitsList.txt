@@ -2,7 +2,7 @@
 <mj-wrapper padding="0px" css-class="content-section">
   <mj-section padding="60px 20px" background-color="#ffffff">
     <mj-column>
-      <mj-text align="center" font-size="32px" font-weight="700" padding-bottom="40px">{{benefits_title}}</mj-text>
+      <mj-text align="center" font-size="32px" font-weight="700" padding-bottom="40px" mj-class="h2">{{benefits_title}}</mj-text>
     </mj-column>
   </mj-section>
   <mj-section padding="0px 20px 60px" background-color="#ffffff">

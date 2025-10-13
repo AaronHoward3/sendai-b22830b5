@@ -1,7 +1,7 @@
 <mj-section>
   <mj-column>
     <mj-image src="https://CUSTOMHEROIMAGE.COM" alt="Main Promo" padding="0px"></mj-image>
-    <mj-text font-size="22px" align="center" font-weight="bold" padding-top="20px">
+    <mj-text font-size="22px" align="center" font-weight="bold" padding-top="20px" mj-class="h1">
       Fresh Looks Just Landed
     </mj-text>
     <mj-text align="center" font-size="16px" padding="10px 20px">

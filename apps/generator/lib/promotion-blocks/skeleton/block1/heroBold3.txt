@@ -3,7 +3,7 @@
   <!-- Text Section First -->
   <mj-section padding="40px 20px">
     <mj-column>
-      <mj-text align="center" font-size="34px" padding-bottom="10px">{{hero_title}}</mj-text>
+      <mj-text align="center" font-size="34px" padding-bottom="10px" mj-class="h1">{{hero_title}}</mj-text>
       <mj-text align="center" font-size="16px">{{hero_subtitle}}</mj-text>
     </mj-column>
   </mj-section>

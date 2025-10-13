@@ -63,7 +63,7 @@ function cleanBrandUrls(brandData) {
 function replaceHeaderFooterPlaceholders(template, brandData, aesthetic = "minimal_clean") {
   // Build brand tokens and skin for full theming
   const tokens = buildBrandTokens(brandData);
-  const skin = makeSkin(tokens, aesthetic);
+  const skin = makeSkin(tokens, aesthetic, brandData._styleManifest);
   
   // Determine brand information
   const hasLogo = brandData.logo_url || brandData.logo;
