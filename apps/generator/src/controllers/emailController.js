@@ -118,13 +118,23 @@ export async function generateEmailsFromEmailController(req, res) {
         ? brandData.banner_url
         : brandData.logo_url || "";
 
-    // Generate hero and email content in parallel for faster processing
     // Build brand style manifest FIRST, before starting any promises
+    let recommendedStyle = resolvedStyleId; // Default to user-selected or fallback style
     try {
       const siteUrl = brandData?.store_url || brandData?.domain || brandData?.website || "";
       const manifest = await buildBrandStyleManifest(brandData, siteUrl);
       // attach for tokens/skins to consume
       brandData._styleManifest = manifest;
+      
+      // Use vision-recommended style for promotions if available and confidence is high enough
+      if (emailType === "Promotion" && manifest?.recommendedPromotionStyle?.style && manifest?.recommendedPromotionStyle?.confidence > 0.6) {
+        recommendedStyle = manifest.recommendedPromotionStyle.style;
+        console.log(`🎨 Using vision-recommended promotion style: ${recommendedStyle} (confidence: ${manifest.recommendedPromotionStyle.confidence})`);
+        console.log(`📝 Reasoning: ${manifest.recommendedPromotionStyle.reasoning}`);
+      } else if (emailType === "Promotion" && manifest?.recommendedPromotionStyle?.style) {
+        console.log(`⚠️  Vision recommended ${manifest.recommendedPromotionStyle.style} but confidence too low (${manifest.recommendedPromotionStyle.confidence}), using user selection: ${resolvedStyleId}`);
+      }
+      
       console.log("✅ Brand style manifest created with fonts:", manifest?.fonts?.heading?.name, manifest?.fonts?.body?.name);
     } catch (e) {
       console.warn("[GEN] Brand style manifest failed:", e.message);
@@ -147,8 +157,8 @@ export async function generateEmailsFromEmailController(req, res) {
 
     const emailPromise = runTwoPassGeneration({
       emailType,
-      designAesthetic: resolvedStyleId,
-      styleId: resolvedStyleId,
+      designAesthetic: recommendedStyle,
+      styleId: recommendedStyle,
       brandData,
       userContext,
       wantsMjml,

@@ -58,12 +58,8 @@ const TONES: { value: Tone; label: string }[] = [
 const DESIGN_STYLES: { value: DesignAesthetic; label: string; blurb?: string }[] = [
   { value: 'minimal_clean',    label: 'Minimal & Clean',    blurb: 'Whitespace, simple typography' },
   { value: 'bold_contrasting', label: 'Bold & Contrasting', blurb: 'High contrast, punchy CTAs' },
-  { value: 'magazine_serif',   label: 'Elegant Serif',      blurb: 'Editorial, premium feel' },
+  { value: 'magazine_serif',   label: 'Magazine Serif',     blurb: 'Editorial, premium feel' },
   { value: 'warm_editorial',   label: 'Warm Editorial',     blurb: 'Serif headlines, paper texture' },
-  { value: 'neo_brutalist',    label: 'Neo Brutalist',      blurb: 'Chunky type, stark blocks' },
-  { value: 'gradient_glow',    label: 'Gradient Glow',      blurb: 'Dark canvas, glowing gradients' },
-  { value: 'pastel_soft',      label: 'Pastel Soft',        blurb: 'Soft colors, friendly shapes' },
-  { value: 'luxe_mono',        label: 'Luxe Mono',          blurb: 'Monochrome, refined' },
 ];
 
 function normalizeDomain(input: string) {
@@ -166,10 +162,6 @@ const STYLE_TRAITS: Record<DesignAesthetic, string[]> = {
   minimal_clean: ['clean background', 'soft light', 'plenty of whitespace'],
   magazine_serif: ['editorial feel', 'subtle film grain', 'artful composition'],
   warm_editorial: ['warm light', 'paper texture', 'cozy editorial vibe'],
-  neo_brutalist: ['hard edges', 'flat planes', 'graphic balance'],
-  gradient_glow: ['glowing gradients', 'dark canvas', 'atmospheric depth'],
-  pastel_soft: ['soft tones', 'gentle lighting', 'rounded shapes'],
-  luxe_mono: ['monochrome palette', 'refined minimalism', 'crisp contrast'],
 };
 
 const OCCASION_VISUALS: Record<string, { palette: string[]; motifs: string[] }> = {
@@ -671,10 +663,6 @@ export const Step2EmailType: React.FC<Step2EmailTypeProps> = ({formData, updateF
                     case 'bold_contrasting': return <Contrast className="h-4 w-4" />;
                     case 'magazine_serif': return <BookOpen className="h-4 w-4" />;
                     case 'warm_editorial': return <Coffee className="h-4 w-4" />;
-                    case 'neo_brutalist': return <Square className="h-4 w-4" />;
-                    case 'gradient_glow': return <Sun className="h-4 w-4" />;
-                    case 'pastel_soft': return <Palette className="h-4 w-4" />;
-                    case 'luxe_mono': return <Layers className="h-4 w-4" />;
                     default: return <Palette className="h-4 w-4" />;
                   }
                 })()}
@@ -691,11 +679,7 @@ export const Step2EmailType: React.FC<Step2EmailTypeProps> = ({formData, updateF
                     case 'bold_contrasting': return <Contrast className="h-4 w-4" />;
                     case 'magazine_serif': return <BookOpen className="h-4 w-4" />;
                     case 'warm_editorial': return <Coffee className="h-4 w-4" />;
-                    case 'neo_brutalist': return <Square className="h-4 w-4" />;
-                    case 'gradient_glow': return <Sun className="h-4 w-4" />;
-                    case 'pastel_soft': return <Palette className="h-4 w-4" />;
-                    case 'luxe_mono': return <Layers className="h-4 w-4" />;
-                    default: return null;
+                    default: return <Palette className="h-4 w-4" />;
                 }};
                 return <DropdownMenuItem key={s.value} onClick={() => setDesignAesthetic(s.value)} className="flex flex-col items-start gap-0.5 py-3 cursor-pointer">
                   <div className="flex items-center gap-2">

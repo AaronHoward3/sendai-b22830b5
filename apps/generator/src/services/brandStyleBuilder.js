@@ -335,12 +335,20 @@ export async function buildBrandStyleManifest(brandPayload = {}, siteUrl = "") {
   const { scrapeRealFonts } = await import('./enhancedCssScraper.js');
   const cssScrapingResults = await scrapeRealFonts(siteUrl || brandPayload?.store_url || brandPayload?.domain || "");
   
+  // Vision-based promotion style detection
+  const { enhanceStyleDetectionWithVision } = await import('./visionStyleDetector.js');
+  const styleDetection = await enhanceStyleDetectionWithVision(
+    siteUrl || brandPayload?.store_url || brandPayload?.domain || "",
+    { ...hints, ...enhancedHints }
+  );
+  
   // Merge enhanced hints with existing hints
   const finalHints = {
     ...hints,
     ...enhancedHints,
     buttonStyles: cssScrapingResults?.buttonStyles || null,
-    colors: cssScrapingResults?.colors || null
+    colors: cssScrapingResults?.colors || null,
+    recommendedPromotionStyle: styleDetection
   };
 
   // Enhanced palette guess from payload + hints + scraped colors

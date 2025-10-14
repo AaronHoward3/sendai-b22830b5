@@ -15,11 +15,7 @@ export type DesignAesthetic =
   | 'minimal_clean'
   | 'bold_contrasting'
   | 'magazine_serif'
-  | 'warm_editorial'
-  | 'neo_brutalist'
-  | 'gradient_glow'
-  | 'pastel_soft'
-  | 'luxe_mono';
+  | 'warm_editorial';
 
 export interface ProductLink {
   name: string;
@@ -100,7 +96,7 @@ const EmailGenerator: React.FC = () => {
     userContext: '',
     imageContext: '',
     tone: 'bold',
-    designAesthetic: 'bold_contrasting',
+    designAesthetic: 'minimal_clean', // Changed from 'bold_contrasting' to a more neutral default
     products: [],
     subjectLine: '',
   });
@@ -125,7 +121,7 @@ const EmailGenerator: React.FC = () => {
       userContext: '',
       imageContext: '',
       tone: 'bold',
-      designAesthetic: 'bold_contrasting',
+      designAesthetic: 'minimal_clean', // Changed from 'bold_contrasting' to a more neutral default
       products: [],
       subjectLine: '',
     });
@@ -140,7 +136,7 @@ const EmailGenerator: React.FC = () => {
       userContext: '',
       imageContext: '',
       tone: 'bold',
-      designAesthetic: 'bold_contrasting',
+      designAesthetic: 'minimal_clean', // Changed from 'bold_contrasting' to a more neutral default
       products: [],
       subjectLine: '',
     });
