@@ -306,6 +306,8 @@ function normalizeShape({ radii, buttons, spacing, shadows }) {
     img: Number.isFinite(radii?.img) ? radii.img : 6,
     btn: Number.isFinite(radii?.btn) ? radii.btn : (Number.isFinite(buttons?.radius) ? buttons.radius : 6)
   };
+  
+  console.log("🔘 [BUTTON RADIUS DEBUG] Scraped button radius:", buttons?.radius, "Final btn radius:", r.btn);
   const b = {
     variant: buttons?.variant || "filled",
     pad: buttons?.pad || "14px 22px",
@@ -329,13 +331,20 @@ export async function buildBrandStyleManifest(brandPayload = {}, siteUrl = "") {
     hints
   );
   
+  // Enhanced CSS scraping for button styles
+  const { scrapeRealFonts } = await import('./enhancedCssScraper.js');
+  const cssScrapingResults = await scrapeRealFonts(siteUrl || brandPayload?.store_url || brandPayload?.domain || "");
+  
   // Merge enhanced hints with existing hints
   const finalHints = {
     ...hints,
-    ...enhancedHints
+    ...enhancedHints,
+    buttonStyles: cssScrapingResults?.buttonStyles || null,
+    colors: cssScrapingResults?.colors || null
   };
 
-  // naive palette guess from payload + hints
+  // Enhanced palette guess from payload + hints + scraped colors
+  const scrapedColors = finalHints.colors || {};
   const p = {
     brand: firstHex(
       brandPayload?.primary_color,
@@ -352,14 +361,40 @@ export async function buildBrandStyleManifest(brandPayload = {}, siteUrl = "") {
         (brandPayload?.colors || [])[1],
         (finalHints.colorHexes || [])[1]
       ) || null,
-    pageBg: firstHex(brandPayload?.page_bg, "#ffffff"),
-    sectionBg: firstHex(brandPayload?.section_bg, brandPayload?.page_bg, "#ffffff"),
-    text: null, muted: null, border: null
+    pageBg: firstHex(
+      brandPayload?.page_bg, 
+      scrapedColors.primaryBackground,
+      "#ffffff"
+    ),
+    sectionBg: firstHex(
+      brandPayload?.section_bg, 
+      brandPayload?.page_bg, 
+      scrapedColors.secondaryBackground,
+      scrapedColors.primaryBackground,
+      "#ffffff"
+    ),
+    text: firstHex(
+      scrapedColors.primaryTextColor,
+      brandPayload?.text_color,
+      "#000000"
+    ),
+    muted: firstHex(
+      scrapedColors.secondaryTextColor,
+      brandPayload?.muted_color,
+      "#666666"
+    ),
+    border: firstHex(
+      brandPayload?.border_color,
+      scrapedColors.secondaryBackground,
+      "#e0e0e0"
+    )
   };
 
   console.log("🔍 [DEBUG] finalHints:", finalHints);
   console.log("🔍 [DEBUG] finalHints.headingFontGuess:", finalHints.headingFontGuess);
   console.log("🔍 [DEBUG] finalHints.bodyFontGuess:", finalHints.bodyFontGuess);
+  console.log("🔘 [DEBUG] finalHints.buttonStyles:", finalHints.buttonStyles);
+  console.log("🎨 [DEBUG] finalHints.colors:", finalHints.colors);
   
   // Use Google Fonts matching results with proper URLs
   const fontsGuess = {
@@ -403,7 +438,7 @@ export async function buildBrandStyleManifest(brandPayload = {}, siteUrl = "") {
       img: Math.max(4, Math.round(hints.radiusAvg*0.75)),
       btn: hints.radiusAvg // Use scraped radius for buttons too
     } : {}),
-    buttons: llm?.buttons || (hints.buttonStyles || {}),
+    buttons: llm?.buttons || (finalHints.buttonStyles || {}),
     spacing: llm?.spacing || {},
     shadows: llm?.shadows || {}
   });

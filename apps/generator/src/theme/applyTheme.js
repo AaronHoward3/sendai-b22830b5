@@ -126,7 +126,9 @@ function buildHead(skin) {
     `.card:hover{box-shadow:${skin.shadow?.card ? skin.shadow.card.replace('0.08', '0.12').replace('0.04', '0.08') : '0 4px 20px rgba(0,0,0,0.1)'};}` +
     `.hero-title{font-family:${H?.name || "Inter"}, ${(H?.isSerif ? serifFallback : sansFallback)} !important;}` +
     `.hero-subtitle{font-family:${B?.name || "Inter"}, ${(B?.isSerif ? serifFallback : sansFallback)} !important;}` +
-    `.btn a{font-family:${H?.name || "Inter"}, ${(H?.isSerif ? serifFallback : sansFallback)} !important;}`;
+    `.btn a{font-family:${H?.name || "Inter"}, ${(H?.isSerif ? serifFallback : sansFallback)} !important;}` +
+    `.product-title{word-break:normal !important;white-space:normal !important;hyphens:auto !important;}` +
+    `.product-desc{word-break:normal !important;white-space:normal !important;hyphens:auto !important;}`;
 
   const cardAttrs = {
     "background-color": skin.palette.cardBg,
@@ -144,14 +146,14 @@ function buildHead(skin) {
       <mj-button ${attrs(buttonBase)} font-family="${headingFont}" mj-class="btn"></mj-button>
       <mj-image border-radius="${skin.radii.img}px" padding="${skin.img?.padding ?? 0}" width="${(skin.img?.width ?? 520)}px"></mj-image>
       <mj-divider border-color="${skin.palette.border}" border-width="${skin.border.width}px" border-style="${skin.border.style}"></mj-divider>
-      <mj-class name="h1" font-family="${headingFont}" font-weight="${skin.h1.weight}" font-size="${skin.h1.size}px" line-height="1.2" text-transform="${skin.typography?.capsHeadings ? "uppercase" : "none"}" letter-spacing="${(skin.typography?.h1LS ?? 0)}em" color="${skin.palette.text}"></mj-class>
-      <mj-class name="h2" font-family="${headingFont}" font-weight="${skin.h2.weight}" font-size="${skin.h2.size}px" line-height="1.3" text-transform="${skin.typography?.capsHeadings ? "uppercase" : "none"}" letter-spacing="${(skin.typography?.h2LS ?? 0)}em" color="${skin.palette.text}"></mj-class>
-      <mj-class name="h3" font-family="${headingFont}" font-weight="${skin.h3?.weight || 600}" font-size="${skin.h3?.size || Math.round(skin.h2.size * 0.85)}px" line-height="1.4" text-transform="${skin.typography?.capsHeadings ? "uppercase" : "none"}" letter-spacing="${(skin.typography?.h3LS ?? 0)}em" color="${skin.palette.text}"></mj-class>
-      <mj-class name="body" font-family="${bodyFont}" font-weight="400" font-size="${skin.bodySize}px" line-height="1.6" color="${skin.palette.text}"></mj-class>
+      <mj-class name="h1" font-family="${headingFont}" font-weight="${skin.h1.weight}" font-size="${skin.h1.size}px" line-height="${skin.typography?.lineHeight || 1.2}" text-transform="${skin.typography?.capsHeadings ? "uppercase" : "none"}" letter-spacing="${(skin.typography?.h1LS ?? 0)}em" color="${skin.palette.text}"></mj-class>
+      <mj-class name="h2" font-family="${headingFont}" font-weight="${skin.h2.weight}" font-size="${skin.h2.size}px" line-height="${skin.typography?.lineHeight || 1.3}" text-transform="${skin.typography?.capsHeadings ? "uppercase" : "none"}" letter-spacing="${(skin.typography?.h2LS ?? 0)}em" color="${skin.palette.text}"></mj-class>
+      <mj-class name="h3" font-family="${headingFont}" font-weight="${skin.h3?.weight || 600}" font-size="${skin.h3?.size || Math.round(skin.h2.size * 0.85)}px" line-height="${skin.typography?.lineHeight || 1.4}" text-transform="${skin.typography?.capsHeadings ? "uppercase" : "none"}" letter-spacing="${(skin.typography?.h3LS ?? 0)}em" color="${skin.palette.text}"></mj-class>
+      <mj-class name="body" font-family="${bodyFont}" font-weight="400" font-size="${skin.bodySize}px" line-height="${skin.typography?.lineHeight || 1.6}" color="${skin.palette.text}"></mj-class>
 
-      <mj-class name="title" font-family="${headingFont}" font-weight="900" font-size="${Math.max(36, skin.h1.size)}px" line-height="1.2" color="${skin.palette.text}" letter-spacing="${skin.id === 'gradient_glow' ? '-0.02em' : '0em'}"></mj-class>
-      <mj-class name="product-title" font-family="${headingFont}" font-weight="900" font-size="${Math.max(20, Math.round(skin.h2.size * 0.9))}px" line-height="1.25" color="${skin.palette.text}" letter-spacing="${skin.id === 'gradient_glow' ? '-0.01em' : '0em'}"></mj-class>
-      <mj-class name="product-desc" font-family="${bodyFont}" font-weight="400" font-size="${Math.max(14, Math.round(skin.bodySize * 0.85))}px" line-height="1.5" color="${skin.palette.muted}"></mj-class>
+      <mj-class name="title" font-family="${headingFont}" font-weight="${skin.id === 'magazine_serif' ? '500' : '900'}" font-size="${Math.max(36, skin.h1.size)}px" line-height="1.2" color="${skin.palette.text}" letter-spacing="0em"></mj-class>
+      <mj-class name="product-title" font-family="${headingFont}" font-weight="${skin.id === 'magazine_serif' ? '400' : '900'}" font-size="${Math.max(20, Math.round(skin.h2.size * 0.9))}px" line-height="${skin.typography?.lineHeight || 1.3}" color="${skin.palette.text}" letter-spacing="${skin.typography?.h2LS ?? 0}em" word-break="normal" white-space="normal"></mj-class>
+      <mj-class name="product-desc" font-family="${bodyFont}" font-weight="400" font-size="${Math.max(14, Math.round(skin.bodySize * 0.85))}px" line-height="${skin.typography?.lineHeight || 1.4}" color="${skin.palette.muted}" word-break="normal" white-space="normal"></mj-class>
       <mj-class name="product-price" font-family="${bodyFont}" font-weight="600" font-size="${Math.max(16, Math.round(skin.bodySize * 1.1))}px" line-height="1.4" color="${skin.palette.text}"></mj-class>
       <mj-class name="no-pad" padding="0"></mj-class>
 
@@ -267,7 +269,7 @@ export function applyTheme(mjml, payloadBrand, skinIdRaw) {
     return s;
   });
 
-  // Bold contrasting tweak: thicken first title + strip image padding
+  // Bold contrasting tweak: thicken first title + strip image padding + improve text spacing
   if (skin.id === "bold_contrasting") {
     let replaced = false;
     const nextOut = out.replace(/<mj-hero\b[^>]*>[\s\S]*?<\/mj-hero>/i, (blk) => {
@@ -277,6 +279,10 @@ export function applyTheme(mjml, payloadBrand, skinIdRaw) {
         if (!/mj-class="/i.test(t)) t = t.replace(/<mj-text/i, `<mj-text mj-class="title"`);
         else t = t.replace(/mj-class="([^"]*)"/i, (mm, val) => `mj-class="${val} title"`);
         t = addOrReplaceAttr(t, "font-weight", "900");
+        // Ensure adequate padding to prevent text squishing
+        if (!/padding=/i.test(t)) {
+          t = addOrReplaceAttr(t, "padding", "30px 25px");
+        }
         return t;
       });
     });
@@ -288,11 +294,31 @@ export function applyTheme(mjml, payloadBrand, skinIdRaw) {
           if (!/mj-class="/i.test(t)) t = t.replace(/<mj-text/i, `<mj-text mj-class="title"`);
           else t = t.replace(/mj-class="([^"]*)"/i, (mm, val) => `mj-class="${val} title"`);
           t = addOrReplaceAttr(t, "font-weight", "900");
+          // Ensure adequate padding to prevent text squishing
+          if (!/padding=/i.test(t)) {
+            t = addOrReplaceAttr(t, "padding", "30px 25px");
+          }
           return t;
         })
       );
     }
     out = out.replace(/<mj-image\b[^>]*>/gi, (tag) => addOrReplaceAttr(tag, "padding", "0"));
+  }
+
+  // Add divider lines between sections for serif and editorial skins
+  if (skin.id === "magazine_serif" || skin.id === "warm_editorial") {
+    const dividerWidth = skin.id === "magazine_serif" ? "1px" : "4px";
+    const dividerColor = skin.palette.border || "#e5e7eb";
+    
+    // Add dividers between sections (but not before the first section)
+    out = out.replace(/(<\/mj-section>)(\s*<mj-section)/gi, (match, sectionEnd, nextSection) => {
+      return sectionEnd + `
+  <mj-section padding="20px 0">
+    <mj-column>
+      <mj-divider border-width="${dividerWidth}" border-color="${dividerColor}" width="100%"></mj-divider>
+    </mj-column>
+  </mj-section>` + nextSection;
+    });
   }
 
   // Color overrides for hardcoded block colors (keep brand tones)

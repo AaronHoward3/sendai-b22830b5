@@ -158,12 +158,16 @@ async function analyzeCssForFonts(cssSources) {
   
   // Analyze button styles
   const buttonAnalysis = analyzeButtonStyles(allCss, cssVariables);
+  
+  // Analyze colors (backgrounds and text)
+  const colorAnalysis = analyzeColors(allCss, cssVariables);
 
   return {
     headingFont: analysis.heading,
     bodyFont: analysis.body,
     fontUrls: [...new Set(googleFonts)],
     buttonStyles: buttonAnalysis,
+    colors: colorAnalysis,
     confidence: analysis.confidence,
     method: 'css-scraping',
     details: {
@@ -172,7 +176,8 @@ async function analyzeCssForFonts(cssSources) {
       googleFonts: googleFonts.length,
       topFonts: analysis.topFonts,
       cssVariables: cssVariables.size,
-      buttonStyles: buttonAnalysis
+      buttonStyles: buttonAnalysis,
+      colors: colorAnalysis
     }
   };
 }
@@ -337,7 +342,8 @@ function analyzeButtonStyles(css, cssVariables) {
     variant: "filled", // filled | outline | ghost | gradient
     pad: "14px 22px",
     caps: false,
-    letterSpacing: 0
+    letterSpacing: 0,
+    radius: 6 // border radius in px
   };
 
   // Look for button-related CSS selectors
@@ -388,6 +394,24 @@ function analyzeButtonStyles(css, cssVariables) {
       }
     }
 
+    // Check for border-radius
+    const borderRadiusMatch = rule.match(/border-radius\s*:\s*([^;]+)/i);
+    if (borderRadiusMatch) {
+      const radius = borderRadiusMatch[1].trim();
+      // Extract pixel values
+      const pxMatch = radius.match(/(\d+(?:\.\d+)?)px/);
+      if (pxMatch) {
+        buttonStyles.radius = parseFloat(pxMatch[1]);
+      } else if (radius.includes('%')) {
+        // Convert percentage to approximate pixel value (assuming button height ~40px)
+        const percentMatch = radius.match(/(\d+(?:\.\d+)?)%/);
+        if (percentMatch) {
+          const percent = parseFloat(percentMatch[1]);
+          buttonStyles.radius = Math.round((percent / 100) * 40); // Approximate
+        }
+      }
+    }
+
     // Check for border styles to determine variant
     const borderMatch = rule.match(/border\s*:\s*([^;]+)/i);
     const backgroundMatch = rule.match(/background\s*:\s*([^;]+)/i);
@@ -405,4 +429,119 @@ function analyzeButtonStyles(css, cssVariables) {
   }
 
   return buttonStyles;
+}
+
+/**
+ * Analyze colors from CSS (backgrounds and text)
+ */
+function analyzeColors(css, cssVariables) {
+  const colorAnalysis = {
+    backgrounds: [],
+    textColors: [],
+    primaryBackground: null,
+    primaryTextColor: null,
+    secondaryBackground: null,
+    secondaryTextColor: null
+  };
+
+  // Extract all color values from CSS
+  const colorMatches = [
+    ...(css.match(/background-color\s*:\s*([^;{}]+)/gi) || []),
+    ...(css.match(/background\s*:\s*([^;{}]+)/gi) || []),
+    ...(css.match(/color\s*:\s*([^;{}]+)/gi) || []),
+    ...(css.match(/border-color\s*:\s*([^;{}]+)/gi) || [])
+  ];
+
+  // Process each color match
+  colorMatches.forEach(match => {
+    const colorValue = match.split(':')[1]?.trim();
+    if (!colorValue) return;
+
+    // Extract hex colors
+    const hexMatches = colorValue.match(/#[0-9a-fA-F]{3,6}/g);
+    if (hexMatches) {
+      hexMatches.forEach(hex => {
+        // Determine if it's likely a background or text color based on context
+        if (match.includes('background')) {
+          colorAnalysis.backgrounds.push(hex);
+        } else if (match.includes('color')) {
+          colorAnalysis.textColors.push(hex);
+        } else {
+          // For border-color, add to both
+          colorAnalysis.backgrounds.push(hex);
+          colorAnalysis.textColors.push(hex);
+        }
+      });
+    }
+
+    // Extract CSS variable references
+    const varMatches = colorValue.match(/var\(--([^)]+)\)/g);
+    if (varMatches) {
+      varMatches.forEach(varMatch => {
+        const varName = varMatch.match(/var\(--([^)]+)\)/)[1];
+        const varValue = cssVariables.get(`--${varName}`);
+        if (varValue) {
+          const hexInVar = varValue.match(/#[0-9a-fA-F]{3,6}/g);
+          if (hexInVar) {
+            hexInVar.forEach(hex => {
+              if (match.includes('background')) {
+                colorAnalysis.backgrounds.push(hex);
+              } else if (match.includes('color')) {
+                colorAnalysis.textColors.push(hex);
+              }
+            });
+          }
+        }
+      });
+    }
+  });
+
+  // Remove duplicates and filter out common colors
+  const commonColors = ['#000000', '#ffffff', '#000', '#fff', '#transparent', 'transparent'];
+  
+  colorAnalysis.backgrounds = [...new Set(colorAnalysis.backgrounds)]
+    .filter(color => !commonColors.includes(color.toLowerCase()));
+  
+  colorAnalysis.textColors = [...new Set(colorAnalysis.textColors)]
+    .filter(color => !commonColors.includes(color.toLowerCase()));
+
+  // Determine primary colors based on frequency and context
+  if (colorAnalysis.backgrounds.length > 0) {
+    // Most common background color becomes primary
+    const bgCounts = {};
+    colorAnalysis.backgrounds.forEach(bg => {
+      bgCounts[bg] = (bgCounts[bg] || 0) + 1;
+    });
+    colorAnalysis.primaryBackground = Object.keys(bgCounts)
+      .sort((a, b) => bgCounts[b] - bgCounts[a])[0];
+    
+    // Second most common becomes secondary
+    const sortedBgs = Object.keys(bgCounts).sort((a, b) => bgCounts[b] - bgCounts[a]);
+    if (sortedBgs.length > 1) {
+      colorAnalysis.secondaryBackground = sortedBgs[1];
+    }
+  }
+
+  if (colorAnalysis.textColors.length > 0) {
+    // Most common text color becomes primary
+    const textCounts = {};
+    colorAnalysis.textColors.forEach(text => {
+      textCounts[text] = (textCounts[text] || 0) + 1;
+    });
+    colorAnalysis.primaryTextColor = Object.keys(textCounts)
+      .sort((a, b) => textCounts[b] - textCounts[a])[0];
+    
+    // Second most common becomes secondary
+    const sortedTexts = Object.keys(textCounts).sort((a, b) => textCounts[b] - textCounts[a]);
+    if (sortedTexts.length > 1) {
+      colorAnalysis.secondaryTextColor = sortedTexts[1];
+    }
+  }
+
+  console.log("🎨 [COLOR ANALYSIS] Backgrounds:", colorAnalysis.backgrounds);
+  console.log("🎨 [COLOR ANALYSIS] Text colors:", colorAnalysis.textColors);
+  console.log("🎨 [COLOR ANALYSIS] Primary background:", colorAnalysis.primaryBackground);
+  console.log("🎨 [COLOR ANALYSIS] Primary text:", colorAnalysis.primaryTextColor);
+
+  return colorAnalysis;
 }

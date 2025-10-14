@@ -1,8 +1,8 @@
 <mj-section mj-class="prod">
   <mj-column width="50%" padding="0px 10px">
     <mj-image mj-class="img" src="{{P1_IMAGE_URL}}" alt="{{P1_TITLE}}" title="{{P1_TITLE}}" padding="0"></mj-image>
-    <mj-text mj-class="product-title" align="center" padding="15px 0px 5px">{{P1_TITLE}}</mj-text>
-    <mj-text mj-class="product-desc" align="center" padding="5px 0px" color="#666666">{{P1_SUBTITLE}}</mj-text>
+    <mj-text mj-class="product-title" align="center" padding="15px 5px 5px" line-height="1.3">{{P1_TITLE}}</mj-text>
+    <mj-text mj-class="product-desc" align="center" padding="5px 5px" color="#666666" line-height="1.4">{{P1_SUBTITLE}}</mj-text>
     <mj-text mj-class="product-price" align="center" padding-bottom="15px">{{P1_PRICE}}</mj-text>
     <mj-button mj-class="btn" href="{{P1_BUTTON_URL}}" align="center" padding="10px 20px">
       {{P1_BUTTON_TEXT}}
@@ -10,8 +10,8 @@
   </mj-column>
   <mj-column width="50%" padding="0px 10px">
     <mj-image mj-class="img" src="{{P2_IMAGE_URL}}" alt="{{P2_TITLE}}" title="{{P2_TITLE}}" padding="0"></mj-image>
-    <mj-text mj-class="product-title" align="center" padding="15px 0px 5px">{{P2_TITLE}}</mj-text>
-    <mj-text mj-class="product-desc" align="center" padding="5px 0px" color="#666666">{{P2_SUBTITLE}}</mj-text>
+    <mj-text mj-class="product-title" align="center" padding="15px 5px 5px" line-height="1.3">{{P2_TITLE}}</mj-text>
+    <mj-text mj-class="product-desc" align="center" padding="5px 5px" color="#666666" line-height="1.4">{{P2_SUBTITLE}}</mj-text>
     <mj-text mj-class="product-price" align="center" padding-bottom="15px">{{P2_PRICE}}</mj-text>
     <mj-button mj-class="btn" href="{{P2_BUTTON_URL}}" align="center" padding="10px 20px">
       {{P2_BUTTON_TEXT}}
@@ -22,8 +22,8 @@
 <mj-section mj-class="prod">
   <mj-column width="50%" padding="0px 10px">
     <mj-image mj-class="img" src="{{P3_IMAGE_URL}}" alt="{{P3_TITLE}}" title="{{P3_TITLE}}" padding="0"></mj-image>
-    <mj-text mj-class="product-title" align="center" padding="15px 0px 5px">{{P3_TITLE}}</mj-text>
-    <mj-text mj-class="product-desc" align="center" padding="5px 0px" color="#666666">{{P3_SUBTITLE}}</mj-text>
+    <mj-text mj-class="product-title" align="center" padding="15px 5px 5px" line-height="1.3">{{P3_TITLE}}</mj-text>
+    <mj-text mj-class="product-desc" align="center" padding="5px 5px" color="#666666" line-height="1.4">{{P3_SUBTITLE}}</mj-text>
     <mj-text mj-class="product-price" align="center" padding-bottom="15px">{{P3_PRICE}}</mj-text>
     <mj-button mj-class="btn" href="{{P3_BUTTON_URL}}" align="center" padding="10px 20px">
       {{P3_BUTTON_TEXT}}
@@ -31,8 +31,8 @@
   </mj-column>
   <mj-column width="50%" padding="0px 10px">
     <mj-image mj-class="img" src="{{P4_IMAGE_URL}}" alt="{{P4_TITLE}}" title="{{P4_TITLE}}" padding="0"></mj-image>
-    <mj-text mj-class="product-title" align="center" padding="15px 0px 5px">{{P4_TITLE}}</mj-text>
-    <mj-text mj-class="product-desc" align="center" padding="5px 0px" color="#666666">{{P4_SUBTITLE}}</mj-text>
+    <mj-text mj-class="product-title" align="center" padding="15px 5px 5px" line-height="1.3">{{P4_TITLE}}</mj-text>
+    <mj-text mj-class="product-desc" align="center" padding="5px 5px" color="#666666" line-height="1.4">{{P4_SUBTITLE}}</mj-text>
     <mj-text mj-class="product-price" align="center" padding-bottom="15px">{{P4_PRICE}}</mj-text>
     <mj-button mj-class="btn" href="{{P4_BUTTON_URL}}" align="center" padding="10px 20px">
       {{P4_BUTTON_TEXT}}
