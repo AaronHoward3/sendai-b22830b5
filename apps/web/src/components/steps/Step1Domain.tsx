@@ -161,18 +161,9 @@ export const Step1Domain: React.FC<{
         // Add a minimum delay to prevent flash
         await new Promise(resolve => setTimeout(resolve, 500));
         
-        const response = await fetch('/api/generate/preview', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            domain: 'test.com',
-            emailType: 'Promotion',
-            userContext: 'test',
-            imageContext: 'test',
-            products: [],
-            brandData: {},
-            customHeroImage: true
-          })
+        const response = await fetch('/api/generate/trial-status', {
+          method: 'GET',
+          headers: { 'Content-Type': 'application/json' }
         });
 
         if (response.status === 403) {

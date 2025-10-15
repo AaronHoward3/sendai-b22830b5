@@ -99,19 +99,10 @@ export const TrialGuard: React.FC<TrialGuardProps> = ({ children }) => {
   }, [user, authLoading]);
   const checkIPTrialStatus = async (): Promise<boolean> => {
     try {
-      // Make a test request to check if IP is blocked
-      const response = await fetch('/api/generate/preview', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', },
-        body: JSON.stringify({
-          domain: 'test.com',
-          emailType: 'Promotion',
-          userContext: 'test',
-          imageContext: 'test',
-          products: [],
-          brandData: {},
-          customHeroImage: true
-        })
+      // Make a request to check trial status without consuming it
+      const response = await fetch('/api/generate/trial-status', {
+        method: 'GET',
+        headers: { 'Content-Type': 'application/json' }
       });
 
       if (response.status === 403) {

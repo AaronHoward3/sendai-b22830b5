@@ -7,8 +7,8 @@
     <mj-text align="center" color="#555555" font-size="18px" padding="0 20px 24px" line- >
       Here’s what’s happening, what’s coming, and what you don’t want to miss.
     </mj-text>
-    <mj-button href="https://example.com" background-color="#007BFF" color="#ffffff" font-size="16px" font-weight="600" inner-padding="14px 28px" border-radius="6px" align="center" width="200px" padding="0 0 32px" >
-      Discover More
+    <mj-button href="{{cta_url}}" background-color="#007BFF" color="#ffffff" font-size="16px" font-weight="600" inner-padding="14px 28px" border-radius="6px" align="center" width="200px" padding="0 0 32px" >
+      {{cta_button_label}}
     </mj-button>
   </mj-column>
 </mj-section>

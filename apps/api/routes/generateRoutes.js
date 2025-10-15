@@ -34,6 +34,19 @@ router.get("/test", (req, res) => {
   });
 });
 
+// GET /api/generate/trial-status - Check trial status without consuming it
+router.get("/trial-status", checkTrialUsage, (req, res) => {
+  console.log("🔍 [TRIAL_STATUS] Checking trial status for IP:", req.trialInfo?.ip);
+  
+  // If we get here, the trial hasn't been used yet (checkTrialUsage would have blocked it)
+  res.json({ 
+    success: true, 
+    trialUsed: false,
+    message: "Trial available",
+    ip: req.trialInfo?.ip
+  });
+});
+
 // POST /api/generate - Authenticated endpoint (requires credits)
 router.post("/", 
   (req, res, next) => {
