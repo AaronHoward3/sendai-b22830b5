@@ -839,5 +839,63 @@
     "confidence": 0.6,
     "method": "existing",
     "processingTime": 11119
+  },
+  {
+    "timestamp": "2025-10-15T14:48:44.368Z",
+    "brandUrl": "https://identitymatrix.ai",
+    "detectedFonts": {
+      "heading": "",
+      "body": "sans-serif"
+    },
+    "headingMatch": {
+      "matchedFont": "Inter",
+      "confidence": 1,
+      "reasoning": "Default fallback font",
+      "googleFontUrl": "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
+    },
+    "bodyMatch": {
+      "matchedFont": "Inter",
+      "confidence": 0.9,
+      "reasoning": "Inter is a modern sans-serif font with a clean and versatile design, making it suitable for body text. Its character shapes and proportions align well with contemporary digital aesthetics, similar to the branding of Identity Matrix.",
+      "googleFontUrl": "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap"
+    },
+    "finalFonts": {
+      "heading": "Inter",
+      "body": "Inter",
+      "headingUrl": "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap",
+      "bodyUrl": "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap"
+    },
+    "confidence": 0.6,
+    "method": "existing",
+    "processingTime": 8400
+  },
+  {
+    "timestamp": "2025-10-15T14:50:58.524Z",
+    "brandUrl": "https://identitymatrix.ai",
+    "detectedFonts": {
+      "heading": "",
+      "body": "sans-serif"
+    },
+    "headingMatch": {
+      "matchedFont": "Inter",
+      "confidence": 1,
+      "reasoning": "Default fallback font",
+      "googleFontUrl": "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
+    },
+    "bodyMatch": {
+      "matchedFont": "Inter",
+      "confidence": 0.9,
+      "reasoning": "Inter is a modern sans-serif font with a clean and versatile design, making it suitable for body text. Its character shapes and proportions align well with contemporary digital aesthetics, similar to the branding of Identity Matrix.",
+      "googleFontUrl": "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap"
+    },
+    "finalFonts": {
+      "heading": "Inter",
+      "body": "Inter",
+      "headingUrl": "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap",
+      "bodyUrl": "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap"
+    },
+    "confidence": 0.6,
+    "method": "existing",
+    "processingTime": 6232
   }
 ]
