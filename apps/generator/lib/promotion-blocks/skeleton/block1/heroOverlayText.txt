@@ -2,8 +2,8 @@
 <mj-wrapper padding="0px" css-class="hero-section">
   <mj-section background-url="https://CUSTOMHEROIMAGE.COM" background-size="cover" background-repeat="no-repeat" background-position="center center" padding="200px 20px">
     <mj-column>
-      <mj-text align="center" color="#ffffff" padding="30px 25px" background-color="rgba(0,0,0,0.6)" border-radius="12px" mj-class="h1">{{hero_title}}</mj-text>
-      <mj-text align="center" color="#ffffff" padding="20px 25px" background-color="rgba(0,0,0,0.4)" border-radius="8px" mj-class="h2">{{hero_subtitle}}</mj-text>
+      <mj-text align="center" color="#ffffff" padding="40px 30px" background-color="rgba(0,0,0,0.6)" border-radius="12px" mj-class="h1">{{hero_title}}</mj-text>
+      <mj-text align="center" color="#ffffff" padding="30px 30px" background-color="rgba(0,0,0,0.4)" border-radius="8px" mj-class="h2">{{hero_subtitle}}</mj-text>
     </mj-column>
   </mj-section>
 </mj-wrapper>

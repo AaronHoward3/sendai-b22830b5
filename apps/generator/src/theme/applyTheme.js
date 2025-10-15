@@ -146,8 +146,8 @@ function buildHead(skin) {
       <mj-button ${attrs(buttonBase)} font-family="${headingFont}" mj-class="btn"></mj-button>
       <mj-image border-radius="${skin.radii.img}px" padding="${skin.img?.padding ?? 0}" width="${(skin.img?.width ?? 520)}px"></mj-image>
       <mj-divider border-color="${skin.palette.border}" border-width="${skin.border.width}px" border-style="${skin.border.style}"></mj-divider>
-      <mj-class name="h1" font-family="${headingFont}" font-weight="${skin.h1.weight}" font-size="${skin.h1.size}px" line-height="${skin.typography?.lineHeight || 1.2}" text-transform="${skin.typography?.capsHeadings ? "uppercase" : "none"}" letter-spacing="${(skin.typography?.h1LS ?? 0)}em" color="${skin.palette.text}"></mj-class>
-      <mj-class name="h2" font-family="${headingFont}" font-weight="${skin.h2.weight}" font-size="${skin.h2.size}px" line-height="${skin.typography?.lineHeight || 1.3}" text-transform="${skin.typography?.capsHeadings ? "uppercase" : "none"}" letter-spacing="${(skin.typography?.h2LS ?? 0)}em" color="${skin.palette.text}"></mj-class>
+      <mj-class name="h1" font-family="${headingFont}" font-weight="${skin.h1.weight}" font-size="${skin.h1.size}px" line-height="${skin.typography?.lineHeight || 1.4}" text-transform="${skin.typography?.capsHeadings ? "uppercase" : "none"}" letter-spacing="${(skin.typography?.h1LS ?? 0)}em" color="${skin.palette.text}" word-break="normal" white-space="normal"></mj-class>
+      <mj-class name="h2" font-family="${headingFont}" font-weight="${skin.h2.weight}" font-size="${skin.h2.size}px" line-height="${skin.typography?.lineHeight || 1.5}" text-transform="${skin.typography?.capsHeadings ? "uppercase" : "none"}" letter-spacing="${(skin.typography?.h2LS ?? 0)}em" color="${skin.palette.text}" word-break="normal" white-space="normal"></mj-class>
       <mj-class name="h3" font-family="${headingFont}" font-weight="${skin.h3?.weight || 600}" font-size="${skin.h3?.size || Math.round(skin.h2.size * 0.85)}px" line-height="${skin.typography?.lineHeight || 1.4}" text-transform="${skin.typography?.capsHeadings ? "uppercase" : "none"}" letter-spacing="${(skin.typography?.h3LS ?? 0)}em" color="${skin.palette.text}"></mj-class>
       <mj-class name="body" font-family="${bodyFont}" font-weight="400" font-size="${skin.bodySize}px" line-height="${skin.typography?.lineHeight || 1.6}" color="${skin.palette.text}"></mj-class>
 
@@ -305,15 +305,28 @@ export function applyTheme(mjml, payloadBrand, skinIdRaw) {
     out = out.replace(/<mj-image\b[^>]*>/gi, (tag) => addOrReplaceAttr(tag, "padding", "0"));
   }
 
-  // Add divider lines between sections for serif and editorial skins
-  if (skin.id === "magazine_serif" || skin.id === "warm_editorial") {
-    const dividerWidth = skin.id === "magazine_serif" ? "1px" : "4px";
-    const dividerColor = skin.palette.border || "#e5e7eb";
+  // Add divider lines between sections for serif, editorial, and bold contrasting skins
+  if (skin.id === "magazine_serif" || skin.id === "warm_editorial" || skin.id === "bold_contrasting") {
+    let dividerWidth, dividerColor;
+    
+    if (skin.id === "magazine_serif") {
+      dividerWidth = "1px";
+      dividerColor = skin.palette.border || "#e5e7eb";
+    } else if (skin.id === "warm_editorial") {
+      dividerWidth = "4px";
+      dividerColor = skin.palette.border || "#e5e7eb";
+    } else if (skin.id === "bold_contrasting") {
+      dividerWidth = "2px";
+      dividerColor = skin.palette.brand || "#ffffff"; // Use brand color for bold contrasting
+    }
     
     // Add dividers between sections (but not before the first section)
     out = out.replace(/(<\/mj-section>)(\s*<mj-section)/gi, (match, sectionEnd, nextSection) => {
+      // For bold contrasting, add dark background to divider section
+      const dividerSectionBg = skin.id === "bold_contrasting" ? ` background-color="${skin.palette.sectionBg}"` : "";
+      
       return sectionEnd + `
-  <mj-section padding="20px 0">
+  <mj-section padding="20px 0"${dividerSectionBg}>
     <mj-column>
       <mj-divider border-width="${dividerWidth}" border-color="${dividerColor}" width="100%"></mj-divider>
     </mj-column>

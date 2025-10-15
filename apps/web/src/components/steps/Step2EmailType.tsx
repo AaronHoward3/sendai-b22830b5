@@ -1,6 +1,6 @@
 // src/components/steps/Step2EmailType.tsx
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { ChevronDown, Pencil, Save, X, Check, Sparkles, Mail, Zap, Users, Briefcase, Smile, Circle, Contrast, BookOpen, Coffee, Square, Sun, Palette, Layers } from 'lucide-react';
+import { ChevronDown, Pencil, Save, X, Check, Sparkles, Mail, Zap, Users, Briefcase, Smile, Circle, Contrast, BookOpen, Coffee, Square, Sun, Palette, Layers, Info } from 'lucide-react';
 import { motion, easeOut } from 'framer-motion';
 
 import { GradientButton } from '../ui/gradient-button';
@@ -12,6 +12,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '../ui/dropdown-menu';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '../ui/tooltip';
 
 import {
   EmailType,
@@ -43,9 +44,9 @@ type SavedImage = {
   height?: number | null;
 };
 
-const EMAIL_TYPES: { value: EmailType; label: string; description: string }[] = [
-  { value: 'Promotion',   label: 'Promotional',       description: 'Sales and special offers' },
-  { value: 'Newsletter',  label: 'Newsletter',        description: 'Regular updates and news' },
+const EMAIL_TYPES: { value: EmailType; label: string; description: string; tooltip: string }[] = [
+  { value: 'Promotion',   label: 'Promotional',       description: 'Sales and special offers', tooltip: 'Product oriented email. Better for ecommerce sites' },
+  { value: 'Newsletter',  label: 'Newsletter',        description: 'Regular updates and news', tooltip: 'Information oriented email. Better for sites without ecommerce style products' },
 ];
 
 const TONES: { value: Tone; label: string }[] = [
@@ -620,13 +621,26 @@ export const Step2EmailType: React.FC<Step2EmailTypeProps> = ({formData, updateF
           {EMAIL_TYPES.map(t => {
             const active = selectedEmailType === t.value;
             const icon = t.value === 'Promotion' ? <Zap className="w-4 h-4" /> : <Mail className="w-4 h-4" />;
-            return <GradientButton
-              key={t.value} type="button"
-              variant={active ? 'solid' : 'white-outline'}
-              onClick={() => setSelectedEmailType(t.value)}
-              title={t.description} aria-pressed={active}
-              className={`w-full px-4 py-2 rounded-xl transition flex items-center justify-center gap-2 ${active ? '' : unselectedSegBtn}`}
-            >{icon}{t.label}</GradientButton>
+            return (
+              <TooltipProvider key={t.value}>
+                <Tooltip delayDuration={300}>
+                  <TooltipTrigger asChild>
+                    <GradientButton
+                      type="button"
+                      variant={active ? 'solid' : 'white-outline'}
+                      onClick={() => setSelectedEmailType(t.value)}
+                      aria-pressed={active}
+                      className={`w-full px-4 py-2 rounded-xl transition flex items-center justify-center gap-2 ${active ? '' : unselectedSegBtn}`}
+                    >
+                      {icon}{t.label}
+                    </GradientButton>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>{t.tooltip}</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            );
           })}
       </div></fieldset></motion.div>
       {/* Tone */}
@@ -808,7 +822,26 @@ export const Step2EmailType: React.FC<Step2EmailTypeProps> = ({formData, updateF
       </motion.div>
       {/* Products */}
       <motion.div className="space-y-4" variants={fadeInUp}>
-         <h3 className="text-lg font-medium text-foreground">Products</h3>
+         <div className="flex items-center gap-2">
+           <h3 className="text-lg font-medium text-foreground">Products</h3>
+           <div className="flex items-center gap-1">
+             <span className="px-2 py-1 text-xs font-medium bg-orange-100 text-orange-800 rounded-full border border-orange-200">
+               BETA
+             </span>
+             <TooltipProvider>
+               <Tooltip delayDuration={300}>
+                 <TooltipTrigger asChild>
+                   <button className="p-1 rounded-full hover:bg-muted transition-colors">
+                     <Info className="w-4 h-4 text-muted-foreground" />
+                   </button>
+                 </TooltipTrigger>
+                 <TooltipContent className="max-w-xs">
+                   <p>This product scraper function is in beta. Products might not get pulled or displayed correctly, double check information for best results.</p>
+                 </TooltipContent>
+               </Tooltip>
+             </TooltipProvider>
+           </div>
+         </div>
          <p className="text-sm text-muted-foreground">Maximum 4 products allowed ({products.length}/4)</p>
          {products.length === 0 && <p className="text-sm text-muted-foreground italic">No products added yet.</p>}
         {products.map((product, index) => {

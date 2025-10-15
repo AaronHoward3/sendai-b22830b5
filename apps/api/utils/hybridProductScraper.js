@@ -615,7 +615,7 @@ function extractProductsPlatformSpecific($, domain, platform) {
         products.push({
           name,
           url,
-          image_url: image || 'https://via.placeholder.com/300x300?text=Product+Image',
+          image_url: image || '',
           description,
           price
         });
@@ -651,7 +651,7 @@ function extractProductsAdvancedGeneric($, domain) {
         products.push({
           name,
           url,
-          image_url: image || 'https://via.placeholder.com/300x300?text=Product+Image',
+          image_url: image || '',
           description,
           price
         });
@@ -688,7 +688,7 @@ function extractProductsWithAI($, domain) {
         products.push({
           name,
           url,
-          image_url: image || 'https://via.placeholder.com/300x300?text=Product+Image',
+          image_url: image || '',
           description: '',
           price: hasPrice ? text.match(/\$[\d,]+(\.\d{2})?/)?.[0] : ''
         });
@@ -745,8 +745,8 @@ function filterAndValidateProducts(products, domain) {
     // Name validation
     if (!isValidProductName(product.name)) return false;
     
-    // Image validation
-    if (product.image_url.includes('placeholder') || product.image_url.includes('logo')) return false;
+    // Image validation - allow placeholder images as they're now used as fallbacks
+    if (product.image_url.includes('logo')) return false;
     
     return true;
   });

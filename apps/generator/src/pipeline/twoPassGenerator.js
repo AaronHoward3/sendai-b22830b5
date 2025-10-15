@@ -23,58 +23,13 @@ const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
  */
 function processUserContext(userContext, brandData, emailType) {
   if (!userContext || typeof userContext !== 'string') {
-    return emailType?.toLowerCase() === "newsletter" ? "General newsletter content" : "General promotion";
+    return emailType?.toLowerCase() === "newsletter" ? "newsletter" : "promotion";
   }
   
   const context = userContext.toLowerCase().trim();
   const brandName = (brandData?.name || brandData?.brandData?.name || "").toLowerCase();
   
-  // For newsletters, preserve more context for richer content
-  if (emailType?.toLowerCase() === "newsletter") {
-    // Extract key concepts but keep more detail
-    const concepts = [];
-    
-    // Content type indicators
-    if (/story|journey|behind|process|how|why|experience|insight|lesson/i.test(context)) {
-      concepts.push("storytelling");
-    }
-    
-    if (/update|news|announcement|launch|release|feature/i.test(context)) {
-      concepts.push("company updates");
-    }
-    
-    if (/tip|advice|guide|tutorial|how-to|educational/i.test(context)) {
-      concepts.push("educational content");
-    }
-    
-    if (/behind|process|making|creation|development/i.test(context)) {
-      concepts.push("behind-the-scenes");
-    }
-    
-    // Brand personality
-    if (/luxury|premium|exclusive|elite|high-end/i.test(brandName + " " + context)) {
-      concepts.push("luxury brand");
-    }
-    
-    if (/tech|digital|app|software|innovation/i.test(brandName + " " + context)) {
-      concepts.push("tech company");
-    }
-    
-    if (/fashion|style|trend|design|aesthetic/i.test(brandName + " " + context)) {
-      concepts.push("fashion brand");
-    }
-    
-    // Fallback with more context
-    if (concepts.length === 0) {
-      // For newsletters, provide a bit more context
-      const shortContext = context.length > 100 ? context.substring(0, 100) + "..." : context;
-      return `Newsletter content: ${shortContext}`;
-    }
-    
-    return concepts.join(", ");
-  }
-  
-  // For promotions, use the existing concise processing
+  // Extract only the most essential concepts - keep it very concise
   const concepts = [];
   
   // Urgency indicators
@@ -89,10 +44,23 @@ function processUserContext(userContext, brandData, emailType) {
   
   // Product categories
   if (/new|launch|arrival|collection|seasonal/i.test(context)) {
-    concepts.push("new products");
+    concepts.push("new");
   }
   
-  // Brand personality
+  // Content type
+  if (/story|journey|behind|process|how|why|experience/i.test(context)) {
+    concepts.push("story");
+  }
+  
+  if (/testimonial|review|customer|love|recommend|trust/i.test(context)) {
+    concepts.push("social");
+  }
+  
+  if (/tip|advice|guide|tutorial|how-to|educational/i.test(context)) {
+    concepts.push("educational");
+  }
+  
+  // Brand personality (simplified)
   if (/luxury|premium|exclusive|elite|high-end/i.test(brandName + " " + context)) {
     concepts.push("luxury");
   }
@@ -105,21 +73,13 @@ function processUserContext(userContext, brandData, emailType) {
     concepts.push("fashion");
   }
   
-  // Content type
-  if (/story|journey|behind|process|how|why|experience/i.test(context)) {
-    concepts.push("storytelling");
-  }
-  
-  if (/testimonial|review|customer|love|recommend|trust/i.test(context)) {
-    concepts.push("social proof");
-  }
-  
-  // Fallback
+  // Fallback - keep it minimal
   if (concepts.length === 0) {
-    concepts.push("general promotion");
+    return emailType?.toLowerCase() === "newsletter" ? "newsletter" : "promotion";
   }
   
-  return concepts.join(", ");
+  // Return only the first 3 concepts to keep it concise
+  return concepts.slice(0, 3).join(", ");
 }
 
 /**
@@ -281,8 +241,15 @@ INPUTS:
 Email Type: ${emailType}
 Design Aesthetic: ${designAesthetic || "minimal_clean"}
 Content Focus: ${processedContext}
-Brand Data JSON:
-${JSON.stringify(brandData || {}, null, 2)}
+Brand Data (Essential Only):
+${JSON.stringify({
+  name: brandData?.name || brandData?.brandData?.name,
+  store_name: brandData?.store_name,
+  website: brandData?.website || brandData?.brandData?.website,
+  products: brandData?.products?.slice(0, 3) || [], // Limit to first 3 products
+  primary_color: brandData?.primary_color,
+  link_color: brandData?.link_color
+}, null, 2)}
 
 BASE MJML (Refine this only; keep structure the same):
 \`\`\`mjml
@@ -297,12 +264,21 @@ async function buildProductSectionWithFallbacks({ emailType, products, designAes
     return "";
   }
 
+  // Validate products have required fields
+  const validProducts = products.filter(p => p && (p.title || p.name) && (p.title || p.name).trim().length > 0);
+  if (validProducts.length === 0) {
+    console.log("🔍 [DEBUG] No valid products found (missing titles/names)");
+    return "";
+  }
+
+  console.log(`🔍 [DEBUG] Processing ${validProducts.length} valid products out of ${products.length} total`);
+
   const attempts = [ designAesthetic, "skeleton", "minimal_clean", "bold_contrasting" ].filter(Boolean);
 
   for (const aesthetic of attempts) {
     try {
       console.log(`🔍 [DEBUG] Attempting product section with aesthetic: ${aesthetic}`);
-      const html = await renderProductSection( emailType, aesthetic, products, seed, null, analysis );
+      const html = await renderProductSection( emailType, aesthetic, validProducts, seed, null, analysis );
       if (html && typeof html === "string" && html.trim().length > 0) {
         console.log(`🔍 [DEBUG] Successfully generated product section with aesthetic: ${aesthetic}`);
         return html;
@@ -318,32 +294,37 @@ async function buildProductSectionWithFallbacks({ emailType, products, designAes
 }
 
 function injectProductSectionIntoMjml(baseMjml, productHtml) {
-  if (!productHtml) {
+  if (!productHtml || productHtml.trim().length === 0) {
     console.log("🔍 [DEBUG] No product HTML to inject");
     return baseMjml;
   }
 
   console.log(`🔍 [DEBUG] Injecting product section, HTML length: ${productHtml.length}`);
 
+  // First, try to replace the PRODUCT_SECTION token
   const tokenRe = /\[\[\s*PRODUCT_SECTION\s*\]\]/i;
   if (tokenRe.test(baseMjml)) {
     console.log("🔍 [DEBUG] Found PRODUCT_SECTION token, replacing");
     return baseMjml.replace(tokenRe, productHtml);
   }
 
-  const closeSectionRe = /<\/mj-section>/i;
-  const match = baseMjml.match(closeSectionRe);
-  if (match && match.index != null) {
+  // If no token found, inject after the first mj-section (usually hero section)
+  const sections = baseMjml.split('</mj-section>');
+  if (sections.length > 1) {
     console.log("🔍 [DEBUG] Inserting after first mj-section");
-    const insertAt = match.index + match[0].length;
-    return baseMjml.slice(0, insertAt) + "\n" + productHtml + "\n" + baseMjml.slice(insertAt);
+    // Reconstruct with product section after first section
+    const firstSection = sections[0] + '</mj-section>';
+    const remainingSections = sections.slice(1).join('</mj-section>');
+    return firstSection + '\n' + productHtml + '\n' + remainingSections;
   }
 
+  // Fallback: insert before mj-body closing tag
   if (baseMjml.includes("</mj-body>")) {
     console.log("🔍 [DEBUG] Inserting before mj-body closing tag");
     return baseMjml.replace("</mj-body>", `${productHtml}\n</mj-body>`);
   }
 
+  // Last resort: append to end
   console.log("🔍 [DEBUG] Appending to end of MJML");
   return baseMjml + "\n" + productHtml;
 }
@@ -382,6 +363,13 @@ export async function runTwoPassGeneration({
   if ((emailType === "Promotion") && Array.isArray(brandData?.products)) {
     m.start("productSection");
     console.log("🔍 [DEBUG] Starting product section generation...");
+    console.log("🔍 [DEBUG] Product data:", {
+      productCount: brandData.products.length,
+      firstProduct: brandData.products[0],
+      designAesthetic,
+      layoutId: layout.layoutId
+    });
+    
     const productHtml = await buildProductSectionWithFallbacks({
       emailType, products: brandData.products, designAesthetic, seed: layout.layoutId, analysis: layout.analysis
     });
@@ -402,6 +390,12 @@ export async function runTwoPassGeneration({
     m.end("productSection");
   } else {
     console.log("🔍 [DEBUG] Removing PRODUCT_SECTION token - not a promotion or no products");
+    console.log("🔍 [DEBUG] Debug info:", {
+      emailType,
+      isPromotion: emailType === "Promotion",
+      hasProducts: Array.isArray(brandData?.products),
+      productCount: brandData?.products?.length || 0
+    });
     baseMjml = baseMjml.replace(/\[\[\s*PRODUCT_SECTION\s*\]\]/gi, "");
   }
 

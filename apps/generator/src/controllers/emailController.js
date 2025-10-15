@@ -112,6 +112,11 @@ export async function generateEmailsFromEmailController(req, res) {
       brandData.hero_image_url = "https://SAVEDHEROIMAGE.COM";
     }
 
+    // Fallback: If no custom hero and no saved hero, use placeholder image ONLY if no existing hero image
+    if (!wantsCustomHero && !wantsSavedHero && (!brandData.hero_image_url || brandData.hero_image_url.trim() === '')) {
+      brandData.hero_image_url = "https://masxzswlivypqantomhc.supabase.co/storage/v1/object/sign/placeholder/placeholder_images/Productimage.png?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV8xYjdkYjI0My04NmZlLTQ2ODItYTUxNy02NTM5ZjcyNGE3ZjYiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJwbGFjZWhvbGRlci9wbGFjZWhvbGRlcl9pbWFnZXMvUHJvZHVjdGltYWdlLnBuZyIsImlhdCI6MTc2MDU0NjEwMiwiZXhwIjoxOTE4MjI2MTAyfQ.1tGHMbQKpwE1a60Rih-gymDv8BMwnkGy0lNOB27J4UM";
+    }
+
     // Fallback header image
     brandData.header_image_url =
       brandData.banner_url && brandData.banner_url.trim() !== ""
@@ -120,11 +125,39 @@ export async function generateEmailsFromEmailController(req, res) {
 
     // Build brand style manifest FIRST, before starting any promises
     let recommendedStyle = resolvedStyleId; // Default to user-selected or fallback style
+    
+    // Ensure we have a fallback manifest structure immediately
+    brandData._styleManifest = {
+      fonts: {
+        heading: { name: "Inter", hrefs: [], isSerif: false },
+        body: { name: "Inter", hrefs: [], isSerif: false }
+      },
+      palette: {},
+      radii: {},
+      buttons: {}
+    };
+    
     try {
       const siteUrl = brandData?.store_url || brandData?.domain || brandData?.website || "";
-      const manifest = await buildBrandStyleManifest(brandData, siteUrl);
+      console.log(`🔍 [DEBUG] Building brand style manifest for: ${siteUrl}`);
+      
+      // Add timeout to brand style manifest building
+      const manifestPromise = buildBrandStyleManifest(brandData, siteUrl);
+      const manifestTimeout = new Promise((_, reject) =>
+        setTimeout(() => reject(new Error("Brand style manifest timeout")), 10000) // 10s timeout
+      );
+      
+      const manifest = await Promise.race([manifestPromise, manifestTimeout]);
       // attach for tokens/skins to consume
       brandData._styleManifest = manifest;
+      
+      console.log(`🔍 [DEBUG] Brand style manifest result:`, {
+        hasManifest: !!manifest,
+        hasFonts: !!(manifest?.fonts),
+        headingFont: manifest?.fonts?.heading?.name,
+        bodyFont: manifest?.fonts?.body?.name,
+        hasRecommendedStyle: !!(manifest?.recommendedPromotionStyle?.style)
+      });
       
       // Use vision-recommended style for promotions if available and confidence is high enough
       if (emailType === "Promotion" && manifest?.recommendedPromotionStyle?.style && manifest?.recommendedPromotionStyle?.confidence > 0.6) {
@@ -138,6 +171,8 @@ export async function generateEmailsFromEmailController(req, res) {
       console.log("✅ Brand style manifest created with fonts:", manifest?.fonts?.heading?.name, manifest?.fonts?.body?.name);
     } catch (e) {
       console.warn("[GEN] Brand style manifest failed:", e.message);
+      console.log(`🔍 [DEBUG] Brand style manifest error details:`, e.stack);
+      // Fallback manifest structure is already set above
     }
 
     if (wantsCustomHero) send("hero:start", {});
@@ -150,6 +185,8 @@ export async function generateEmailsFromEmailController(req, res) {
             setTimeout(() => reject(new Error("Hero generation timeout")), TIMEOUTS.HERO_GENERATION)
           )
         ]).catch(err => {
+          console.error(`❌ [DEBUG] Hero generation failed for job ${jobId}:`, err.message);
+          console.log(`🔍 [DEBUG] Hero generation error details:`, err.stack);
           m.log("Hero generation failed:", err.message);
           return brandData;
         })
@@ -267,6 +304,7 @@ export async function generateEmailsFromEmailController(req, res) {
         finalBrandData.hero_image_url &&
         finalBrandData.hero_image_url.includes("http") &&
         !finalBrandData.hero_image_url.includes("CUSTOMHEROIMAGE") &&
+        !finalBrandData.hero_image_url.includes("masxzswlivypqantomhc.supabase.co") && // Don't replace with placeholder
         updated.includes("CUSTOMHEROIMAGE.COM")
       ) {
         console.log("🔍 [DEBUG] Replacing CUSTOMHEROIMAGE with:", finalBrandData.hero_image_url);
@@ -295,20 +333,20 @@ export async function generateEmailsFromEmailController(req, res) {
         heroImageUrlUsed = finalBrandData.hero_image_url;
       }
 
-      // Final fallback: If hero generation failed and we still have placeholder, use logo or remove image
+      // Final fallback: If hero generation failed and we still have placeholder, use logo, banner, or placeholder image
       if (updated.includes("CUSTOMHEROIMAGE.COM")) {
-        console.log("🔍 [DEBUG] Hero generation failed, using fallback image or removing hero section");
-        const fallbackImage = finalBrandData.logo_url || finalBrandData.banner_url || "";
-        if (fallbackImage) {
-          console.log("🔍 [DEBUG] Using logo/banner as fallback:", fallbackImage);
-          updated = updated.replace(/src="https:\/\/CUSTOMHEROIMAGE\.COM"/g, `src="${fallbackImage}"`);
-          updated = updated.replace(/background-url="https:\/\/CUSTOMHEROIMAGE\.COM"/g, `background-url="${fallbackImage}"`);
-          heroImageUrlUsed = fallbackImage;
-        } else {
-          console.log("🔍 [DEBUG] No fallback image available, removing hero section");
-          // Remove the entire hero section if no fallback is available
-          updated = updated.replace(/<!-- Hero Section -->[\s\S]*?<!-- \/Hero Section -->/g, "");
-        }
+        console.log("🔍 [DEBUG] Hero generation failed, using fallback image");
+        const fallbackImage = finalBrandData.logo_url || finalBrandData.banner_url || "https://masxzswlivypqantomhc.supabase.co/storage/v1/object/sign/placeholder/placeholder_images/Productimage.png?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV8xYjdkYjI0My04NmZlLTQ2ODItYTUxNy02NTM5ZjcyNGE3ZjYiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJwbGFjZWhvbGRlci9wbGFjZWhvbGRlcl9pbWFnZXMvUHJvZHVjdGltYWdlLnBuZyIsImlhdCI6MTc2MDU0NjEwMiwiZXhwIjoxOTE4MjI2MTAyfQ.1tGHMbQKpwE1a60Rih-gymDv8BMwnkGy0lNOB27J4UM";
+        console.log("🔍 [DEBUG] Using fallback image:", fallbackImage);
+        updated = updated.replace(/src="https:\/\/CUSTOMHEROIMAGE\.COM"/g, `src="${fallbackImage}"`);
+        updated = updated.replace(/background-url="https:\/\/CUSTOMHEROIMAGE\.COM"/g, `background-url="${fallbackImage}"`);
+        heroImageUrlUsed = fallbackImage;
+      }
+
+      // Handle direct placeholder image URLs (when no custom hero was requested)
+      if (updated.includes("masxzswlivypqantomhc.supabase.co/storage/v1/object/sign/placeholder/placeholder_images/Productimage.png")) {
+        console.log("🔍 [DEBUG] Using direct placeholder hero image");
+        heroImageUrlUsed = "https://masxzswlivypqantomhc.supabase.co/storage/v1/object/sign/placeholder/placeholder_images/Productimage.png?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV8xYjdkYjI0My04NmZlLTQ2ODItYTUxNy02NTM5ZjcyNGE3ZjYiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJwbGFjZWhvbGRlci9wbGFjZWhvbGRlcl9pbWFnZXMvUHJvZHVjdGltYWdlLnBuZyIsImlhdCI6MTc2MDU0NjEwMiwiZXhwIjoxOTE4MjI2MTAyfQ.1tGHMbQKpwE1a60Rih-gymDv8BMwnkGy0lNOB27J4UM";
       }
 
       if (!updated.includes("<mj-head>")) {

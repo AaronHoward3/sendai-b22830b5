@@ -103,11 +103,14 @@ function fillTemplate(tpl, prods) {
       buttonUrl: p.buttonUrl || p.buttonURL || p.url 
     });
     
+    // Use placeholder image ONLY if no imageUrl provided
+    const imageUrl = p.imageUrl && p.imageUrl.trim() ? p.imageUrl : 'https://masxzswlivypqantomhc.supabase.co/storage/v1/object/sign/placeholder/placeholder_images/Productimage.png?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV8xYjdkYjI0My04NmZlLTQ2ODItYTUxNy02NTM5ZjcyNGE3ZjYiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJwbGFjZWhvbGRlci9wbGFjZWhvbGRlcl9pbWFnZXMvUHJvZHVjdGltYWdlLnBuZyIsImlhdCI6MTc2MDU0NjEwMiwiZXhwIjoxOTE4MjI2MTAyfQ.1tGHMbQKpwE1a60Rih-gymDv8BMwnkGy0lNOB27J4UM';
+    
     out = out
       .replaceAll(`{{P${i}_TITLE}}`, p.title ?? "")
       .replaceAll(`{{P${i}_SUBTITLE}}`, p.subtitle ?? "")
       .replaceAll(`{{P${i}_PRICE}}`, p.price ?? "")
-      .replaceAll(`{{P${i}_IMAGE_URL}}`, p.imageUrl ?? "")
+      .replaceAll(`{{P${i}_IMAGE_URL}}`, imageUrl)
       .replaceAll(`{{P${i}_BUTTON_TEXT}}`, p.buttonText ?? "View")
       .replaceAll(`{{P${i}_BUTTON_URL}}`, p.buttonUrl ?? p.buttonURL ?? p.url ?? "");
   });

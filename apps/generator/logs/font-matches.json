@@ -897,5 +897,498 @@
     "confidence": 0.6,
     "method": "existing",
     "processingTime": 6232
+  },
+  {
+    "timestamp": "2025-10-15T16:29:47.996Z",
+    "brandUrl": "https://identitymatrix.ai",
+    "detectedFonts": {
+      "heading": "",
+      "body": "sans-serif"
+    },
+    "headingMatch": {
+      "matchedFont": "Inter",
+      "confidence": 1,
+      "reasoning": "Default fallback font",
+      "googleFontUrl": "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
+    },
+    "bodyMatch": {
+      "matchedFont": "Inter",
+      "confidence": 0.9,
+      "reasoning": "Inter is a modern sans-serif font with a clean and versatile design, making it suitable for body text. Its character shapes and proportions align well with contemporary digital aesthetics, similar to the style used by Identity Matrix.",
+      "googleFontUrl": "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap"
+    },
+    "finalFonts": {
+      "heading": "Inter",
+      "body": "Inter",
+      "headingUrl": "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap",
+      "bodyUrl": "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap"
+    },
+    "confidence": 0.6,
+    "method": "existing",
+    "processingTime": 7779
+  },
+  {
+    "timestamp": "2025-10-15T16:38:45.185Z",
+    "brandUrl": "https://oakley.com",
+    "detectedFonts": {
+      "heading": "Inter",
+      "body": "Inter"
+    },
+    "headingMatch": {
+      "matchedFont": "Inter",
+      "confidence": 1,
+      "reasoning": "Default fallback font",
+      "googleFontUrl": "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
+    },
+    "bodyMatch": {
+      "matchedFont": "Inter",
+      "confidence": 1,
+      "reasoning": "Default fallback font",
+      "googleFontUrl": "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
+    },
+    "finalFonts": {
+      "heading": "Inter",
+      "body": "Inter",
+      "headingUrl": "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap",
+      "bodyUrl": "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
+    },
+    "confidence": 0.3,
+    "method": "default",
+    "processingTime": 933
+  },
+  {
+    "timestamp": "2025-10-15T16:42:49.054Z",
+    "brandUrl": "https://gfuel.com",
+    "detectedFonts": {
+      "heading": "var(--oke-title-fontFamily)",
+      "body": "var(--oke-text-fontFamily)"
+    },
+    "headingMatch": {
+      "matchedFont": "Poppins",
+      "confidence": 0.9,
+      "reasoning": "Poppins is a geometric sans-serif font that closely matches the modern and bold aesthetic typically used in branding like G Fuel. Its clean lines and rounded shapes provide a strong visual presence suitable for headings.",
+      "googleFontUrl": "https://fonts.googleapis.com/css2?family=Poppins:wght@600;700;800;900&display=swap"
+    },
+    "bodyMatch": {
+      "matchedFont": "Roboto",
+      "confidence": 0.9,
+      "reasoning": "Roboto is a versatile sans-serif font that offers a modern and clean aesthetic, similar to the likely characteristics of 'var(--oke-text-fontFamily)' used on the G Fuel website. It has a wide range of weights and is designed for readability, making it a strong match for body text.",
+      "googleFontUrl": "https://fonts.googleapis.com/css2?family=Roboto:wght@400;500&display=swap"
+    },
+    "finalFonts": {
+      "heading": "Poppins",
+      "body": "Roboto",
+      "headingUrl": "https://fonts.googleapis.com/css2?family=Poppins:wght@600;700;800;900&display=swap",
+      "bodyUrl": "https://fonts.googleapis.com/css2?family=Roboto:wght@400;500&display=swap"
+    },
+    "confidence": 0.6,
+    "method": "existing",
+    "processingTime": 11135
+  },
+  {
+    "timestamp": "2025-10-15T16:51:12.701Z",
+    "brandUrl": "https://gfuel.com",
+    "detectedFonts": {
+      "heading": "var(--oke-title-fontFamily)",
+      "body": "var(--oke-text-fontFamily)"
+    },
+    "headingMatch": {
+      "matchedFont": "Poppins",
+      "confidence": 0.9,
+      "reasoning": "Poppins is a geometric sans-serif font that shares a modern and clean aesthetic similar to the branding of G Fuel. Its rounded shapes and versatility in weights make it a strong match for headings.",
+      "googleFontUrl": "https://fonts.googleapis.com/css2?family=Poppins:wght@600;700;800;900&display=swap"
+    },
+    "bodyMatch": {
+      "matchedFont": "Roboto",
+      "confidence": 0.9,
+      "reasoning": "Roboto is a versatile sans-serif font with a modern appearance that aligns well with the clean and energetic branding of G Fuel. Its geometric shapes and open curves provide excellent readability, making it suitable for body text.",
+      "googleFontUrl": "https://fonts.googleapis.com/css2?family=Roboto:wght@400;500&display=swap"
+    },
+    "finalFonts": {
+      "heading": "Poppins",
+      "body": "Roboto",
+      "headingUrl": "https://fonts.googleapis.com/css2?family=Poppins:wght@600;700;800;900&display=swap",
+      "bodyUrl": "https://fonts.googleapis.com/css2?family=Roboto:wght@400;500&display=swap"
+    },
+    "confidence": 0.6,
+    "method": "existing",
+    "processingTime": 10381
+  },
+  {
+    "timestamp": "2025-10-15T16:52:50.636Z",
+    "brandUrl": "https://gfuel.com",
+    "detectedFonts": {
+      "heading": "var(--oke-title-fontFamily)",
+      "body": "var(--oke-text-fontFamily)"
+    },
+    "headingMatch": {
+      "matchedFont": "Poppins",
+      "confidence": 0.9,
+      "reasoning": "Poppins is a geometric sans-serif typeface that offers a modern and clean aesthetic, similar to the branding style of G Fuel. Its rounded shapes and versatility in weights make it a strong match for headings.",
+      "googleFontUrl": "https://fonts.googleapis.com/css2?family=Poppins:wght@600;700;800;900&display=swap"
+    },
+    "bodyMatch": {
+      "matchedFont": "Poppins",
+      "confidence": 0.9,
+      "reasoning": "Poppins is a geometric sans-serif typeface that shares a modern and clean aesthetic similar to the font used on the G Fuel website. It has a wide range of weights, making it versatile for body text, and its character shapes and proportions align well with contemporary branding styles.",
+      "googleFontUrl": "https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap"
+    },
+    "finalFonts": {
+      "heading": "Poppins",
+      "body": "Poppins",
+      "headingUrl": "https://fonts.googleapis.com/css2?family=Poppins:wght@600;700;800;900&display=swap",
+      "bodyUrl": "https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap"
+    },
+    "confidence": 0.6,
+    "method": "existing",
+    "processingTime": 12161
+  },
+  {
+    "timestamp": "2025-10-15T16:54:41.430Z",
+    "brandUrl": "https://gfuel.com",
+    "detectedFonts": {
+      "heading": "var(--oke-title-fontFamily)",
+      "body": "var(--oke-text-fontFamily)"
+    },
+    "headingMatch": {
+      "matchedFont": "Poppins",
+      "confidence": 0.9,
+      "reasoning": "Poppins is a geometric sans-serif font that shares a modern and clean aesthetic similar to the font used for G Fuel's branding. Its rounded shapes and versatility in weight make it a strong match for headings.",
+      "googleFontUrl": "https://fonts.googleapis.com/css2?family=Poppins:wght@600;700;800;900&display=swap"
+    },
+    "bodyMatch": {
+      "matchedFont": "Roboto",
+      "confidence": 0.9,
+      "reasoning": "Roboto is a versatile sans-serif font with a modern appearance that aligns well with the clean and energetic branding of G Fuel. Its geometric shapes and friendly curves make it suitable for body text, similar to the characteristics of the unspecified font.",
+      "googleFontUrl": "https://fonts.googleapis.com/css2?family=Roboto:wght@400;500&display=swap"
+    },
+    "finalFonts": {
+      "heading": "Poppins",
+      "body": "Roboto",
+      "headingUrl": "https://fonts.googleapis.com/css2?family=Poppins:wght@600;700;800;900&display=swap",
+      "bodyUrl": "https://fonts.googleapis.com/css2?family=Roboto:wght@400;500&display=swap"
+    },
+    "confidence": 0.6,
+    "method": "existing",
+    "processingTime": 9764
+  },
+  {
+    "timestamp": "2025-10-15T17:00:41.404Z",
+    "brandUrl": "https://gfuel.com",
+    "detectedFonts": {
+      "heading": "var(--oke-title-fontFamily)",
+      "body": "var(--oke-text-fontFamily)"
+    },
+    "headingMatch": {
+      "matchedFont": "Poppins",
+      "confidence": 0.9,
+      "reasoning": "Poppins is a geometric sans-serif font that shares a modern and clean aesthetic similar to the branding of G Fuel. Its rounded shapes and versatility in weights make it a strong match for headings.",
+      "googleFontUrl": "https://fonts.googleapis.com/css2?family=Poppins:wght@600;700;800;900&display=swap"
+    },
+    "bodyMatch": {
+      "matchedFont": "Roboto",
+      "confidence": 0.9,
+      "reasoning": "Roboto is a versatile sans-serif font with a modern appearance that aligns well with the clean and energetic aesthetic of G Fuel's branding. Its geometric shapes and friendly curves make it suitable for body text, similar to the characteristics of the unspecified font.",
+      "googleFontUrl": "https://fonts.googleapis.com/css2?family=Roboto:wght@400;500&display=swap"
+    },
+    "finalFonts": {
+      "heading": "Poppins",
+      "body": "Roboto",
+      "headingUrl": "https://fonts.googleapis.com/css2?family=Poppins:wght@600;700;800;900&display=swap",
+      "bodyUrl": "https://fonts.googleapis.com/css2?family=Roboto:wght@400;500&display=swap"
+    },
+    "confidence": 0.6,
+    "method": "existing",
+    "processingTime": 11137
+  },
+  {
+    "timestamp": "2025-10-15T17:05:35.647Z",
+    "brandUrl": "https://gfuel.com",
+    "detectedFonts": {
+      "heading": "var(--oke-title-fontFamily)",
+      "body": "var(--oke-text-fontFamily)"
+    },
+    "headingMatch": {
+      "matchedFont": "Poppins",
+      "confidence": 0.9,
+      "reasoning": "Poppins is a geometric sans-serif typeface with a modern and clean appearance, making it suitable for headings. Its rounded shapes and wide proportions closely resemble the style typically used in branding like G Fuel.",
+      "googleFontUrl": "https://fonts.googleapis.com/css2?family=Poppins:wght@600;700;800;900&display=swap"
+    },
+    "bodyMatch": {
+      "matchedFont": "Roboto",
+      "confidence": 0.9,
+      "reasoning": "Roboto is a versatile sans-serif font that offers a modern and clean aesthetic, similar to the body font typically used in branding like G Fuel. It has a wide range of weights and maintains good readability, making it a strong match for body text.",
+      "googleFontUrl": "https://fonts.googleapis.com/css2?family=Roboto:wght@400;500&display=swap"
+    },
+    "finalFonts": {
+      "heading": "Poppins",
+      "body": "Roboto",
+      "headingUrl": "https://fonts.googleapis.com/css2?family=Poppins:wght@600;700;800;900&display=swap",
+      "bodyUrl": "https://fonts.googleapis.com/css2?family=Roboto:wght@400;500&display=swap"
+    },
+    "confidence": 0.6,
+    "method": "existing",
+    "processingTime": 10937
+  },
+  {
+    "timestamp": "2025-10-15T17:12:23.475Z",
+    "brandUrl": "https://outdoorvoices.com",
+    "detectedFonts": {
+      "heading": "var(--oke-title-fontFamily)",
+      "body": "var(--oke-text-fontFamily)"
+    },
+    "headingMatch": {
+      "matchedFont": "Montserrat",
+      "confidence": 0.9,
+      "reasoning": "Montserrat has a modern, geometric sans-serif style that aligns well with the clean and contemporary aesthetic of Outdoor Voices. Its character shapes and proportions are similar to the font used in their branding, making it a strong match.",
+      "googleFontUrl": "https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700;800;900&display=swap"
+    },
+    "bodyMatch": {
+      "matchedFont": "Inter",
+      "confidence": 0.9,
+      "reasoning": "Inter is a modern sans-serif font that offers excellent readability and a clean aesthetic, making it suitable for body text. Its character shapes and proportions closely align with contemporary web design trends, similar to the font used by Outdoor Voices.",
+      "googleFontUrl": "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap"
+    },
+    "finalFonts": {
+      "heading": "Montserrat",
+      "body": "Inter",
+      "headingUrl": "https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700;800;900&display=swap",
+      "bodyUrl": "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap"
+    },
+    "confidence": 0.6,
+    "method": "existing",
+    "processingTime": 6359
+  },
+  {
+    "timestamp": "2025-10-15T17:15:05.301Z",
+    "brandUrl": "https://outdoorvoices.com",
+    "detectedFonts": {
+      "heading": "var(--oke-title-fontFamily)",
+      "body": "var(--oke-text-fontFamily)"
+    },
+    "headingMatch": {
+      "matchedFont": "Poppins",
+      "confidence": 0.9,
+      "reasoning": "Poppins is a geometric sans-serif font that shares a modern and clean aesthetic similar to the heading font used by Outdoor Voices. Its rounded shapes and versatility in weight make it a strong match for branding purposes.",
+      "googleFontUrl": "https://fonts.googleapis.com/css2?family=Poppins:wght@600;700;800;900&display=swap"
+    },
+    "bodyMatch": {
+      "matchedFont": "Inter",
+      "confidence": 0.9,
+      "reasoning": "Inter is a versatile sans-serif font that offers a modern and clean aesthetic, closely aligning with the contemporary design of Outdoor Voices. Its character shapes and proportions are well-suited for body text, providing excellent readability, which is essential for a brand focused on an active lifestyle.",
+      "googleFontUrl": "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap"
+    },
+    "finalFonts": {
+      "heading": "Poppins",
+      "body": "Inter",
+      "headingUrl": "https://fonts.googleapis.com/css2?family=Poppins:wght@600;700;800;900&display=swap",
+      "bodyUrl": "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap"
+    },
+    "confidence": 0.6,
+    "method": "existing",
+    "processingTime": 7146
+  },
+  {
+    "timestamp": "2025-10-15T17:16:33.530Z",
+    "brandUrl": "https://gfuel.com",
+    "detectedFonts": {
+      "heading": "var(--oke-title-fontFamily)",
+      "body": "var(--oke-text-fontFamily)"
+    },
+    "headingMatch": {
+      "matchedFont": "Poppins",
+      "confidence": 0.9,
+      "reasoning": "Poppins is a geometric sans-serif font that closely matches the modern and bold aesthetic of the font used for headings on the G Fuel website. It has a similar character shape and proportions, making it a suitable alternative.",
+      "googleFontUrl": "https://fonts.googleapis.com/css2?family=Poppins:wght@600;700;800;900&display=swap"
+    },
+    "bodyMatch": {
+      "matchedFont": "Poppins",
+      "confidence": 0.9,
+      "reasoning": "Poppins is a geometric sans-serif font that closely matches the modern and clean aesthetic of G Fuel's branding. It has a similar character shape and proportions, making it a suitable alternative for body text.",
+      "googleFontUrl": "https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap"
+    },
+    "finalFonts": {
+      "heading": "Poppins",
+      "body": "Poppins",
+      "headingUrl": "https://fonts.googleapis.com/css2?family=Poppins:wght@600;700;800;900&display=swap",
+      "bodyUrl": "https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap"
+    },
+    "confidence": 0.6,
+    "method": "existing",
+    "processingTime": 10683
+  },
+  {
+    "timestamp": "2025-10-15T17:19:45.461Z",
+    "brandUrl": "https://prestonherbco.com",
+    "detectedFonts": {
+      "heading": "",
+      "body": "EbGaramond"
+    },
+    "headingMatch": {
+      "matchedFont": "Inter",
+      "confidence": 1,
+      "reasoning": "Default fallback font",
+      "googleFontUrl": "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
+    },
+    "bodyMatch": {
+      "matchedFont": "EB Garamond",
+      "confidence": 0.95,
+      "reasoning": "EB Garamond is a direct match to 'EbGaramond' as it is the same font family. It shares the same serif characteristics, proportions, and overall aesthetic, making it the best match for body text.",
+      "googleFontUrl": "https://fonts.googleapis.com/css2?family=EB+Garamond:wght@400;500;600&display=swap"
+    },
+    "finalFonts": {
+      "heading": "Inter",
+      "body": "EB Garamond",
+      "headingUrl": "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap",
+      "bodyUrl": "https://fonts.googleapis.com/css2?family=EB+Garamond:wght@400;500;600&display=swap"
+    },
+    "confidence": 0.6,
+    "method": "existing",
+    "processingTime": 7917
+  },
+  {
+    "timestamp": "2025-10-15T17:21:36.581Z",
+    "brandUrl": "https://prestonherbco.com",
+    "detectedFonts": {
+      "heading": "",
+      "body": "EbGaramond"
+    },
+    "headingMatch": {
+      "matchedFont": "Inter",
+      "confidence": 1,
+      "reasoning": "Default fallback font",
+      "googleFontUrl": "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
+    },
+    "bodyMatch": {
+      "matchedFont": "EB Garamond",
+      "confidence": 0.95,
+      "reasoning": "EB Garamond is a direct match to 'EbGaramond' as it is the same font family. It shares the same serif characteristics, proportions, and overall aesthetic, making it the best match for body text.",
+      "googleFontUrl": "https://fonts.googleapis.com/css2?family=EB+Garamond:wght@400;500;600&display=swap"
+    },
+    "finalFonts": {
+      "heading": "Inter",
+      "body": "EB Garamond",
+      "headingUrl": "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap",
+      "bodyUrl": "https://fonts.googleapis.com/css2?family=EB+Garamond:wght@400;500;600&display=swap"
+    },
+    "confidence": 0.6,
+    "method": "existing",
+    "processingTime": 6274
+  },
+  {
+    "timestamp": "2025-10-15T17:23:29.178Z",
+    "brandUrl": "https://identitymatrix.ai",
+    "detectedFonts": {
+      "heading": "",
+      "body": "sans-serif"
+    },
+    "headingMatch": {
+      "matchedFont": "Inter",
+      "confidence": 1,
+      "reasoning": "Default fallback font",
+      "googleFontUrl": "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
+    },
+    "bodyMatch": {
+      "matchedFont": "Inter",
+      "confidence": 0.9,
+      "reasoning": "Inter is a modern sans-serif font with a clean and versatile design, making it suitable for body text. Its character shapes and proportions align well with contemporary digital aesthetics, similar to the branding of Identity Matrix.",
+      "googleFontUrl": "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap"
+    },
+    "finalFonts": {
+      "heading": "Inter",
+      "body": "Inter",
+      "headingUrl": "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap",
+      "bodyUrl": "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap"
+    },
+    "confidence": 0.6,
+    "method": "existing",
+    "processingTime": 6361
+  },
+  {
+    "timestamp": "2025-10-15T17:24:35.538Z",
+    "brandUrl": "https://prestonherbco.com",
+    "detectedFonts": {
+      "heading": "",
+      "body": "EbGaramond"
+    },
+    "headingMatch": {
+      "matchedFont": "Inter",
+      "confidence": 1,
+      "reasoning": "Default fallback font",
+      "googleFontUrl": "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
+    },
+    "bodyMatch": {
+      "matchedFont": "EB Garamond",
+      "confidence": 0.95,
+      "reasoning": "EB Garamond is a direct match to 'EbGaramond' as it is the same font family. It shares the same serif characteristics, proportions, and overall aesthetic, making it the best match for body text.",
+      "googleFontUrl": "https://fonts.googleapis.com/css2?family=EB+Garamond:wght@400;500;600&display=swap"
+    },
+    "finalFonts": {
+      "heading": "Inter",
+      "body": "EB Garamond",
+      "headingUrl": "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap",
+      "bodyUrl": "https://fonts.googleapis.com/css2?family=EB+Garamond:wght@400;500;600&display=swap"
+    },
+    "confidence": 0.6,
+    "method": "existing",
+    "processingTime": 6170
+  },
+  {
+    "timestamp": "2025-10-15T17:26:21.413Z",
+    "brandUrl": "https://identitymatrix.ai",
+    "detectedFonts": {
+      "heading": "",
+      "body": "sans-serif"
+    },
+    "headingMatch": {
+      "matchedFont": "Inter",
+      "confidence": 1,
+      "reasoning": "Default fallback font",
+      "googleFontUrl": "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
+    },
+    "bodyMatch": {
+      "matchedFont": "Inter",
+      "confidence": 0.9,
+      "reasoning": "Inter is a modern sans-serif font with a clean and versatile design, making it suitable for body text. Its character shapes and proportions align well with contemporary digital aesthetics, similar to the style used by Identity Matrix.",
+      "googleFontUrl": "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap"
+    },
+    "finalFonts": {
+      "heading": "Inter",
+      "body": "Inter",
+      "headingUrl": "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap",
+      "bodyUrl": "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap"
+    },
+    "confidence": 0.6,
+    "method": "existing",
+    "processingTime": 8599
+  },
+  {
+    "timestamp": "2025-10-15T17:31:49.291Z",
+    "brandUrl": "https://gfuel.com",
+    "detectedFonts": {
+      "heading": "var(--oke-title-fontFamily)",
+      "body": "var(--oke-text-fontFamily)"
+    },
+    "headingMatch": {
+      "matchedFont": "Poppins",
+      "confidence": 0.9,
+      "reasoning": "Poppins is a geometric sans-serif font that offers a modern and clean aesthetic, similar to the branding style of G Fuel. Its rounded shapes and versatility in weights align well with the visual identity of the brand.",
+      "googleFontUrl": "https://fonts.googleapis.com/css2?family=Poppins:wght@600;700;800;900&display=swap"
+    },
+    "bodyMatch": {
+      "matchedFont": "Poppins",
+      "confidence": 0.9,
+      "reasoning": "Poppins is a geometric sans-serif font that closely matches the modern and clean aesthetic of the G Fuel brand. Its rounded shapes and versatility in weight make it suitable for body text, aligning well with the brand's visual identity.",
+      "googleFontUrl": "https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap"
+    },
+    "finalFonts": {
+      "heading": "Poppins",
+      "body": "Poppins",
+      "headingUrl": "https://fonts.googleapis.com/css2?family=Poppins:wght@600;700;800;900&display=swap",
+      "bodyUrl": "https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap"
+    },
+    "confidence": 0.6,
+    "method": "existing",
+    "processingTime": 11304
   }
 ]

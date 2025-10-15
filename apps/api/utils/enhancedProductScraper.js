@@ -362,7 +362,7 @@ function extractProductsPlatformSpecific($, domain, platform) {
         products.push({
           name,
           url,
-          image_url: image || 'https://via.placeholder.com/300x300?text=Product+Image',
+          image_url: image || '',
           description,
           price,
           source: `platform-${platform}`
@@ -397,7 +397,7 @@ function extractProductsGeneric($, domain) {
         products.push({
           name,
           url,
-          image_url: image || 'https://via.placeholder.com/300x300?text=Product+Image',
+          image_url: image || '',
           description,
           price,
           source: 'generic'
@@ -428,7 +428,7 @@ function extractLinksWithImages($, domain) {
       products.push({
         name,
         url,
-        image_url: image || 'https://via.placeholder.com/300x300?text=Product+Image',
+        image_url: image || '',
         description,
         source: 'fallback'
       });
@@ -503,22 +503,8 @@ function extractBestImage($parent, selectors, domain) {
     }
   }
   
-  // If no real image found, try to get a placeholder but mark it
-  if (!bestImage) {
-    for (const selector of selectors) {
-      const $img = $parent.find(selector).first();
-      if ($img.length) {
-        const src = $img.attr('src') || $img.attr('data-src');
-        if (src && src.startsWith('data:image/gif;base64')) {
-          // Return a placeholder URL instead of null
-          bestImage = 'https://via.placeholder.com/300x300?text=Product+Image';
-          break;
-        }
-      }
-    }
-  }
-  
-  return bestImage;
+  // Return empty string if no image found - placeholder will be added later if needed
+  return bestImage || '';
 }
 
 function extractDescription($parent, selectors) {

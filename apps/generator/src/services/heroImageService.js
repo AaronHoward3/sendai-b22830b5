@@ -225,6 +225,13 @@ export async function generateCustomHeroAndEnrich(brandData, storeId, jobId, { m
     // 4) Upload and return URLs
     metrics?.start?.("imageUpload");
     console.log(`[GEN] Starting image upload for job ${jobId}...`);
+    
+    // Validate that we have a real generated image, not a placeholder
+    if (!imageBase64 || imageBase64.length < 1000) {
+      console.error(`❌ Invalid image data for job ${jobId} - image too small or empty`);
+      throw new Error("Invalid image data generated");
+    }
+    
     const randomHash =
       Math.random().toString(36).substring(2, 15) +
       Math.random().toString(36).substring(2, 15);
@@ -237,6 +244,13 @@ export async function generateCustomHeroAndEnrich(brandData, storeId, jobId, { m
     );
     
     const publicUrl = await Promise.race([uploadPromise, uploadTimeout]);
+    
+    // Final validation: ensure the uploaded URL is not a placeholder
+    if (publicUrl && publicUrl.includes("masxzswlivypqantomhc.supabase.co")) {
+      console.error(`❌ Uploaded image appears to be placeholder for job ${jobId}: ${publicUrl}`);
+      throw new Error("Uploaded image is placeholder, not generated image");
+    }
+    
     console.log(`[GEN] Image upload completed for job ${jobId}: ${publicUrl}`);
     metrics?.end?.("imageUpload");
 

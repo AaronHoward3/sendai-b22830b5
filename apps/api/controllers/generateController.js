@@ -250,14 +250,17 @@ export async function generateEmailsController(req, res) {
     }
     // Normalize products to match generator expectations
     console.log("🔍 [DEBUG] Raw products before normalization:", products?.slice(0, 2));
-    const normalizedProducts = Array.isArray(products) ? products.map(p => ({
-      title: p.name || p.title || '',
-      subtitle: p.description || p.subtitle || '',
-      price: p.price || '',
-      imageUrl: p.image_url || p.imageUrl || p.image || '',
-      buttonText: p.buttonText || 'View',
-      buttonUrl: p.url || p.buttonUrl || p.buttonURL || ''
-    })) : (brandJson.brandData.products || []);
+    const normalizedProducts = Array.isArray(products) ? products.map(p => {
+      const imageUrl = p.image_url || p.imageUrl || p.image || '';
+      return {
+        title: p.name || p.title || '',
+        subtitle: p.description || p.subtitle || '',
+        price: p.price || '',
+        imageUrl: imageUrl && imageUrl.trim() ? imageUrl : '', // Only use placeholder if no imageUrl
+        buttonText: p.buttonText || 'View',
+        buttonUrl: p.url || p.buttonUrl || p.buttonURL || ''
+      };
+    }) : (brandJson.brandData.products || []);
     console.log("🔍 [DEBUG] Normalized products:", normalizedProducts?.slice(0, 2));
     console.log("🔍 [DEBUG] Normalized products count:", normalizedProducts?.length || 0);
     console.log("🔍 [DEBUG] Products with valid imageUrl:", normalizedProducts?.filter(p => p.imageUrl && p.imageUrl.trim()).length || 0);
