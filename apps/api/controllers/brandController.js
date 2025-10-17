@@ -1,4 +1,3 @@
-import { normalizeBrandDevToPumaStyle } from "../utils/normalizeBrand.js";
 import { scrapeProductsFromDomain } from "../utils/productScraper.js";
 import { getStoredBrand, storeBrand } from "../utils/dataStore.js";
 import fetch from "node-fetch";
@@ -63,13 +62,12 @@ export async function checkBrand(req, res) {
     }
 
     const brandDevData = await response.json();
-    const normalized = normalizeBrandDevToPumaStyle(brandDevData);
 
-    await storeBrand(normalizedDomain, null, normalized);
+    await storeBrand(normalizedDomain, null, brandDevData);
 
     console.log(`Stored brand info for ${normalizedDomain}.`);
 
-    res.json(normalized);
+    res.json(brandDevData);
 
   } catch (err) {
     console.error("Brand check error:", err.message);
@@ -123,11 +121,25 @@ export async function updateBrandColors(req, res) {
 
     // clone, modify, persist
     const brand = structuredClone(existing.brand);
-    brand.brandData = brand.brandData || {};
-    brand.brandData.primary_color = primary_color;
-    brand.brandData.link_color = link_color;
-
-    // mirror for template compatibility
+    
+    // Update colors in the raw brand.dev structure
+    if (brand.brand && brand.brand.colors) {
+      // Update the first color as primary_color
+      if (brand.brand.colors[0]) {
+        brand.brand.colors[0].hex = primary_color;
+      } else {
+        brand.brand.colors[0] = { hex: primary_color, name: "Primary" };
+      }
+      
+      // Update the second color as link_color
+      if (brand.brand.colors[1]) {
+        brand.brand.colors[1].hex = link_color;
+      } else {
+        brand.brand.colors[1] = { hex: link_color, name: "Link" };
+      }
+    }
+    
+    // Also add top-level properties for backward compatibility
     brand.primary_color = primary_color;
     brand.link_color = link_color;
 

@@ -53,18 +53,22 @@ export async function getStoredBrand(domain) {
 export async function storeBrand(domain, _userId, brandJson) {
   const normalized = String(domain).trim().toLowerCase();
 
-  // Extract helpful columns
+  // Extract helpful columns from raw brand.dev structure
   const primary_color =
     brandJson?.primary_color ??
+    brandJson?.brand?.colors?.[0]?.hex ??
     brandJson?.brandData?.primary_color ??
     null;
 
   const link_color =
     brandJson?.link_color ??
+    brandJson?.brand?.colors?.[1]?.hex ??
     brandJson?.brandData?.link_color ??
     null;
 
-  const store_id = brandJson?.brandData?.store_id ?? null;
+  const store_id = brandJson?.brand?.domain?.replace(/\W/g, "").toLowerCase() ?? 
+                   brandJson?.brandData?.store_id ?? 
+                   null;
 
   if (USE_SUPABASE) {
     const row = {

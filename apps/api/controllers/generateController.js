@@ -234,19 +234,24 @@ export async function generateEmailsController(req, res) {
     brandJson.imageContext = imageContext || "";
     brandJson.tone = tone || "";
     brandJson.designAesthetic = designAesthetic || "";
+    
+    // Create brandData structure for compatibility with generator
     brandJson.brandData = brandJson.brandData || {};
     brandJson.brandData.customHeroImage = customHeroImage ?? true;
     brandJson.customHeroImage = customHeroImage ?? true; // Also set at top level for generator
     
+    // Extract fields from raw brand.dev structure for generator compatibility
+    const rawBrand = brandJson.brand || {};
+    
     // Ensure required fields are at the top level for generator services
     if (!brandJson.store_name) {
-      brandJson.store_name = brandJson.brandData?.store_name || brandJson.name || normalizedDomain;
+      brandJson.store_name = brandJson.brandData?.store_name || rawBrand.title || rawBrand.domain || brandJson.name || normalizedDomain;
     }
     if (!brandJson.store_url) {
-      brandJson.store_url = brandJson.brandData?.store_url || brandJson.website || `https://${normalizedDomain}`;
+      brandJson.store_url = brandJson.brandData?.store_url || `https://${rawBrand.domain}` || brandJson.website || `https://${normalizedDomain}`;
     }
     if (!brandJson.logo_url) {
-      brandJson.logo_url = brandJson.brandData?.logo_url || brandJson.logo || null;
+      brandJson.logo_url = brandJson.brandData?.logo_url || rawBrand.logos?.[0]?.url || brandJson.logo || null;
     }
     // Normalize products to match generator expectations
     console.log("🔍 [DEBUG] Raw products before normalization:", products?.slice(0, 2));
@@ -260,7 +265,7 @@ export async function generateEmailsController(req, res) {
         buttonText: p.buttonText || 'View',
         buttonUrl: p.url || p.buttonUrl || p.buttonURL || ''
       };
-    }) : (brandJson.brandData.products || []);
+    }) : (brandJson.brandData.products || rawBrand.products || []);
     console.log("🔍 [DEBUG] Normalized products:", normalizedProducts?.slice(0, 2));
     console.log("🔍 [DEBUG] Normalized products count:", normalizedProducts?.length || 0);
     console.log("🔍 [DEBUG] Products with valid imageUrl:", normalizedProducts?.filter(p => p.imageUrl && p.imageUrl.trim()).length || 0);
@@ -275,7 +280,18 @@ export async function generateEmailsController(req, res) {
     }
 
     // propagate colors to top-level for back-compat
-    for (const key of COLOR_KEYS) if (brandJson.brandData[key]) brandJson[key] = brandJson.brandData[key];
+    for (const key of COLOR_KEYS) {
+      if (brandJson.brandData[key]) {
+        brandJson[key] = brandJson.brandData[key];
+      } else if (rawBrand.colors && rawBrand.colors.length > 0) {
+        // Extract colors from raw brand.dev structure
+        if (key === 'primary_color' && rawBrand.colors[0]?.hex) {
+          brandJson[key] = rawBrand.colors[0].hex;
+        } else if (key === 'link_color' && rawBrand.colors[1]?.hex) {
+          brandJson[key] = rawBrand.colors[1].hex;
+        }
+      }
+    }
 
     const { resolved } = resolveEffectiveColors(brandJson);
     brandJson.theme = { ...(brandJson.theme || {}), primaryColor: brandJson.primary_color, linkColor: brandJson.link_color };
@@ -313,15 +329,18 @@ export async function generateEmailsController(req, res) {
       method: "POST",
       headers: { "Content-Type": "application/json", "Accept": "application/json" },
       body: JSON.stringify({
+        domain: brandJson.domain || normalizedDomain,
+        emailType: brandJson.emailType,
+        designAesthetic: brandJson.designAesthetic,
+        tone: brandJson.tone,
+        userContext: brandJson.userContext,
+        imageContext: brandJson.imageContext,
+        products: brandJson.products,
         brandData: {
           ...brandJson,
           products: brandJson.products // Ensure products are at the top level of brandData
         },
-        emailType: brandJson.emailType,
-        userContext: brandJson.userContext,
-        imageContext: brandJson.imageContext,
-        designAesthetic: brandJson.designAesthetic,
-        styleId: brandJson.designAesthetic,
+        customHeroImage: brandJson.customHeroImage || false,
         savedHeroImageUrl: brandJson.savedHeroImageUrl
       }),
     });
