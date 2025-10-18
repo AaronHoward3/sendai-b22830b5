@@ -194,7 +194,7 @@ function buildMJMLGenerationPrompt({
   const primaryColor = brandData?.brand?.colors?.[0]?.hex || brandData?.primary_color || '#000000';
   const linkColor = brandData?.brand?.colors?.[1]?.hex || brandData?.link_color || '#0066cc';
 
-  return `You are an expert email designer. I'm showing you an example email template image. Please generate clean, valid MJML code that recreates this design with the following specifications:
+  return `You are an expert email designer specializing in high-conversion promotional emails. I'm showing you an example email template image. Please generate clean, valid MJML code that recreates this design with enhanced typography and structure.
 
 BRAND INFORMATION:
 - Brand Name: ${brandName}
@@ -220,21 +220,61 @@ Product ${index + 1}:
 - Button URL: ${product.buttonUrl || product.url || '#'}
 `).join('')}
 
-REQUIREMENTS:
-1. Generate clean, valid MJML code that matches the visual design in the image
-2. Use the brand colors provided
-3. Include the products listed above
-4. Make sure all text content is relevant to the brand and context
-5. Use placeholder URLs like https://CUSTOMHEROIMAGE.COM for hero images
-6. Ensure responsive design with proper MJML structure
-7. Include proper email headers and footers
-8. Use semantic HTML structure within MJML
+TYPOGRAPHY & DESIGN REQUIREMENTS:
+1. HERO IMAGE SIZING:
+   - Use mj-hero component with height="400px" for optimal visual impact
+   - Ensure hero image covers full width with proper aspect ratio
+   - Add subtle overlay or gradient for text readability if needed
+
+2. TYPOGRAPHY HIERARCHY:
+   - Main headline: font-size="32px" font-weight="700" line-height="1.2" (bold, impactful)
+   - Subheadline: font-size="18px" font-weight="400" line-height="1.4" (readable, supportive)
+   - Body text: font-size="16px" font-weight="400" line-height="1.6" (clear, scannable)
+   - Product titles: font-size="20px" font-weight="600" line-height="1.3" (prominent)
+   - Product descriptions: font-size="14px" font-weight="400" line-height="1.5" (concise)
+   - Prices: font-size="18px" font-weight="700" color="${primaryColor}" (attention-grabbing)
+
+3. CREATIVE CONTENT GENERATION:
+   - Create compelling, brand-relevant headlines that match the ${tone} tone
+   - Write engaging subheadlines that support the main message
+   - Generate persuasive product descriptions that highlight benefits
+   - Use power words and emotional triggers appropriate for ${emailType}
+   - Include urgency or scarcity language when appropriate
+
+4. STRUCTURE & LAYOUT:
+   - Use proper MJML components: mj-hero, mj-section, mj-column, mj-text, mj-image, mj-button
+   - Implement responsive design with mj-group and mj-column for mobile
+   - Add proper spacing with padding="20px" on sections
+   - Use mj-divider for visual separation when needed
+
+5. BUTTONS & CTAs:
+   - Primary CTA: background-color="${primaryColor}" font-weight="600" font-size="16px"
+   - Secondary buttons: border="2px solid ${primaryColor}" color="${primaryColor}"
+   - Use action-oriented button text like "Shop Now", "Get Yours", "Discover More"
+
+6. COLOR USAGE:
+   - Primary color for headlines, buttons, and accents
+   - Link color for secondary CTAs and links
+   - Use color contrast ratios that meet accessibility standards
+
+7. CONTENT CREATIVITY:
+   - Generate headlines that are specific to the brand and products
+   - Create subheadlines that build on the main message
+   - Write product descriptions that focus on benefits, not just features
+   - Use the user context to make content more relevant and personalized
+
+TECHNICAL REQUIREMENTS:
+- Use placeholder URLs like https://CUSTOMHEROIMAGE.COM for hero images
+- Ensure all MJML is valid and properly structured
+- Include proper email headers and footers
+- Use semantic HTML structure within MJML components
+- Test responsive behavior with different screen sizes
 
 Please return ONLY the MJML code, no explanations or markdown formatting.`;
 }
 
 /**
- * Clean and validate the generated MJML
+ * Clean and validate the generated MJML with enhanced typography
  */
 function cleanMJML(mjml) {
   // Remove any markdown formatting
@@ -252,5 +292,57 @@ function cleanMJML(mjml) {
     cleaned = cleaned + '\n</mjml>';
   }
 
+  // Enhance typography and structure
+  cleaned = enhanceTypography(cleaned);
+  
   return cleaned;
+}
+
+/**
+ * Enhance typography and structure in MJML
+ */
+function enhanceTypography(mjml) {
+  let enhanced = mjml;
+  
+  // Ensure proper font families are set
+  enhanced = enhanced.replace(
+    /<mj-text([^>]*?)>/gi,
+    (match) => {
+      if (!match.includes('font-family=')) {
+        return match.replace('>', ' font-family="Arial, sans-serif">');
+      }
+      return match;
+    }
+  );
+  
+  // Ensure buttons have proper styling
+  enhanced = enhanced.replace(
+    /<mj-button([^>]*?)>/gi,
+    (match) => {
+      let button = match;
+      if (!button.includes('font-weight=')) {
+        button = button.replace('>', ' font-weight="600">');
+      }
+      if (!button.includes('font-size=')) {
+        button = button.replace('>', ' font-size="16px">');
+      }
+      if (!button.includes('border-radius=')) {
+        button = button.replace('>', ' border-radius="4px">');
+      }
+      return button;
+    }
+  );
+  
+  // Ensure sections have proper padding
+  enhanced = enhanced.replace(
+    /<mj-section([^>]*?)>/gi,
+    (match) => {
+      if (!match.includes('padding=')) {
+        return match.replace('>', ' padding="20px 0">');
+      }
+      return match;
+    }
+  );
+  
+  return enhanced;
 }

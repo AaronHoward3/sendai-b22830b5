@@ -16,23 +16,30 @@ const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
  */
 const INVARIANTS = `
 STYLE & SUBJECT:
-- Editorial lifestyle hero photograph for a promotional email
-- modern, brand-safe, cinematic, natural light, polished
-- people, environment, or product-in-use if provided (no abstract concept art)
+- High-quality editorial lifestyle hero photograph for promotional email
+- Modern, brand-safe, cinematic quality with professional lighting
+- Focus on people, environments, or products-in-use (no abstract concepts)
+- Clean, aspirational lifestyle that appeals to target audience
 
-COMPOSITION:
-- centered or upper-third composition
-- leave the lower third uncluttered for potential text overlay
-- subtle bottom framing or gradient to ease transition into email body
+COMPOSITION & SIZING:
+- Wide aspect ratio optimized for email headers (16:9 or 3:1)
+- Centered or rule-of-thirds composition for visual impact
+- Leave lower third clean for text overlay and email transition
+- Subtle bottom gradient or framing to blend into email body
+- Ensure image works well at 600px width (standard email width)
 
 STRICT NEGATIVES (MANDATORY):
-- no text, lettering, signage, labels, symbols, wordmarks, or typography of any kind
-- no brand logos or trademarks (on clothing, products, backdrops, or anywhere)
-- no packaging or boxes with labels
-- no watermarks
+- No text, lettering, signage, labels, symbols, wordmarks, or typography
+- No brand logos or trademarks anywhere in the image
+- No packaging, boxes, or products with visible labels
+- No watermarks, copyright symbols, or promotional text
+- No cluttered backgrounds that distract from main subject
 
-COLOR GUIDANCE:
-- prefer balanced, natural tones with a single accent unless brand color is specified
+COLOR & MOOD:
+- Balanced, natural tones with single accent color
+- Professional, aspirational mood that builds trust
+- Good contrast for potential text overlay
+- Colors that complement brand palette when specified
 `.trim();
 
 /**
@@ -101,25 +108,30 @@ async function createCreativeFocusViaChat(brandData, model) {
   const { brandDesc, primaryColor, audience, extraGuidance } = extractBrandBits(brandData);
 
   const sys = `
-You are a senior creative director and image prompt engineer.
-Output ONE short, vivid line that describes a photography concept for an email hero image.
-No preamble, no list, no formatting—just the single sentence idea.
-It must not include any words instructing text overlays, logos, watermarks, labels, or typography.
+You are a senior creative director specializing in high-conversion email marketing imagery.
+Generate ONE compelling, specific photography concept for an email hero image that will drive engagement.
+Focus on lifestyle, emotion, and aspirational moments that connect with the target audience.
+Output only a single vivid sentence (max 20 words) describing the scene, mood, or moment.
+Never mention text overlays, logos, watermarks, labels, or typography.
 `.trim();
 
   const user = `
 Brand: ${brandDesc}
-Audience: ${audience}
-Primary color (optional): ${primaryColor || "n/a"}
-Extra guidance (optional): ${extraGuidance || "n/a"}
+Target Audience: ${audience}
+Brand Color: ${primaryColor || "neutral palette"}
+Context: ${extraGuidance || "general promotional email"}
 
-Return only the single-line creative angle (<= 25 words).
+Create a specific, engaging photography concept that would work as a hero image for this brand's promotional email.
+Think about the lifestyle, emotions, and moments that would resonate with ${audience}.
+Focus on authentic, aspirational scenes that build trust and desire.
+
+Return only the single-line creative concept (max 20 words).
 `.trim();
 
   const resp = await openai.chat.completions.create({
     model,
-    temperature: 0.6,
-    max_tokens: 80,
+    temperature: 0.7,
+    max_tokens: 60,
     messages: [
       { role: "system", content: sys },
       { role: "user", content: user }

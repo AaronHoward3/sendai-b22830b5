@@ -106,14 +106,39 @@ export async function generateEmailsController(req, res) {
 }
 
 /**
- * Inject hero image URL into MJML
+ * Inject hero image URL into MJML with proper sizing and structure
  */
 function injectHeroImage(mjml, imageUrl) {
   if (!imageUrl) return mjml;
   
   // Replace placeholder with actual image URL
-  return mjml
+  let updatedMjml = mjml
     .replace(/https:\/\/CUSTOMHEROIMAGE\.COM/g, imageUrl)
     .replace(/https:\/\/SAVEDHEROIMAGE\.COM/g, imageUrl)
     .replace(/https:\/\/PLACEHOLDERHERO\.COM/g, imageUrl);
+  
+  // Ensure hero images have proper sizing attributes
+  updatedMjml = updatedMjml.replace(
+    /<mj-hero([^>]*?)background-url=["']([^"']*?)["']([^>]*?)>/gi,
+    (match, before, url, after) => {
+      // Add height if not present
+      if (!match.includes('height=')) {
+        return `<mj-hero${before}background-url="${url}" height="400px"${after}>`;
+      }
+      return match;
+    }
+  );
+  
+  // Ensure hero images have proper width
+  updatedMjml = updatedMjml.replace(
+    /<mj-hero([^>]*?)>/gi,
+    (match) => {
+      if (!match.includes('width=')) {
+        return match.replace('>', ' width="100%">');
+      }
+      return match;
+    }
+  );
+  
+  return updatedMjml;
 }
