@@ -385,22 +385,43 @@ export async function generateEmailsController(req, res) {
       return res.status(500).json({ error: "Invalid response from generator service" });
     }
 
-    // Compile MJML -> HTML
-    const htmlEmails = (generated.emails || []).map((email) => {
-      const compiled = mjml2html(email.content || "");
+    // Handle both old generator format (emails array) and new GeneratorV2 format (mjml string)
+    let htmlEmails = [];
+    
+    if (generated.emails && Array.isArray(generated.emails)) {
+      // Old generator format - emails array
+      htmlEmails = generated.emails.map((email) => {
+        const compiled = mjml2html(email.content || "");
+        let html = compiled.html || "";
+        if (process.env.DEBUG_COLORS === "1") {
+          const cmt = `<!-- DEBUG_COLORS primary=${resolved.primary_color} link=${resolved.link_color} designAesthetic=${brandJson.designAesthetic} -->`;
+          html = cmt + "\n" + html;
+        }
+        return { ...email, html };
+      });
+    } else if (generated.mjml) {
+      // New GeneratorV2 format - single mjml string
+      const compiled = mjml2html(generated.mjml);
       let html = compiled.html || "";
       if (process.env.DEBUG_COLORS === "1") {
         const cmt = `<!-- DEBUG_COLORS primary=${resolved.primary_color} link=${resolved.link_color} designAesthetic=${brandJson.designAesthetic} -->`;
         html = cmt + "\n" + html;
       }
-      return { ...email, html };
-    });
+      htmlEmails = [{
+        content: generated.mjml,
+        html: html,
+        subject: generated.subjectLine || generated.subject || ""
+      }];
+    } else {
+      console.error("[generateController] No emails or mjml found in generator response");
+      return res.status(500).json({ error: "No email content received from generator" });
+    }
 
     // ===== Persist the image actually used (with de-dupe by URL) =====
     let savedHero = null;
     try {
       const uid = req.user?.id; // requireAuth sets this
-      const mjml = htmlEmails?.[0]?.content || generated?.emails?.[0]?.content || "";
+      const mjml = htmlEmails?.[0]?.content || generated?.mjml || generated?.emails?.[0]?.content || "";
       const html = htmlEmails?.[0]?.html || "";
       const extractedUrl = extractHeroUrl({ generated, headerHero, mjml, html });
       const urlToStore = extractedUrl ? normalizeUrl(extractedUrl) : null;
@@ -517,8 +538,8 @@ export async function generateEmailsController(req, res) {
       totalTokens: generated.totalTokens,
       emails: htmlEmails,
       savedHeroImage: savedHero ? { id: savedHero.id, url: savedHero.public_url } : null,
-      heroImageUrlUsed: generated?.heroImageUrlUsed || headerHero || null,
-      usedImageSource: generated?.heroImageUrlUsed ? (savedHeroImageUrl ? "saved" : "generated") : null,
+      heroImageUrlUsed: generated?.heroImageUrlUsed || generated?.heroImageUrl || headerHero || null,
+      usedImageSource: generated?.heroImageUrlUsed || generated?.heroImageUrl ? (savedHeroImageUrl ? "saved" : "generated") : null,
       debug: { colorsSent: resolveEffectiveColors(brandJson).resolved },
     };
     // Add preview mode indicators
