@@ -387,17 +387,16 @@ export const Step2EmailType: React.FC<Step2EmailTypeProps> = ({formData, updateF
   } | null>(null);
   // Helper function to safely get string values from brand data
   const getBrandString = (value: unknown): string => {return typeof value === 'string' ? value : '';};
-  // From Step 1 brand payload
-  const scrapedPrimary = getBrandString(formData?.brandData?.brandData?.primary_color) || '';
-  const scrapedSecondary = getBrandString(formData?.brandData?.brandData?.link_color) || '';
+  // From Step 1 brand payload (now in brand.dev format)
+  const scrapedPrimary = getBrandString(formData?.brandData?.brand?.colors?.[0]?.hex) || '';
+  const scrapedSecondary = getBrandString(formData?.brandData?.brand?.colors?.[1]?.hex) || '';
   const brandName = 
-    getBrandString(formData?.brandData?.brandData?.name) ||
-    getBrandString(formData?.brandData?.name) ||
+    getBrandString(formData?.brandData?.brand?.title) ||
+    getBrandString(formData?.brandData?.brand?.domain) ||
     normalizeDomain(formData.domain || 'your brand');
   const brandDesc =
-    getBrandString(formData?.brandData?.brandData?.description) ||
-    getBrandString(formData?.brandData?.description) ||
-    getBrandString((formData?.brandData?.brandData as { tagline?: unknown })?.tagline) ||
+    getBrandString(formData?.brandData?.brand?.description) ||
+    getBrandString(formData?.brandData?.brand?.slogan) ||
     '';
   const brandPrimary = scrapedPrimary || getBrandString(formData?.brandData?.primary_color);
   const brandLink = scrapedSecondary || getBrandString(formData?.brandData?.link_color);
@@ -406,10 +405,12 @@ export const Step2EmailType: React.FC<Step2EmailTypeProps> = ({formData, updateF
     const existing = formData.brandData || {};
     const updated = {
       ...existing,
-      brandData: {
-        ...(existing.brandData || {}),
-        primary_color: colors.primary_color,
-        link_color: colors.link_color,
+      brand: {
+        ...(existing.brand || {}),
+        colors: [
+          { hex: colors.primary_color, name: "Primary" },
+          { hex: colors.link_color, name: "Secondary" }
+        ]
       },
       primary_color: colors.primary_color,
       link_color: colors.link_color,

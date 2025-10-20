@@ -75,18 +75,10 @@ const PORT = process.env.PORT || 3001;
 // Production-ready webhook handler that works with Render.com's JSON parsing
 app.post("/stripe-webhook", express.json(), (req, res) => {
   // Render.com parses JSON at infrastructure level, so we need to handle this
-  console.log('[webhook] Received webhook event (production endpoint)');
-  console.log('[webhook] Headers:', req.headers);
-  console.log('[webhook] Body type:', typeof req.body);
-  console.log('[webhook] Body length:', req.body?.length || 0);
-  console.log('[webhook] Stripe signature:', req.headers['stripe-signature']);
-  
   // Since Render.com parses JSON, we need to reconstruct the raw body
   // This is a workaround for Render.com's infrastructure-level JSON parsing
   const rawBody = JSON.stringify(req.body);
   req.rawBody = rawBody;
-  
-  console.log('[webhook] Reconstructed raw body length:', rawBody.length);
   
   stripeWebhook(req, res);
 });
@@ -95,13 +87,6 @@ app.post("/stripe-webhook", express.json(), (req, res) => {
 app.post("/webhooks/stripe", express.raw({ type: "application/json" }), (req, res) => {
   // Store the raw body for signature verification
   req.rawBody = req.body;
-  
-  // Log webhook details for debugging
-  console.log('[webhook] Received webhook event (legacy endpoint)');
-  console.log('[webhook] Headers:', req.headers);
-  console.log('[webhook] Body length:', req.body?.length || 0);
-  console.log('[webhook] Body type:', typeof req.body);
-  console.log('[webhook] Stripe signature:', req.headers['stripe-signature']);
   
   // Convert Buffer to string if needed for signature verification
   if (Buffer.isBuffer(req.body)) {
@@ -180,18 +165,7 @@ app.head(["/health", "/healthz", "/api/health", "/api/healthz"], (_req, res) =>
 );
 
 // --------- Startup logs ----------
-console.log("🔐 API Keys / Config:");
-console.log(`- BRANDDEV_API_KEY: ${process.env.BRANDDEV_API_KEY ? "✅ yes" : "❌ no"}`);
-console.log(`- OPENAI_API_KEY: ${process.env.OPENAI_API_KEY ? "✅ yes" : "❌ no"}`);
-console.log(`- STRIPE_SECRET_KEY: ${process.env.STRIPE_SECRET_KEY ? "✅ yes" : "❌ no"}`);
-console.log(`- STRIPE_WEBHOOK_SECRET: ${process.env.STRIPE_WEBHOOK_SECRET ? "✅ yes" : "❌ no"}`);
-console.log(`- SCRAPINGBEE_API_KEY: ${process.env.SCRAPINGBEE_API_KEY ? "✅ yes" : "❌ no"}`);
-console.log(`- GENERATOR_URL: ${process.env.GENERATOR_URL ? "✅ yes" : "❌ no"}`);
-console.log(`- CLIENT_URL: ${process.env.CLIENT_URL}`);
-const allowedOrigins = getAllowedOrigins();
-console.log(`- Allowed CORS origins: ${allowedOrigins === true ? 'ALL (development mode)' : allowedOrigins.join(', ')}`);
-
-console.log("\n📡 Available Routes (high level):");
+console.log("\n📡 Available Routes:");
 console.log("- /api/brand/* and /api/brands/* (alias) ✅");
 console.log("- /api/products/*");
 console.log("- /api/generate (protected)");

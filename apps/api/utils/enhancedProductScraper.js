@@ -164,8 +164,6 @@ export async function scrapeProductsFromDomain(domain) {
     const scrapingbeeApiKey = process.env.SCRAPINGBEE_API_KEY;
     const url = `https://${domain}`;
 
-    console.log("🔍 Enhanced scraping from:", url);
-
     const response = await axios.get(
       `https://app.scrapingbee.com/api/v1/`,
       {
@@ -187,14 +185,12 @@ export async function scrapeProductsFromDomain(domain) {
 
     // Step 1: Detect platform
     const platform = detectPlatform($, domain);
-    console.log(`🎯 Detected platform: ${platform || 'Generic'}`);
 
     let products = [];
 
     // Step 2: Try structured data first (most reliable)
     products = extractStructuredData($, domain);
     if (products.length > 0) {
-      console.log(`✅ Found ${products.length} products via structured data`);
       return products.slice(0, 6);
     }
 
@@ -202,7 +198,6 @@ export async function scrapeProductsFromDomain(domain) {
     if (platform && PLATFORM_PATTERNS[platform]) {
       products = extractProductsPlatformSpecific($, domain, platform);
       if (products.length > 0) {
-        console.log(`✅ Found ${products.length} products via ${platform} patterns`);
         return products.slice(0, 6);
       }
     }
@@ -210,13 +205,11 @@ export async function scrapeProductsFromDomain(domain) {
     // Step 4: Try generic pattern matching
     products = extractProductsGeneric($, domain);
     if (products.length > 0) {
-      console.log(`✅ Found ${products.length} products via generic patterns`);
       return products.slice(0, 6);
     }
 
     // Step 5: Last resort - any links with images
     products = extractLinksWithImages($, domain);
-    console.log(`⚠️ Fallback: Found ${products.length} links with images`);
     
     return products.slice(0, 6);
 

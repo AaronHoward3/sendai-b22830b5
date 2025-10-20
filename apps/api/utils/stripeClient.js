@@ -13,5 +13,3 @@ if (!/^sk_(test|live)_/.test(key)) {
 
 export const stripe = new Stripe(key, { apiVersion: '2024-06-20' });
 
-// Optional: tiny mode hint (safe)
-console.log(`[API] Stripe mode: ${key.startsWith('sk_live_') ? 'LIVE' : 'TEST'}`);

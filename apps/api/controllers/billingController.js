@@ -8,7 +8,6 @@ async function getOrCreateCustomer(user) {
     if (prof?.stripe_customer_id) return prof.stripe_customer_id;
   } catch (error) {
     // If column doesn't exist, fall back to subscriptions table
-    console.log('[billing] stripe_customer_id column not found in profiles, checking subscriptions table');
   }
 
   // Fallback: check subscriptions table for existing customer ID
@@ -106,7 +105,6 @@ export async function createPortalSession(req, res) {
       }
     } catch (error) {
       // If column doesn't exist, fall back to subscriptions table
-      console.log('[billing] stripe_customer_id column not found in profiles, checking subscriptions table');
     }
 
     // Fallback: check subscriptions table for existing customer ID
@@ -515,26 +513,8 @@ export async function stripeWebhook(req, res) {
   const sig = req.headers['stripe-signature'];
   let event;
   
-  console.log('[stripe] Processing webhook event');
-  console.log('[stripe] Signature present:', !!sig);
-  console.log('[stripe] Raw body type:', typeof req.rawBody);
-  console.log('[stripe] Raw body length:', req.rawBody?.length || 0);
-  console.log('[stripe] Webhook secret set:', !!process.env.STRIPE_WEBHOOK_SECRET);
-  
-  // Additional debugging for signature verification
-  if (sig) {
-    console.log('[stripe] Signature format:', sig.substring(0, 50) + '...');
-    console.log('[stripe] Signature parts:', sig.split(',').length);
-  }
-  
-  // Log first 100 chars of body for debugging
-  if (req.rawBody) {
-    console.log('[stripe] Body preview:', req.rawBody.substring(0, 100) + '...');
-  }
-  
   try {
     event = stripe.webhooks.constructEvent(req.rawBody, sig, process.env.STRIPE_WEBHOOK_SECRET);
-    console.log('[stripe] Event verified successfully:', event.type);
   } catch (err) {
     console.warn('[stripe] webhook verify failed', err?.message || err);
     console.warn('[stripe] Error details:', {
@@ -547,7 +527,6 @@ export async function stripeWebhook(req, res) {
     // Production fallback: Since Render.com parses JSON at infrastructure level,
     // we need to handle this case. We'll verify the event comes from Stripe
     // by checking the event structure and using additional validation
-    console.log('[stripe] Attempting production fallback for Render.com...');
     
     try {
       // Parse the event data
@@ -572,12 +551,10 @@ export async function stripeWebhook(req, res) {
       ];
       
       if (!validEventTypes.includes(eventData.type)) {
-        console.log('[stripe] Ignoring unsupported event type:', eventData.type);
         return res.json({ received: true, ignored: true });
       }
       
       event = eventData;
-      console.log('[stripe] Event validated successfully (fallback):', event.type);
       
     } catch (parseErr) {
       console.error('[stripe] Failed to validate event data:', parseErr);

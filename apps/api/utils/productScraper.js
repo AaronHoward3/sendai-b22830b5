@@ -6,8 +6,6 @@ export async function scrapeProductsFromDomain(domain) {
     const scrapingbeeApiKey = process.env.SCRAPINGBEE_API_KEY;
     const url = `https://${domain}`;
 
-    console.log("Scraping from:", url);
-
     const response = await axios.get(
       `https://app.scrapingbee.com/api/v1/`,
       {
@@ -30,12 +28,6 @@ export async function scrapeProductsFromDomain(domain) {
     const generatorMeta = $('meta[name="generator"]').attr("content") || "";
     const isShopify = generatorMeta.toLowerCase().includes("shopify");
     const isWoo = generatorMeta.toLowerCase().includes("woocommerce");
-
-    console.log(
-      `Detected platform: ${
-        isShopify ? "Shopify" : isWoo ? "WooCommerce" : "Unknown"
-      }`
-    );
 
     function absolute(urlPart) {
       if (!urlPart) return "";
@@ -162,7 +154,6 @@ export async function scrapeProductsFromDomain(domain) {
       });
     }
 
-    console.log("Final products:", products);
     return products;
   } catch (err) {
     console.error("Scraper error:", err.message);

@@ -1,7 +1,5 @@
 import { getStoredBrand } from "../utils/dataStore.js";
 import mjml2html from "mjml";
-import path from "node:path";
-import fs from "node:fs/promises";
 import { storeUserImageFromUrl, storeUserImageFromDataUrl } from "./imagesController.js";
 import { supabase } from "../utils/supabaseClient.js";
 
@@ -133,11 +131,9 @@ function extractHeroUrl({ generated, headerHero, mjml, html }) {
   return null;
 }
 export async function generateEmailsController(req, res) {
-  console.log("🎯 [CONTROLLER] generate Emails started");
   const startTime = Date.now();
   const isPreviewMode = req.isPreviewMode || false;
   try {
-    console.log("🎯 [CONTROLLER] Extracting request body...");
     const {
       domain,
       emailType,
@@ -150,35 +146,18 @@ export async function generateEmailsController(req, res) {
       savedHeroImageUrl, // pass-through for reusing a saved image
       savedHeroImageId,  // reserved for future id->url resolution
     } = req.body || {};
-    console.log("🎯 [CONTROLLER] Request data:", {
-      domain,
-      emailType,
-      tone,
-      designAesthetic,
-      customHeroImage,
-      hasProducts: !!products,
-      productsLength: products?.length || 0,
-      productsPreview: products?.slice(0, 2) || [],
-      hasSavedHeroImageUrl: !!savedHeroImageUrl,
-      hasSavedHeroImageId: !!savedHeroImageId
-    });
     if (!domain) {
-      console.error("❌ [CONTROLLER] Domain is required");
       return res.status(400).json({ error: "Domain is required" });
     }
     const normalizedDomain = normalizeDomain(domain);
-    console.log("🎯 [CONTROLLER] Normalized domain:", normalizedDomain);
 
     const existing = await getStoredBrand(normalizedDomain);
-    console.log("🎯 [CONTROLLER] Brand lookup result:", !!existing?.brand);
     
     let brandJson;
     if (!existing?.brand) {
-      console.error("❌ [CONTROLLER] Brand info not found for domain:", normalizedDomain);
       
       // For preview mode, create a fallback brand to allow generation
       if (isPreviewMode) {
-        console.log("🎯 [CONTROLLER] Creating fallback brand for preview mode");
         const fallbackBrand = {
           name: normalizedDomain,
           domain: normalizedDomain,
@@ -208,133 +187,83 @@ export async function generateEmailsController(req, res) {
           }
         };
         brandJson = structuredClone(fallbackBrand);
-        console.log("🎯 [CONTROLLER] Using fallback brand for preview generation");
       } else {
         return res.status(404).json({ error: "Brand info not found for domain", domain: normalizedDomain });
       }
     } else {
-      // Use existing brand data
+      // Use existing brand data (now in original brand.dev format)
       brandJson = structuredClone(existing.brand);
       
-      // Ensure required fields for headers and footers
-      if (!brandJson.store_name) {
-        brandJson.store_name = brandJson.name || normalizedDomain;
+      // Add decisions to the original brand.dev payload
+      brandJson.emailType = emailType || "";
+      brandJson.userContext = userContext || "";
+      brandJson.imageContext = imageContext || "";
+      brandJson.tone = tone || "";
+      brandJson.designAesthetic = designAesthetic || "";
+      brandJson.customHeroImage = customHeroImage ?? true;
+      
+      // Add products to the payload
+      brandJson.products = products || [];
+      
+      // Add saved hero image if provided
+      if (typeof savedHeroImageUrl === "string" && /^https?:\/\//i.test(savedHeroImageUrl.trim())) {
+        brandJson.savedHeroImageUrl = savedHeroImageUrl.trim();
       }
-      if (!brandJson.store_url) {
-        brandJson.store_url = brandJson.website || `https://${normalizedDomain}`;
-      }
-      if (!brandJson.logo_url) {
-        brandJson.logo_url = brandJson.logo || null;
-      }
+      
+      // Add compatibility fields for generator services
+      const brand = brandJson.brand || {};
+      brandJson.store_name = brand.title || brand.domain || normalizedDomain;
+      brandJson.store_url = `https://${brand.domain || normalizedDomain}`;
+      brandJson.logo_url = brand.logos?.[0]?.url || null;
+      brandJson.primary_color = brand.colors?.[0]?.hex || "#4f46e5";
+      brandJson.link_color = brand.colors?.[1]?.hex || "#22d3ee";
     }
+    // Log products for debugging
 
-    // Build payload for generator (common logic for both cases)
-    brandJson.emailType = emailType || "";
-    brandJson.userContext = userContext || "";
-    brandJson.imageContext = imageContext || "";
-    brandJson.tone = tone || "";
-    brandJson.designAesthetic = designAesthetic || "";
-    brandJson.brandData = brandJson.brandData || {};
-    brandJson.brandData.customHeroImage = customHeroImage ?? true;
-    brandJson.customHeroImage = customHeroImage ?? true; // Also set at top level for generator
-    
-    // Ensure required fields are at the top level for generator services
-    if (!brandJson.store_name) {
-      brandJson.store_name = brandJson.brandData?.store_name || brandJson.name || normalizedDomain;
-    }
-    if (!brandJson.store_url) {
-      brandJson.store_url = brandJson.brandData?.store_url || brandJson.website || `https://${normalizedDomain}`;
-    }
-    if (!brandJson.logo_url) {
-      brandJson.logo_url = brandJson.brandData?.logo_url || brandJson.logo || null;
-    }
-    // Normalize products to match generator expectations
-    console.log("🔍 [DEBUG] Raw products before normalization:", products?.slice(0, 2));
-    const normalizedProducts = Array.isArray(products) ? products.map(p => {
-      const imageUrl = p.image_url || p.imageUrl || p.image || '';
-      return {
-        title: p.name || p.title || '',
-        subtitle: p.description || p.subtitle || '',
-        price: p.price || '',
-        imageUrl: imageUrl && imageUrl.trim() ? imageUrl : '', // Only use placeholder if no imageUrl
-        buttonText: p.buttonText || 'View',
-        buttonUrl: p.url || p.buttonUrl || p.buttonURL || ''
-      };
-    }) : (brandJson.brandData.products || []);
-    console.log("🔍 [DEBUG] Normalized products:", normalizedProducts?.slice(0, 2));
-    console.log("🔍 [DEBUG] Normalized products count:", normalizedProducts?.length || 0);
-    console.log("🔍 [DEBUG] Products with valid imageUrl:", normalizedProducts?.filter(p => p.imageUrl && p.imageUrl.trim()).length || 0);
-    
-    brandJson.brandData.products = normalizedProducts;
-    brandJson.products = normalizedProducts; // Also put products at top level for generator
+    // Add theme and styles for generator compatibility
+    brandJson.theme = { 
+      primaryColor: brandJson.primary_color, 
+      linkColor: brandJson.link_color 
+    };
+    brandJson.styles = { 
+      primary_color: brandJson.primary_color, 
+      link_color: brandJson.link_color 
+    };
+    brandJson.debug = { 
+      designAesthetic: brandJson.designAesthetic, 
+      emailType: brandJson.emailType 
+    };
 
-    // Forward saved image to generator -> it will inject and skip generating
-    if (typeof savedHeroImageUrl === "string" && /^https?:\/\//i.test(savedHeroImageUrl.trim())) {
-      brandJson.savedHeroImageUrl = savedHeroImageUrl.trim();
-      brandJson.brandData.customHeroImage = false;
-    }
+    // Prepare payload to send to generator
+    const payloadToSend = {
+      brandData: brandJson,
+      emailType: brandJson.emailType,
+      userContext: brandJson.userContext,
+      imageContext: brandJson.imageContext,
+      designAesthetic: brandJson.designAesthetic,
+      styleId: brandJson.designAesthetic,
+      savedHeroImageUrl: brandJson.savedHeroImageUrl
+    };
 
-    // propagate colors to top-level for back-compat
-    for (const key of COLOR_KEYS) if (brandJson.brandData[key]) brandJson[key] = brandJson.brandData[key];
-
-    const { resolved } = resolveEffectiveColors(brandJson);
-    brandJson.theme = { ...(brandJson.theme || {}), primaryColor: brandJson.primary_color, linkColor: brandJson.link_color };
-    brandJson.styles = { ...(brandJson.styles || {}), primary_color: brandJson.primary_color, link_color: brandJson.link_color };
-    brandJson.debug = { ...(brandJson.debug || {}), effectiveColors: resolved, designAesthetic: brandJson.designAesthetic, emailType: brandJson.emailType };
-
-    if (process.env.LOG_GENERATOR_PAYLOAD === "1") {
-      try {
-        const outPath = path.join(process.cwd(), "__debug_last_generator_payload.json");
-        await fs.writeFile(outPath, JSON.stringify(brandJson, null, 2), "utf8");
-        console.log(`[generateController] wrote payload to ${outPath}`);
-      } catch (e) {
-        console.warn("[generateController] failed to write payload:", e.message);
-      }
-    }
-
-    console.log("[generateController] Forwarding to Generator...");
-    console.log("🔍 [DEBUG] Final brand data structure:");
-    console.log(brandJson);
     
     if (!process.env.GENERATOR_URL) {
       console.error("[generateController] GENERATOR_URL not configured");
       return res.status(500).json({ error: "Generator service not configured" });
     }
-    console.log("🎯 [CONTROLLER] Generator URL:", process.env.GENERATOR_URL);
-    console.log("🎯 [CONTROLLER] Brand JSON payload size:", JSON.stringify(brandJson).length);
-    console.log("🎯 [CONTROLLER] Sending to generator:", {
-      hasProducts: !!brandJson.products,
-      productsLength: brandJson.products?.length || 0,
-      productsPreview: brandJson.products?.slice(0, 2) || []
-    });
     
     const genStart = Date.now();
     const generatorResponse = await fetch(process.env.GENERATOR_URL, {
       method: "POST",
       headers: { "Content-Type": "application/json", "Accept": "application/json" },
-      body: JSON.stringify({
-        brandData: {
-          ...brandJson,
-          products: brandJson.products // Ensure products are at the top level of brandData
-        },
-        emailType: brandJson.emailType,
-        userContext: brandJson.userContext,
-        imageContext: brandJson.imageContext,
-        designAesthetic: brandJson.designAesthetic,
-        styleId: brandJson.designAesthetic,
-        savedHeroImageUrl: brandJson.savedHeroImageUrl
-      }),
+      body: JSON.stringify(payloadToSend),
     });
-    console.log(`[generateController] Generator responded in ${Date.now() - genStart} ms`);
 
     if (!generatorResponse.ok) {
-      console.log("Generator server error code:", generatorResponse.status);
       const errorText = await generatorResponse.text().catch(() => "Unknown error");
       console.error("[generateController] Generator error:", errorText);
       
       // Handle specific error types
       if (generatorResponse.status === 429) {
-        console.error("[generateController] Rate limit exceeded (429) - stopping generation process");
         return res.status(429).json({ 
           error: "Too many requests. Please wait a moment before trying again.",
           type: "rate_limit",
@@ -343,7 +272,6 @@ export async function generateEmailsController(req, res) {
       }
       
       if (generatorResponse.status >= 500) {
-        console.error("[generateController] Server error - stopping generation process");
         return res.status(500).json({ 
           error: "Email generator service is temporarily unavailable. Please try again later.",
           type: "server_error"
@@ -355,15 +283,34 @@ export async function generateEmailsController(req, res) {
         type: "generator_error"
       });
     }
-    console.log("🎯 [CONTROLLER] Generator response OK, parsing JSON...");
+    console.log("🎯 [CONTROLLER] Generator response OK, parsing response...");
     const headerHero = generatorResponse.headers.get("x-hero-image-url-used") || null;
     let generated;
-    try {
-      generated = await generatorResponse.json();
-      console.log("🎯 [CONTROLLER] Generator JSON parsed successfully");
-    } catch (parseError) {
-      console.error("[generateController] Failed to parse generator response:", parseError);
-      return res.status(500).json({ error: "Invalid response from generator service" });
+    
+    // First try to get the response as text to check if it's MJML
+    const responseText = await generatorResponse.text();
+    
+    // Check if the response looks like MJML (starts with <mjml>)
+    if (responseText.trim().startsWith('<mjml>')) {
+      console.log("🎯 [CONTROLLER] Detected MJML response, processing directly");
+      
+      // Create a mock structure that matches the expected format
+      generated = {
+        emails: [{
+          content: responseText,
+          subject: brandJson.subject || "Generated Email",
+          preview: brandJson.preview || ""
+        }]
+      };
+    } else {
+      // Try to parse as JSON (fallback for backward compatibility)
+      try {
+        generated = JSON.parse(responseText);
+        console.log("🎯 [CONTROLLER] Generator JSON parsed successfully");
+      } catch (parseError) {
+        console.error("[generateController] Failed to parse generator response as JSON:", parseError);
+        return res.status(500).json({ error: "Invalid response from generator service" });
+      }
     }
 
     // Compile MJML -> HTML
@@ -387,32 +334,7 @@ export async function generateEmailsController(req, res) {
       const urlToStore = extractedUrl ? normalizeUrl(extractedUrl) : null;
       const selectedUrl = savedHeroImageUrl ? normalizeUrl(savedHeroImageUrl) : null;
 
-      console.log("[generateController] hero capture:", {
-        hasUser: !!uid,
-        userId: uid,
-        domain: normalizedDomain,
-        headerHero,
-        hadExplicit: !!generated?.heroImageUrlUsed,
-        heroImageUrlUsed: generated?.heroImageUrlUsed,
-        foundFrom: urlToStore ? "extracted" : "none",
-        selectedSaved: !!selectedUrl,
-        urlPreview: urlToStore ? String(urlToStore).slice(0, 80) : null,
-        isPreviewMode,
-        willSaveImage: !!(uid && normalizedDomain && urlToStore && !isPreviewMode)
-      });
       // Only proceed if we have a user + domain + a URL to store AND not in preview mode
-      if (uid && normalizedDomain && urlToStore && !isPreviewMode) {
-        console.log("[generateController] Proceeding with image save - all conditions met");
-      } else {
-        console.log("[generateController] Skipping image save - conditions not met:", {
-          hasUser: !!uid,
-          hasDomain: !!normalizedDomain,
-          hasUrl: !!urlToStore,
-          isPreviewMode: isPreviewMode,
-          reason: !uid ? "No user" : !normalizedDomain ? "No domain" : !urlToStore ? "No URL" : "Preview mode"
-        });
-      }
-      
       if (uid && normalizedDomain && urlToStore && !isPreviewMode) {
         // If user picked a saved image and it's the same link, just reuse existing DB row
         if (selectedUrl && selectedUrl === urlToStore) {
@@ -461,37 +383,26 @@ export async function generateEmailsController(req, res) {
         }
         // Still not found? Only then upload/save.
         if (!savedHero) {
-          console.log("[generateController] Saving new image to user profile:", {
-            userId: uid,
-            domain: normalizedDomain,
-            url: extractedUrl,
-            isDataUrl: extractedUrl.startsWith("data:"),
-            isHttpUrl: /^https?:\/\//i.test(extractedUrl)
-          });
           if (extractedUrl.startsWith("data:")) {
             savedHero = await storeUserImageFromDataUrl({
               userId: uid,
               domain: normalizedDomain,
               dataUrl: extractedUrl,
             });
-            console.log("[generateController] Image saved from data URL:", savedHero?.id);
           } else if (/^https?:\/\//i.test(extractedUrl)) {
             savedHero = await storeUserImageFromUrl({
               userId: uid,
               domain: normalizedDomain,
               url: extractedUrl,
             });
-            console.log("[generateController] Image saved from URL:", savedHero?.id);
           }
         } else {
-          console.log("[generateController] Reusing existing image:", savedHero?.id);
         }
       }
     } catch (e) {
       console.warn("[generateController] Hero image save skipped:", e?.message || e);
     }
     // ================================================================
-    console.log(`[generateController] Total request time: ${Date.now() - startTime} ms`);
     const response = {
       success: true,
       subjectLine: generated.subjectLine || generated.subject || (htmlEmails[0]?.subject ?? ""),

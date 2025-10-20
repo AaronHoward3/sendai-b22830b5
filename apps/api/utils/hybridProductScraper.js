@@ -303,7 +303,6 @@ export async function scrapeProductsFromDomain(domain, options = {}) {
   } = options;
 
   try {
-    console.log(`🔍 Hybrid scraping from: ${domain}`);
     
     const scrapingbeeApiKey = process.env.SCRAPINGBEE_API_KEY;
     const url = `https://${domain}`;
@@ -322,7 +321,6 @@ export async function scrapeProductsFromDomain(domain, options = {}) {
     for (let attempt = 0; attempt < strategies.length; attempt++) {
       try {
         const strategy = strategies[attempt];
-        console.log(`📡 Attempt ${attempt + 1}: ${JSON.stringify(strategy)}`);
         
         const response = await axios.get(
           `https://app.scrapingbee.com/api/v1/`,
@@ -343,7 +341,6 @@ export async function scrapeProductsFromDomain(domain, options = {}) {
         break;
       } catch (error) {
         lastError = error;
-        console.log(`❌ Attempt ${attempt + 1} failed: ${error.message}`);
         if (attempt < strategies.length - 1) {
           await new Promise(resolve => setTimeout(resolve, 1000));
         }
@@ -358,7 +355,6 @@ export async function scrapeProductsFromDomain(domain, options = {}) {
     
     // Step 1: Detect platform
     const platform = detectPlatform($, domain);
-    console.log(`🎯 Detected platform: ${platform || 'Generic'}`);
 
     // Step 2: Try multiple extraction strategies
     const allProducts = [];
@@ -403,9 +399,6 @@ export async function scrapeProductsFromDomain(domain, options = {}) {
       .filter(p => p.confidence >= minConfidence)
       .slice(0, maxProducts);
 
-    console.log(`✅ Found ${finalProducts.length} high-quality products`);
-    console.log(`📊 Strategy breakdown:`, getStrategyBreakdown(finalProducts));
-    
     // Return final products (limit to 4)
     return finalProducts.slice(0, 4).map(p => ({
       name: p.name,

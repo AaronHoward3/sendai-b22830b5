@@ -1,4 +1,3 @@
-import { normalizeBrandDevToPumaStyle } from "../utils/normalizeBrand.js";
 import { scrapeProductsFromDomain } from "../utils/productScraper.js";
 import { getStoredBrand, storeBrand } from "../utils/dataStore.js";
 import fetch from "node-fetch";
@@ -27,24 +26,21 @@ export async function checkBrand(req, res) {
     if (!process.env.BRANDDEV_API_KEY) {
       console.log(`No BRANDDEV_API_KEY found, returning fallback brand for ${normalizedDomain}`);
       
-      // Return fallback brand data for freemium users
+      // Return fallback brand data for freemium users in brand.dev format
       const fallbackBrand = {
-        name: normalizedDomain,
-        domain: normalizedDomain,
-        website: `https://${normalizedDomain}`,
-        description: `Brand for ${normalizedDomain}`,
-        primary_color: "#4f46e5",
-        link_color: "#22d3ee",
-        logo: null,
-        logo_url: null, // Header service looks for this field
-        store_name: normalizedDomain, // Header service looks for this field
-        store_url: `https://${normalizedDomain}`, // Header service looks for this field
-        products: [],
-        brandData: {
-          products: [],
+        brand: {
+          domain: normalizedDomain,
+          title: normalizedDomain,
           description: `Brand for ${normalizedDomain}`,
-          primary_color: "#4f46e5",
-          link_color: "#22d3ee",
+          slogan: "",
+          colors: [
+            { hex: "#4f46e5", name: "Primary" },
+            { hex: "#22d3ee", name: "Secondary" }
+          ],
+          logos: [],
+          backdrops: [],
+          fonts: [],
+          socials: []
         }
       };
       
@@ -63,13 +59,13 @@ export async function checkBrand(req, res) {
     }
 
     const brandDevData = await response.json();
-    const normalized = normalizeBrandDevToPumaStyle(brandDevData);
+    
+    // Store the original brand.dev response without normalization
+    await storeBrand(normalizedDomain, null, brandDevData);
 
-    await storeBrand(normalizedDomain, null, normalized);
+    console.log(`Stored original brand.dev data for ${normalizedDomain}.`);
 
-    console.log(`Stored brand info for ${normalizedDomain}.`);
-
-    res.json(normalized);
+    res.json(brandDevData);
 
   } catch (err) {
     console.error("Brand check error:", err.message);
