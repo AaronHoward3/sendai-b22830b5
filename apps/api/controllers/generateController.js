@@ -68,16 +68,29 @@ function extractHeroUrl({ generated, headerHero, mjml, html }) {
   if (typeof generated?.heroImageUrlUsed === "string") candidates.push(generated.heroImageUrlUsed);
   if (typeof headerHero === "string") candidates.push(headerHero);
 
-  // 2) MJML-side clues (before compile)
+  // 2) MJML-side clues (before compile) - Only extract hero images, not product images
   if (typeof mjml === "string" && mjml) {
     const s = safeSlice(mjml);
-    // <mj-section background-url="..."> / <mj-hero background-url="...">
-    const bgAttr = s.match(/background-url=["']([^"']+)["']/i);
-    if (bgAttr?.[1]) candidates.push(bgAttr[1]);
+    
+    // Only look for hero section background images, not product images
+    // <mj-hero background-url="..."> - this is specifically for hero sections
+    const heroBgAttr = s.match(/<mj-hero[^>]*background-url=["']([^"']+)["']/i);
+    if (heroBgAttr?.[1]) candidates.push(heroBgAttr[1]);
+    
+    // <mj-section background-url="..."> but only in hero/header context
+    const heroSectionBgAttr = s.match(/<mj-section[^>]*background-url=["']([^"']+)["'][^>]*>[\s\S]*?<\/mj-section>/i);
+    if (heroSectionBgAttr?.[1]) {
+      // Only include if it's likely a hero section (contains hero-related text or is early in the email)
+      const sectionContent = heroSectionBgAttr[0];
+      if (sectionContent.includes('hero') || sectionContent.includes('header') || 
+          sectionContent.includes('welcome') || sectionContent.includes('main')) {
+        candidates.push(heroSectionBgAttr[1]);
+      }
+    }
 
-    // Legacy MJML background="https://..."
-    const bgAttr2 = s.match(/\bbackground=["'](https?:\/\/[^"']+)["']/i);
-    if (bgAttr2?.[1]) candidates.push(bgAttr2[1]);
+    // Legacy MJML background="https://..." but only for hero sections
+    const heroBgAttr2 = s.match(/<mj-hero[^>]*background=["'](https?:\/\/[^"']+)["']/i);
+    if (heroBgAttr2?.[1]) candidates.push(heroBgAttr2[1]);
 
     // Inline CSS url(...)
     const cssUrl = s.match(/url\((?:"|')?(https?:\/\/[^'")]+)(?:"|')?\)/i); // no backrefs

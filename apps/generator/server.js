@@ -3,6 +3,7 @@ import express from "express";
 import fs from "fs";
 import path from "path";
 import OpenAI from "openai";
+import { createClient } from '@supabase/supabase-js';
 import { scrapeWebsiteStyles, findClosestGoogleFont } from "./utils/websiteScraper.js";
 
 const app = express();
@@ -11,9 +12,17 @@ app.use(express.json({ limit: "10mb" }));
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 const PORT = process.env.PORT || 3001;
 
+// Supabase client for image storage
+const supabase = (process.env.SUPABASE_URL && process.env.SUPABASE_SERVICE_ROLE_KEY)
+  ? createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY, { 
+      auth: { persistSession: false } 
+    })
+  : null;
+
 // Cost constants (USD per 1M tokens for gpt-5-mini)
 const INPUT_COST = 0.25 / 1_000_000;
 const OUTPUT_COST = 2.00 / 1_000_000;
+const IMAGE_COST = 0.04; // DALL-E 3 cost per image
 
 
 // 🎯 Pick example image based on emailType and designAesthetic from payload
@@ -68,6 +77,145 @@ function pickExampleImage(emailType = null, designAesthetic = null) {
   console.log(`✅ Selected example: ${selectedFile} from ${emailTypeFolder}/${designAestheticFolder} (${Math.round(buf.length/1024)}KB)`);
   
   return { part, filename: selectedFile, layoutType };
+}
+
+// 🎨 Generate safe image prompt with imageContext
+function generateSafeImagePrompt(imageContext, brandName, emailType, designAesthetic) {
+  // Base safe prompts for different email types and aesthetics
+  const basePrompts = {
+    promotion: {
+      minimal_clean: "Clean, modern product showcase with subtle shadows and minimalist design",
+      bold_contrasting: "Bold, vibrant product display with high contrast and dynamic composition"
+    },
+    newsletter: {
+      minimal_clean: "Clean, professional newsletter header with subtle branding elements",
+      bold_contrasting: "Dynamic newsletter banner with bold typography and striking visuals"
+    }
+  };
+
+  const basePrompt = basePrompts[emailType]?.[designAesthetic] || "Professional, clean marketing image";
+  
+  // Safely incorporate imageContext (limit length and filter inappropriate content)
+  let safeContext = "";
+  if (imageContext && typeof imageContext === 'string') {
+    // Remove potentially problematic words and limit length
+    safeContext = imageContext
+      .replace(/[^\w\s\-.,!?]/g, '') // Remove special characters except basic punctuation
+      .substring(0, 100) // Limit length
+      .trim();
+  }
+
+  const brandPart = brandName ? `featuring ${brandName} branding` : '';
+  
+  return `${basePrompt}, ${brandPart}${safeContext ? `, ${safeContext}` : ''}, professional photography style, high quality, marketing appropriate`.trim();
+}
+
+// 🖼️ Generate image using DALL-E
+async function generateHeroImage(prompt, brandId) {
+  try {
+    console.log(`🎨 Generating image with prompt: ${prompt}`);
+    
+    const response = await openai.images.generate({
+      model: "dall-e-3",
+      prompt: prompt,
+      size: "1024x1024",
+      quality: "standard",
+      n: 1,
+    });
+
+    const imageUrl = response.data[0].url;
+    console.log(`✅ Image generated: ${imageUrl}`);
+    
+    return { success: true, imageUrl, prompt };
+  } catch (error) {
+    console.error(`❌ Image generation failed:`, error.message);
+    return { success: false, error: error.message };
+  }
+}
+
+// 📤 Upload image to Supabase storage
+async function uploadImageToSupabase(imageUrl, brandId, filename) {
+  if (!supabase) {
+    console.warn("⚠️ Supabase not configured, cannot upload image");
+    return { success: false, error: "Supabase not configured" };
+  }
+
+  try {
+    // Download image from OpenAI
+    const imageResponse = await fetch(imageUrl);
+    const imageBuffer = await imageResponse.arrayBuffer();
+    
+    // Upload to Supabase storage
+    const bucketName = process.env.SUPABASE_IMAGES_BUCKET || 'hero-images';
+    const { data, error } = await supabase.storage
+      .from(bucketName)
+      .upload(`${brandId}/${filename}`, imageBuffer, {
+        contentType: 'image/png',
+        upsert: true
+      });
+
+    if (error) {
+      console.error(`❌ Supabase upload failed:`, error);
+      return { success: false, error: error.message };
+    }
+
+    // Get public URL
+    const { data: publicData } = supabase.storage
+      .from(bucketName)
+      .getPublicUrl(`${brandId}/${filename}`);
+
+    console.log(`✅ Image uploaded to Supabase: ${publicData.publicUrl}`);
+    return { success: true, publicUrl: publicData.publicUrl };
+  } catch (error) {
+    console.error(`❌ Image upload failed:`, error.message);
+    return { success: false, error: error.message };
+  }
+}
+
+// 🔄 Generate and upload hero image
+async function generateAndUploadHeroImage(imageContext, brandData, emailType, designAesthetic) {
+  const brandId = brandData?.brand?.id || brandData?.id || 'default';
+  const brandName = brandData?.brand?.title || brandData?.title || 'Brand';
+  
+  // Generate safe prompt
+  const prompt = generateSafeImagePrompt(imageContext, brandName, emailType, designAesthetic);
+  
+  // Generate image
+  const imageResult = await generateHeroImage(prompt, brandId);
+  if (!imageResult.success) {
+    return { success: false, error: imageResult.error };
+  }
+  
+  // Upload to Supabase
+  const filename = `hero-${Date.now()}.png`;
+  const uploadResult = await uploadImageToSupabase(imageResult.imageUrl, brandId, filename);
+  
+  if (!uploadResult.success) {
+    return { success: false, error: uploadResult.error };
+  }
+  
+  return { 
+    success: true, 
+    imageUrl: uploadResult.publicUrl,
+    prompt: imageResult.prompt,
+    cost: IMAGE_COST
+  };
+}
+
+// 🔗 Static placeholder URL for custom hero images
+const CUSTOM_HERO_PLACEHOLDER = "https://via.placeholder.com/600x300/4f46e5/ffffff?text=Generating+Hero+Image...";
+
+// 🎯 Determine hero image URL based on useCustomHeroImage flag
+function getHeroImageUrl(enhancedPayload) {
+  const useCustomHeroImage = enhancedPayload.useCustomHeroImage || enhancedPayload.brandData?.useCustomHeroImage || enhancedPayload.customHeroImage || enhancedPayload.brandData?.customHeroImage;
+  
+  if (useCustomHeroImage) {
+    // Return placeholder URL - will be replaced with actual generated image
+    return CUSTOM_HERO_PLACEHOLDER;
+  } else {
+    // Use saved image URL
+    return enhancedPayload.brandData?.savedHeroImageUrl || 'none';
+  }
 }
 
 // 🧾 Simple logger
@@ -209,20 +357,62 @@ app.post("/generate", async (req, res) => {
     
     console.log(`🔍 Extracted emailType: ${emailType}, designAesthetic: ${designAesthetic}`);
     
-    // Pick image based on emailType and designAesthetic
+    // Check if we need to generate a custom hero image
+    const useCustomHeroImage = enhancedPayload.useCustomHeroImage || enhancedPayload.brandData?.useCustomHeroImage || enhancedPayload.customHeroImage || enhancedPayload.brandData?.customHeroImage;
+    const imageContext = enhancedPayload.imageContext || enhancedPayload.brandData?.imageContext;
+    
+    let heroImageUrl = getHeroImageUrl(enhancedPayload);
+    let imageGenerationPromise = null;
+    
+    // Start async image generation if needed
+    if (useCustomHeroImage && imageContext) {
+      console.log(`🎨 Starting async hero image generation...`);
+      console.log(`🎨 Image context: ${imageContext.substring(0, 100)}...`);
+      imageGenerationPromise = generateAndUploadHeroImage(
+        imageContext, 
+        enhancedPayload.brandData, 
+        emailType, 
+        designAesthetic
+      );
+    } else {
+      console.log(`🎨 Custom hero image: ${useCustomHeroImage}, Image context: ${!!imageContext}`);
+    }
+    
+    // Pick example image for layout reference
     const { part: imagePart, filename: imageFile, layoutType } = pickExampleImage(emailType, designAesthetic);
 
-    const systemPrompt = `Generate MJML email code only. No explanations.
+    // Add randomness to ensure unique generations
+    const randomSeed = Math.random().toString(36).substring(7);
+    const layoutVariations = ['modern', 'classic', 'creative', 'minimalist', 'bold'];
+    const randomLayout = layoutVariations[Math.floor(Math.random() * layoutVariations.length)];
+    
+    const systemPrompt = `Generate unique MJML email code only. No explanations.
 
-Layout: ${layoutType} - Use example image structure, ignore colors/content.
+Layout: ${layoutType} - Use example image structure, ignore colors/content. Style: ${randomLayout} approach.
 
 Requirements:
 - Brand colors: ${enhancedPayload.brandData?.primary_color || '#4f46e5'}, ${enhancedPayload.brandData?.link_color || '#22d3ee'}
-- Brand image: ${enhancedPayload.brandData?.savedHeroImageUrl || 'none'}
+- Brand image: ${heroImageUrl}
 - Brand name: ${enhancedPayload.brandData?.brand?.title || 'Brand'}
 - Font: ${enhancedPayload.scrapedStyles?.primaryFont || 'Inter'}
+- Random seed: ${randomSeed}
 
-Output: Start with <mjml>, end with </mjml>. Max width 600px. Include hero, products (if any), footer.`;
+Output: Start with <mjml>, end with </mjml>. Max width 600px. Include hero, products (if any), footer. Create unique layout variations.`;
+
+    // Extract only essential data to reduce token usage
+    const essentialData = {
+      brandName: enhancedPayload.brandData?.brand?.title || 'Brand',
+      brandColors: {
+        primary: enhancedPayload.brandData?.primary_color || '#4f46e5',
+        link: enhancedPayload.brandData?.link_color || '#22d3ee'
+      },
+      heroImage: heroImageUrl,
+      font: enhancedPayload.scrapedStyles?.primaryFont || 'Inter',
+      products: enhancedPayload.brandData?.products || [],
+      userContext: enhancedPayload.userContext || '',
+      emailType: emailType,
+      designAesthetic: designAesthetic
+    };
 
     const messages = [
       { role: "system", content: systemPrompt },
@@ -231,7 +421,7 @@ Output: Start with <mjml>, end with </mjml>. Max width 600px. Include hero, prod
         content: [
           {
             type: "text",
-            text: `Generate brand-aware MJML using this payload:\n${JSON.stringify(enhancedPayload, null, 2)}`
+            text: `Generate MJML email for ${essentialData.brandName}:\n${JSON.stringify(essentialData, null, 2)}`
           },
           ...(imagePart ? [imagePart] : [])
         ]
@@ -240,11 +430,12 @@ Output: Start with <mjml>, end with </mjml>. Max width 600px. Include hero, prod
 
     const model = process.env.OPENAI_MODEL_ID || "gpt-5";
     console.log("🧠 Using model:", model);
+    console.log("🔍 Essential data size:", JSON.stringify(essentialData).length, "characters");
 
     const resp = await openai.chat.completions.create({
       model,
       messages,
-        max_completion_tokens: 4000
+        max_completion_tokens: 6000
     });
 
     const rawOutput = resp.choices?.[0]?.message?.content?.trim() || "";
@@ -255,8 +446,15 @@ Output: Start with <mjml>, end with </mjml>. Max width 600px. Include hero, prod
     console.log("🔍 Raw output last 200 chars:", rawOutput.substring(Math.max(0, rawOutput.length - 200)));
     
     // Check if output was truncated
-    if (rawOutput.length >= 3990) {
+    if (rawOutput.length >= 5990) {
       console.warn("⚠️ Output may have been truncated due to token limit");
+    }
+
+    // Check for empty output
+    if (!rawOutput || rawOutput.length === 0) {
+      console.error("❌ Model returned empty output");
+      logEvent("❌ Model returned empty output - possible token limit issue");
+      return res.status(400).type("text/plain").send("Model returned empty output. Try reducing payload size or increasing token limit.");
     }
 
     // Clean and validate MJML output
@@ -283,7 +481,34 @@ Output: Start with <mjml>, end with </mjml>. Max width 600px. Include hero, prod
       return res.status(400).type("text/plain").send("Model did not return valid MJML.");
     }
 
-    res.type("text/plain").send(cleanedMjml);
+    // Wait for image generation to complete if it was started
+    let finalMjml = cleanedMjml;
+    let imageCost = 0;
+    
+    if (imageGenerationPromise) {
+      console.log(`⏳ Waiting for hero image generation to complete...`);
+      try {
+        const imageResult = await imageGenerationPromise;
+        if (imageResult.success) {
+          // Replace placeholder URL with actual generated image URL
+          finalMjml = cleanedMjml.replace(CUSTOM_HERO_PLACEHOLDER, imageResult.imageUrl);
+          imageCost = imageResult.cost;
+          console.log(`✅ Hero image generated and injected: ${imageResult.imageUrl}`);
+          logEvent(`🎨 Hero image generated: ${imageResult.imageUrl} | Cost: $${imageCost}`);
+        } else {
+          console.warn(`⚠️ Hero image generation failed: ${imageResult.error}`);
+          logEvent(`⚠️ Hero image generation failed: ${imageResult.error}`);
+        }
+      } catch (error) {
+        console.error(`❌ Hero image generation error:`, error.message);
+        logEvent(`❌ Hero image generation error: ${error.message}`);
+      }
+    }
+
+    // Update total cost to include image generation
+    const totalCost = cost + imageCost;
+    
+    res.type("text/plain").send(finalMjml);
   } catch (err) {
     console.error("❌ Error:", err);
     logEvent(`❌ Error: ${err.message}`);
