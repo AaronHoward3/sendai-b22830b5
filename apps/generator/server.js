@@ -53,14 +53,19 @@ function pickExampleImage(emailType = null, designAesthetic = null) {
 
   // Random selection from the emailType/designAesthetic-specific folder
   const selectedFile = files[Math.floor(Math.random() * files.length)];
+  
+  // Read and compress image to reduce token usage
   const buf = fs.readFileSync(path.join(dir, selectedFile));
+  
+  // For large images, we could compress them here, but for now just use as-is
+  // Future optimization: Use sharp or similar to resize/compress images
   const mime = /\.png$/i.test(selectedFile) ? "image/png" : "image/jpeg";
   const dataUrl = `data:${mime};base64,${buf.toString("base64")}`;
 
   const part = { type: "image_url", image_url: { url: dataUrl } };
   const layoutType = `${emailType}-${designAesthetic}` || "standard-layout";
   
-  console.log(`✅ Selected example: ${selectedFile} from ${emailTypeFolder}/${designAestheticFolder}`);
+  console.log(`✅ Selected example: ${selectedFile} from ${emailTypeFolder}/${designAestheticFolder} (${Math.round(buf.length/1024)}KB)`);
   
   return { part, filename: selectedFile, layoutType };
 }
@@ -119,8 +124,8 @@ function cleanMjmlOutput(rawOutput) {
   return cleaned.trim();
 }
 
-// 🌐 Enhance payload with website-scraped styles
-async function enhancePayloadWithWebsiteStyles(payload) {
+// 🌐 Enhance payload with website-scraped styles (with timeout)
+async function enhancePayloadWithWebsiteStyles(payload, timeoutMs = 5000) {
   try {
     // Debug: Log payload structure to understand the format
     console.log("🔍 Payload structure:", JSON.stringify(payload, null, 2));
@@ -140,8 +145,18 @@ async function enhancePayloadWithWebsiteStyles(payload) {
       return payload;
     }
 
-    console.log(`🔍 Scraping website styles for: ${domain}`);
-    const scrapedData = await scrapeWebsiteStyles(domain);
+    console.log(`🔍 Scraping website styles for: ${domain} (timeout: ${timeoutMs}ms)`);
+    
+    // Create a promise that rejects after timeout
+    const timeoutPromise = new Promise((_, reject) => {
+      setTimeout(() => reject(new Error('Website scraping timeout')), timeoutMs);
+    });
+    
+    // Race between scraping and timeout
+    const scrapedData = await Promise.race([
+      scrapeWebsiteStyles(domain),
+      timeoutPromise
+    ]);
     
     if (scrapedData.success) {
       // Find closest Google Font
@@ -168,6 +183,9 @@ async function enhancePayloadWithWebsiteStyles(payload) {
     }
   } catch (error) {
     console.error(`❌ Error enhancing payload with website styles:`, error.message);
+    if (error.message === 'Website scraping timeout') {
+      console.log(`⏰ Website scraping timed out after ${timeoutMs}ms, continuing without scraped styles`);
+    }
     return payload;
   }
 }
@@ -181,8 +199,9 @@ app.post("/generate", async (req, res) => {
   try {
     const payload = req.body && typeof req.body === "object" ? req.body : {};
 
-    // Enhance payload with website-scraped styles
-    const enhancedPayload = await enhancePayloadWithWebsiteStyles(payload);
+    // Enhance payload with website-scraped styles (with fast mode option)
+    const skipScraping = payload.skipScraping || payload.fastMode;
+    const enhancedPayload = skipScraping ? payload : await enhancePayloadWithWebsiteStyles(payload);
 
     // Extract emailType and designAesthetic from payload
     const emailType = enhancedPayload.emailType || enhancedPayload.brandData?.emailType;
@@ -193,22 +212,17 @@ app.post("/generate", async (req, res) => {
     // Pick image based on emailType and designAesthetic
     const { part: imagePart, filename: imageFile, layoutType } = pickExampleImage(emailType, designAesthetic);
 
-    const systemPrompt = `
-You are an MJML email generator. Generate ONLY raw MJML code - no explanations, no markdown.
+    const systemPrompt = `Generate MJML email code only. No explanations.
 
-LAYOUT: ${layoutType} - Study the example image for structure only, ignore colors/content.
+Layout: ${layoutType} - Use example image structure, ignore colors/content.
 
-INSTRUCTIONS:
-1. Use layout structure from example image
-2. Use brand colors: ${enhancedPayload.brandData?.primary_color || '#4f46e5'} and ${enhancedPayload.brandData?.link_color || '#22d3ee'}
-3. Use brand image: ${enhancedPayload.brandData?.savedHeroImageUrl || 'none'}
-4. Use brand name: ${enhancedPayload.brandData?.brand?.title || 'Brand'}
-5. Use scraped font: ${enhancedPayload.scrapedStyles?.primaryFont || 'Inter'}
+Requirements:
+- Brand colors: ${enhancedPayload.brandData?.primary_color || '#4f46e5'}, ${enhancedPayload.brandData?.link_color || '#22d3ee'}
+- Brand image: ${enhancedPayload.brandData?.savedHeroImageUrl || 'none'}
+- Brand name: ${enhancedPayload.brandData?.brand?.title || 'Brand'}
+- Font: ${enhancedPayload.scrapedStyles?.primaryFont || 'Inter'}
 
-OUTPUT: Start with <mjml> and end with </mjml>. No other text.
-
-Include: Hero section, product grid (if products exist), footer. Width 600px max.
-`.trim();
+Output: Start with <mjml>, end with </mjml>. Max width 600px. Include hero, products (if any), footer.`;
 
     const messages = [
       { role: "system", content: systemPrompt },
@@ -230,7 +244,7 @@ Include: Hero section, product grid (if products exist), footer. Width 600px max
     const resp = await openai.chat.completions.create({
       model,
       messages,
-      max_completion_tokens: 9000
+        max_completion_tokens: 4000
     });
 
     const rawOutput = resp.choices?.[0]?.message?.content?.trim() || "";
@@ -241,7 +255,7 @@ Include: Hero section, product grid (if products exist), footer. Width 600px max
     console.log("🔍 Raw output last 200 chars:", rawOutput.substring(Math.max(0, rawOutput.length - 200)));
     
     // Check if output was truncated
-    if (rawOutput.length >= 5990) {
+    if (rawOutput.length >= 3990) {
       console.warn("⚠️ Output may have been truncated due to token limit");
     }
 
