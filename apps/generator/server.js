@@ -37,8 +37,10 @@ function pickExampleImage(emailType = null, designAesthetic = null) {
   const designAestheticToFolderMap = {
     "minimal_clean": "minimal_clean",
     "bold_contrasting": "bold_contrasting",
+    "magazine_serif": "magazine_serif",
     "minimal-clean": "minimal_clean", // Handle variations
-    "bold-contrasting": "bold_contrasting" // Handle variations
+    "bold-contrasting": "bold_contrasting", // Handle variations
+    "magazine-serif": "magazine_serif" // Handle variations
   };
   
   const emailTypeFolder = emailTypeToFolderMap[emailType] || emailType;
@@ -85,11 +87,13 @@ function generateSafeImagePrompt(imageContext, brandName, emailType, designAesth
   const basePrompts = {
     promotion: {
       minimal_clean: "Clean, modern product showcase with subtle shadows and minimalist design",
-      bold_contrasting: "Bold, vibrant product display with high contrast and dynamic composition"
+      bold_contrasting: "Bold, vibrant product display with high contrast and dynamic composition",
+      magazine_serif: "Elegant magazine-style product presentation with sophisticated typography and editorial layout"
     },
     newsletter: {
       minimal_clean: "Clean, professional newsletter header with subtle branding elements",
-      bold_contrasting: "Dynamic newsletter banner with bold typography and striking visuals"
+      bold_contrasting: "Dynamic newsletter banner with bold typography and striking visuals",
+      magazine_serif: "Editorial-style newsletter header with classic typography and refined aesthetic"
     }
   };
 
@@ -481,31 +485,29 @@ Output: Start with <mjml>, end with </mjml>. Max width 600px. Include hero, prod
       return res.status(400).type("text/plain").send("Model did not return valid MJML.");
     }
 
-    // Wait for image generation to complete if it was started
+    // Don't wait for image generation - return MJML immediately with placeholder
     let finalMjml = cleanedMjml;
     let imageCost = 0;
     
     if (imageGenerationPromise) {
-      console.log(`⏳ Waiting for hero image generation to complete...`);
-      try {
-        const imageResult = await imageGenerationPromise;
+      console.log(`🎨 Image generation running in background - returning MJML with placeholder`);
+      
+      // Don't await - let it run in background
+      imageGenerationPromise.then(imageResult => {
         if (imageResult.success) {
-          // Replace placeholder URL with actual generated image URL
-          finalMjml = cleanedMjml.replace(CUSTOM_HERO_PLACEHOLDER, imageResult.imageUrl);
-          imageCost = imageResult.cost;
-          console.log(`✅ Hero image generated and injected: ${imageResult.imageUrl}`);
-          logEvent(`🎨 Hero image generated: ${imageResult.imageUrl} | Cost: $${imageCost}`);
+          console.log(`✅ Hero image generated in background: ${imageResult.imageUrl}`);
+          logEvent(`🎨 Hero image generated: ${imageResult.imageUrl} | Cost: $${imageResult.cost}`);
         } else {
-          console.warn(`⚠️ Hero image generation failed: ${imageResult.error}`);
-          logEvent(`⚠️ Hero image generation failed: ${imageResult.error}`);
+          console.warn(`⚠️ Background hero image generation failed: ${imageResult.error}`);
+          logEvent(`⚠️ Background hero image generation failed: ${imageResult.error}`);
         }
-      } catch (error) {
-        console.error(`❌ Hero image generation error:`, error.message);
-        logEvent(`❌ Hero image generation error: ${error.message}`);
-      }
+      }).catch(error => {
+        console.error(`❌ Background hero image generation error:`, error.message);
+        logEvent(`❌ Background hero image generation error: ${error.message}`);
+      });
     }
 
-    // Update total cost to include image generation
+    // Update total cost (image cost will be 0 since we're not waiting)
     const totalCost = cost + imageCost;
     
     res.type("text/plain").send(finalMjml);
