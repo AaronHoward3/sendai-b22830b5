@@ -92,9 +92,9 @@ export async function storeUserImageFromUrl({ userId, domain, url }) {
   const ct = resp.headers.get("content-type") || "";
   const buf = Buffer.from(await resp.arrayBuffer());
 
-  // Build storage path
+  // Build storage path - use bucket name in path for consistency
   const ext = guessExtFromUrl(u) || guessExtFromContentType(ct);
-  const objectPath = `hero-images/${safeSeg(userId)}/${safeSeg(d)}/${Date.now()}.${ext}`;
+  const objectPath = `${BUCKET}/${safeSeg(userId)}/${safeSeg(d)}/${Date.now()}.${ext}`;
 
   // Ensure bucket exists, then upload (retry once if bucket-not-found)
   await ensureBucket();
@@ -146,7 +146,7 @@ export async function storeUserImageFromDataUrl({ userId, domain, dataUrl }) {
   const ct = m[1] || "image/png";
   const buf = Buffer.from(m[2], "base64");
   const ext = guessExtFromContentType(ct);
-  const objectPath = `hero-images/${safeSeg(userId)}/${safeSeg(d)}/${Date.now()}.${ext}`;
+  const objectPath = `${BUCKET}/${safeSeg(userId)}/${safeSeg(d)}/${Date.now()}.${ext}`;
 
   await ensureBucket();
 

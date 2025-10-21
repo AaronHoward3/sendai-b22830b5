@@ -403,11 +403,29 @@ export async function generateEmailsController(req, res) {
               dataUrl: extractedUrl,
             });
           } else if (/^https?:\/\//i.test(extractedUrl)) {
-            savedHero = await storeUserImageFromUrl({
-              userId: uid,
-              domain: normalizedDomain,
-              url: extractedUrl,
-            });
+            // Skip re-saving images that are already from Supabase (generated images)
+            if (extractedUrl.includes('supabase.co') || extractedUrl.includes('supabase.com')) {
+              console.log(`[generateController] Skipping re-save of Supabase image: ${extractedUrl}`);
+              // Just create a database record without re-uploading
+              const { data, error } = await supabase
+                .from("user_images")
+                .insert({ 
+                  user_id: uid, 
+                  domain: normalizedDomain, 
+                  path: extractedUrl, // Use the URL as path for Supabase images
+                  public_url: extractedUrl 
+                })
+                .select()
+                .single();
+              
+              if (!error) savedHero = data;
+            } else {
+              savedHero = await storeUserImageFromUrl({
+                userId: uid,
+                domain: normalizedDomain,
+                url: extractedUrl,
+              });
+            }
           }
         } else {
         }

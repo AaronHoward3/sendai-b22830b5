@@ -138,7 +138,7 @@ async function generateHeroImage(prompt, brandId) {
 }
 
 // 📤 Upload image to Supabase storage
-async function uploadImageToSupabase(imageUrl, brandId, filename) {
+async function uploadImageToSupabase(imageUrl, brandId, domain, filename) {
   if (!supabase) {
     console.warn("⚠️ Supabase not configured, cannot upload image");
     return { success: false, error: "Supabase not configured" };
@@ -149,11 +149,13 @@ async function uploadImageToSupabase(imageUrl, brandId, filename) {
     const imageResponse = await fetch(imageUrl);
     const imageBuffer = await imageResponse.arrayBuffer();
     
-    // Upload to Supabase storage
+    // Upload to Supabase storage with consistent path structure
     const bucketName = process.env.SUPABASE_IMAGES_BUCKET || 'hero-images';
+    const objectPath = `${bucketName}/${brandId}/${domain}/${filename}`;
+    
     const { data, error } = await supabase.storage
       .from(bucketName)
-      .upload(`${brandId}/${filename}`, imageBuffer, {
+      .upload(objectPath, imageBuffer, {
         contentType: 'image/png',
         upsert: true
       });
@@ -166,7 +168,7 @@ async function uploadImageToSupabase(imageUrl, brandId, filename) {
     // Get public URL
     const { data: publicData } = supabase.storage
       .from(bucketName)
-      .getPublicUrl(`${brandId}/${filename}`);
+      .getPublicUrl(objectPath);
 
     console.log(`✅ Image uploaded to Supabase: ${publicData.publicUrl}`);
     return { success: true, publicUrl: publicData.publicUrl };
@@ -178,8 +180,14 @@ async function uploadImageToSupabase(imageUrl, brandId, filename) {
 
 // 🔄 Generate and upload hero image
 async function generateAndUploadHeroImage(imageContext, brandData, emailType, designAesthetic) {
-  const brandId = brandData?.brand?.id || brandData?.id || 'default';
+  // Extract proper identifiers, avoid 'default' fallbacks
+  const brandId = brandData?.brand?.id || brandData?.id || 
+                  brandData?.brand?.title?.toLowerCase().replace(/[^a-z0-9]/g, '') || 
+                  'generated';
   const brandName = brandData?.brand?.title || brandData?.title || 'Brand';
+  const domain = brandData?.brand?.domain || brandData?.domain || 
+                 brandData?.brand?.website?.replace(/^https?:\/\//, '').replace(/\/$/, '') ||
+                 'unknown';
   
   // Generate safe prompt
   const prompt = generateSafeImagePrompt(imageContext, brandName, emailType, designAesthetic);
@@ -190,9 +198,10 @@ async function generateAndUploadHeroImage(imageContext, brandData, emailType, de
     return { success: false, error: imageResult.error };
   }
   
-  // Upload to Supabase
+  // Upload to Supabase with consistent path structure
   const filename = `hero-${Date.now()}.png`;
-  const uploadResult = await uploadImageToSupabase(imageResult.imageUrl, brandId, filename);
+  console.log(`🔍 Image upload path: ${brandId}/${domain}/${filename}`);
+  const uploadResult = await uploadImageToSupabase(imageResult.imageUrl, brandId, domain, filename);
   
   if (!uploadResult.success) {
     return { success: false, error: uploadResult.error };
@@ -342,7 +351,7 @@ async function enhancePayloadWithWebsiteStyles(payload, timeoutMs = 5000) {
   }
 }
 
-app.get("/health", (_, res) => res.json({ ok: true }));
+app.get("/healthz", (_, res) => res.json({ ok: true }));
 
 // POST /generate  -> returns raw MJML
 app.post("/generate", async (req, res) => {
@@ -366,18 +375,34 @@ app.post("/generate", async (req, res) => {
     const imageContext = enhancedPayload.imageContext || enhancedPayload.brandData?.imageContext;
     
     let heroImageUrl = getHeroImageUrl(enhancedPayload);
-    let imageGenerationPromise = null;
     
-    // Start async image generation if needed
+    // Generate hero image synchronously if needed
     if (useCustomHeroImage && imageContext) {
-      console.log(`🎨 Starting async hero image generation...`);
+      console.log(`🎨 Starting hero image generation...`);
       console.log(`🎨 Image context: ${imageContext.substring(0, 100)}...`);
-      imageGenerationPromise = generateAndUploadHeroImage(
-        imageContext, 
-        enhancedPayload.brandData, 
-        emailType, 
-        designAesthetic
-      );
+      
+      try {
+        const imageResult = await generateAndUploadHeroImage(
+          imageContext, 
+          enhancedPayload.brandData, 
+          emailType, 
+          designAesthetic
+        );
+        
+        if (imageResult.success) {
+          console.log(`✅ Hero image generated: ${imageResult.imageUrl}`);
+          heroImageUrl = imageResult.imageUrl; // Use the actual generated image URL
+          logEvent(`🎨 Hero image generated: ${imageResult.imageUrl} | Cost: $${imageResult.cost}`);
+        } else {
+          console.warn(`⚠️ Hero image generation failed: ${imageResult.error}`);
+          logEvent(`⚠️ Hero image generation failed: ${imageResult.error}`);
+          // Keep using placeholder if generation fails
+        }
+      } catch (error) {
+        console.error(`❌ Hero image generation error:`, error.message);
+        logEvent(`❌ Hero image generation error: ${error.message}`);
+        // Keep using placeholder if generation fails
+      }
     } else {
       console.log(`🎨 Custom hero image: ${useCustomHeroImage}, Image context: ${!!imageContext}`);
     }
@@ -439,7 +464,7 @@ Output: Start with <mjml>, end with </mjml>. Max width 600px. Include hero, prod
     const resp = await openai.chat.completions.create({
       model,
       messages,
-        max_completion_tokens: 6000
+      max_completion_tokens: 6000
     });
 
     const rawOutput = resp.choices?.[0]?.message?.content?.trim() || "";
@@ -485,30 +510,11 @@ Output: Start with <mjml>, end with </mjml>. Max width 600px. Include hero, prod
       return res.status(400).type("text/plain").send("Model did not return valid MJML.");
     }
 
-    // Don't wait for image generation - return MJML immediately with placeholder
+    // Return MJML with actual image URL (or placeholder if generation failed)
     let finalMjml = cleanedMjml;
-    let imageCost = 0;
     
-    if (imageGenerationPromise) {
-      console.log(`🎨 Image generation running in background - returning MJML with placeholder`);
-      
-      // Don't await - let it run in background
-      imageGenerationPromise.then(imageResult => {
-        if (imageResult.success) {
-          console.log(`✅ Hero image generated in background: ${imageResult.imageUrl}`);
-          logEvent(`🎨 Hero image generated: ${imageResult.imageUrl} | Cost: $${imageResult.cost}`);
-        } else {
-          console.warn(`⚠️ Background hero image generation failed: ${imageResult.error}`);
-          logEvent(`⚠️ Background hero image generation failed: ${imageResult.error}`);
-        }
-      }).catch(error => {
-        console.error(`❌ Background hero image generation error:`, error.message);
-        logEvent(`❌ Background hero image generation error: ${error.message}`);
-      });
-    }
-
-    // Update total cost (image cost will be 0 since we're not waiting)
-    const totalCost = cost + imageCost;
+    // Update total cost
+    const totalCost = cost;
     
     res.type("text/plain").send(finalMjml);
   } catch (err) {

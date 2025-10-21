@@ -37,7 +37,7 @@ services:
     env: node
     rootDir: apps/generator
     buildCommand: "npm ci"
-    startCommand: "node src/server.js"
+    startCommand: "node server.js"
     plan: free
     autoDeploy: true
     envVars:
@@ -46,5 +46,11 @@ services:
       - key: PORT
         value: 10000
       - key: OPENAI_API_KEY
+        sync: false
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false
+      - key: SUPABASE_IMAGES_BUCKET
         sync: false
     healthCheckPath: /healthz

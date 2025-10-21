@@ -169,6 +169,7 @@ const Dashboard: React.FC = () => {
   const [usedBrands, setUsedBrands] = useState<UsedBrand[]>([]);
   const [imagesByDomain, setImagesByDomain] = useState<Record<string, SavedImage[]>>({});
   const [isLoadingBrands, setIsLoadingBrands] = useState(true);
+  const [lastRefresh, setLastRefresh] = useState<number>(Date.now());
 
   // Edit brand modal
   const [showBrandModal, setShowBrandModal] = useState(false);
@@ -311,10 +312,12 @@ const Dashboard: React.FC = () => {
       toast({ title: 'Portal error', description: json?.error || 'Unable to open billing portal', variant: 'destructive' });
     }
   };
-  // --- Brands list + colors + images ---
-  useEffect(() => {
+  // Function to refresh brands and images data
+  const refreshBrandsAndImages = async () => {
     if (!user) return;
-    (async () => {
+    
+    setIsLoadingBrands(true);
+    try {
       // First, get domains from user_brands table (the correct source)
       const { data: userBrandsRows } = await supabase
         .from('user_brands')
@@ -356,8 +359,28 @@ const Dashboard: React.FC = () => {
         } catch { /* ignore */ }
       }
       setImagesByDomain(imagesMap);
+      setLastRefresh(Date.now());
+    } catch (error) {
+      console.error('Failed to refresh brands and images:', error);
+    } finally {
       setIsLoadingBrands(false);
-    })();
+    }
+  };
+
+  // --- Brands list + colors + images ---
+  useEffect(() => {
+    refreshBrandsAndImages();
+  }, [user]);
+
+  // Auto-refresh every 30 seconds to catch new images
+  useEffect(() => {
+    if (!user) return;
+    
+    const interval = setInterval(() => {
+      refreshBrandsAndImages();
+    }, 30000); // 30 seconds
+
+    return () => clearInterval(interval);
   }, [user]);
 
   const openBrandModal = (brand?: UsedBrand) => {
@@ -493,8 +516,32 @@ const Dashboard: React.FC = () => {
             {/* RIGHT COLUMN */}
             <div className="space-y-6 lg:col-span-8"><Card>
                 <CardHeader>
-                  <CardTitle className="flex items-center justify-between">Brands</CardTitle>
-                  <CardDescription>Brands you’ve used appear here. Edit to tweak cached colors.</CardDescription>
+                  <CardTitle className="flex items-center justify-between">
+                    <span>Brands</span>
+                    <button
+                      onClick={refreshBrandsAndImages}
+                      disabled={isLoadingBrands}
+                      className="inline-flex items-center justify-center rounded-md p-2 text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                      title="Refresh brands and images"
+                    >
+                      <svg 
+                        className={`h-4 w-4 ${isLoadingBrands ? 'animate-spin' : ''}`} 
+                        fill="none" 
+                        viewBox="0 0 24 24" 
+                        stroke="currentColor"
+                      >
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                      </svg>
+                    </button>
+                  </CardTitle>
+                  <CardDescription>
+                    Brands you've used appear here. Edit to tweak cached colors.
+                    {lastRefresh && (
+                      <span className="ml-2 text-xs text-muted-foreground">
+                        Last updated: {new Date(lastRefresh).toLocaleTimeString()}
+                      </span>
+                    )}
+                  </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-6">
                   {isLoadingBrands ? (
