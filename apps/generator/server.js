@@ -408,10 +408,11 @@ app.post("/generate", async (req, res) => {
     const skipScraping = payload.skipScraping || payload.fastMode;
     const enhancedPayload = skipScraping ? payload : await enhancePayloadWithWebsiteStyles(payload);
 
-    // Extract emailType from payload
+    // Extract emailType and designAesthetic from payload
     const emailType = enhancedPayload.emailType || enhancedPayload.brandData?.emailType;
+    const designAesthetic = enhancedPayload.designAesthetic || enhancedPayload.brandData?.designAesthetic || 'minimal_clean';
     
-    console.log(`🔍 Extracted emailType: ${emailType}`);
+    console.log(`🔍 Extracted emailType: ${emailType}, designAesthetic: ${designAesthetic}`);
     
     // Check if we need to generate a custom hero image
     const useCustomHeroImage = enhancedPayload.useCustomHeroImage || enhancedPayload.brandData?.useCustomHeroImage || enhancedPayload.customHeroImage || enhancedPayload.brandData?.customHeroImage;
@@ -459,7 +460,6 @@ app.post("/generate", async (req, res) => {
     const randomLayout = layoutVariations[Math.floor(Math.random() * layoutVariations.length)];
     
     // Get design aesthetic specific styling
-    const designAesthetic = enhancedPayload.designAesthetic || enhancedPayload.brandData?.designAesthetic || 'minimal_clean';
     const aestheticStyles = getDesignAestheticStyles(designAesthetic);
     
     const systemPrompt = `Generate unique MJML email code only. No explanations.
