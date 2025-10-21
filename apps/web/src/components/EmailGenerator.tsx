@@ -14,8 +14,7 @@ export type Tone = 'bold' | 'friendly' | 'formal' | 'fun';
 export type DesignAesthetic =
   | 'minimal_clean'
   | 'bold_contrasting'
-  | 'magazine_serif'
-  | 'warm_editorial';
+  | 'magazine_serif';
 
 export interface ProductLink {
   name: string;

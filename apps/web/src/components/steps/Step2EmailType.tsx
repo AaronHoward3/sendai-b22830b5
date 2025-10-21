@@ -60,7 +60,6 @@ const DESIGN_STYLES: { value: DesignAesthetic; label: string; blurb?: string }[]
   { value: 'minimal_clean',    label: 'Minimal & Clean',    blurb: 'Whitespace, simple typography' },
   { value: 'bold_contrasting', label: 'Bold & Contrasting', blurb: 'High contrast, punchy CTAs' },
   { value: 'magazine_serif',   label: 'Magazine Serif',     blurb: 'Editorial, premium feel' },
-  { value: 'warm_editorial',   label: 'Warm Editorial',     blurb: 'Serif headlines, paper texture' },
 ];
 
 function normalizeDomain(input: string) {
@@ -162,7 +161,6 @@ const STYLE_TRAITS: Record<DesignAesthetic, string[]> = {
   bold_contrasting: ['high contrast', 'dramatic lighting', 'rich shadows'],
   minimal_clean: ['clean background', 'soft light', 'plenty of whitespace'],
   magazine_serif: ['editorial feel', 'subtle film grain', 'artful composition'],
-  warm_editorial: ['warm light', 'paper texture', 'cozy editorial vibe'],
 };
 
 const OCCASION_VISUALS: Record<string, { palette: string[]; motifs: string[] }> = {
@@ -677,7 +675,6 @@ export const Step2EmailType: React.FC<Step2EmailTypeProps> = ({formData, updateF
                     case 'minimal_clean': return <Circle className="h-4 w-4" />;
                     case 'bold_contrasting': return <Contrast className="h-4 w-4" />;
                     case 'magazine_serif': return <BookOpen className="h-4 w-4" />;
-                    case 'warm_editorial': return <Coffee className="h-4 w-4" />;
                     default: return <Palette className="h-4 w-4" />;
                   }
                 })()}
@@ -693,7 +690,6 @@ export const Step2EmailType: React.FC<Step2EmailTypeProps> = ({formData, updateF
                     case 'minimal_clean': return <Circle className="h-4 w-4" />;
                     case 'bold_contrasting': return <Contrast className="h-4 w-4" />;
                     case 'magazine_serif': return <BookOpen className="h-4 w-4" />;
-                    case 'warm_editorial': return <Coffee className="h-4 w-4" />;
                     default: return <Palette className="h-4 w-4" />;
                 }};
                 return <DropdownMenuItem key={s.value} onClick={() => setDesignAesthetic(s.value)} className="flex flex-col items-start gap-0.5 py-3 cursor-pointer">

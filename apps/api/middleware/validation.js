@@ -31,7 +31,7 @@ export const generateEmailSchema = z.object({
   domain: domainSchema,
   emailType: z.enum(['Promotion', 'Newsletter']),
   tone: z.enum(['bold', 'friendly', 'formal', 'fun']),
-  designAesthetic: z.enum(['minimal_clean', 'bold_contrasting', 'magazine_serif', 'warm_editorial', 'neo_brutalist', 'gradient_glow', 'pastel_soft', 'luxe_mono']),
+  designAesthetic: z.enum(['minimal_clean', 'bold_contrasting', 'magazine_serif', 'neo_brutalist', 'gradient_glow', 'pastel_soft', 'luxe_mono']),
   userContext: z.string().max(1000, 'User context too long'),
   imageContext: z.string().max(1000, 'Image context too long').optional(),
   products: z.array(productSchema).max(4, 'Too many products'),

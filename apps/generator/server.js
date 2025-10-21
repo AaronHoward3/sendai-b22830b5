@@ -456,7 +456,7 @@ app.post("/generate", async (req, res) => {
 
     // Add randomness to ensure unique generations
     const randomSeed = Math.random().toString(36).substring(7);
-    const layoutVariations = ['modern', 'classic', 'creative', 'minimalist', 'bold'];
+    const layoutVariations = ['modern', 'classic', 'minimalist', 'bold'];
     const randomLayout = layoutVariations[Math.floor(Math.random() * layoutVariations.length)];
     
     // Get design aesthetic specific styling
