@@ -179,7 +179,7 @@ async function uploadImageToSupabase(imageUrl, brandId, domain, filename) {
 }
 
 // 🔄 Generate and upload hero image
-async function generateAndUploadHeroImage(imageContext, brandData, emailType, designAesthetic) {
+async function generateAndUploadHeroImage(imageContext, brandData, emailType, designAesthetic, shouldUploadToSupabase = true) {
   // Extract proper identifiers, avoid 'default' fallbacks
   const brandId = brandData?.brand?.id || brandData?.id || 
                   brandData?.brand?.title?.toLowerCase().replace(/[^a-z0-9]/g, '') || 
@@ -198,21 +198,32 @@ async function generateAndUploadHeroImage(imageContext, brandData, emailType, de
     return { success: false, error: imageResult.error };
   }
   
-  // Upload to Supabase with consistent path structure
-  const filename = `hero-${Date.now()}.png`;
-  console.log(`🔍 Image upload path: ${brandId}/${domain}/${filename}`);
-  const uploadResult = await uploadImageToSupabase(imageResult.imageUrl, brandId, domain, filename);
-  
-  if (!uploadResult.success) {
-    return { success: false, error: uploadResult.error };
+  // Only upload to Supabase if explicitly requested (for newly generated images)
+  if (shouldUploadToSupabase) {
+    const filename = `hero-${Date.now()}.png`;
+    console.log(`🔍 Image upload path: ${brandId}/${domain}/${filename}`);
+    const uploadResult = await uploadImageToSupabase(imageResult.imageUrl, brandId, domain, filename);
+    
+    if (!uploadResult.success) {
+      return { success: false, error: uploadResult.error };
+    }
+    
+    return { 
+      success: true, 
+      imageUrl: uploadResult.publicUrl,
+      prompt: imageResult.prompt,
+      cost: IMAGE_COST
+    };
+  } else {
+    // Return the OpenAI URL directly without uploading to Supabase
+    console.log(`🎨 Generated image URL (not uploaded to Supabase): ${imageResult.imageUrl}`);
+    return { 
+      success: true, 
+      imageUrl: imageResult.imageUrl,
+      prompt: imageResult.prompt,
+      cost: IMAGE_COST
+    };
   }
-  
-  return { 
-    success: true, 
-    imageUrl: uploadResult.publicUrl,
-    prompt: imageResult.prompt,
-    cost: IMAGE_COST
-  };
 }
 
 // 🎨 Get design aesthetic specific styling
@@ -416,6 +427,7 @@ app.post("/generate", async (req, res) => {
     
     // Check if we need to generate a custom hero image
     const useCustomHeroImage = enhancedPayload.useCustomHeroImage || enhancedPayload.brandData?.useCustomHeroImage || enhancedPayload.customHeroImage || enhancedPayload.brandData?.customHeroImage;
+    const generateCustomHero = enhancedPayload.generateCustomHero || enhancedPayload.brandData?.generateCustomHero;
     const imageContext = enhancedPayload.imageContext || enhancedPayload.brandData?.imageContext;
     
     let heroImageUrl = getHeroImageUrl(enhancedPayload);
@@ -424,19 +436,23 @@ app.post("/generate", async (req, res) => {
     if (useCustomHeroImage && imageContext) {
       console.log(`🎨 Starting hero image generation...`);
       console.log(`🎨 Image context: ${imageContext.substring(0, 100)}...`);
+      console.log(`🎨 Generate custom hero: ${generateCustomHero}`);
       
       try {
+        // Only upload to Supabase if generateCustomHero is true
+        const shouldUploadToSupabase = generateCustomHero === true;
         const imageResult = await generateAndUploadHeroImage(
           imageContext, 
           enhancedPayload.brandData, 
           emailType, 
-          designAesthetic
+          designAesthetic,
+          shouldUploadToSupabase
         );
         
         if (imageResult.success) {
           console.log(`✅ Hero image generated: ${imageResult.imageUrl}`);
           heroImageUrl = imageResult.imageUrl; // Use the actual generated image URL
-          logEvent(`🎨 Hero image generated: ${imageResult.imageUrl} | Cost: $${imageResult.cost}`);
+          logEvent(`🎨 Hero image generated: ${imageResult.imageUrl} | Cost: $${imageResult.cost} | Uploaded to Supabase: ${shouldUploadToSupabase}`);
         } else {
           console.warn(`⚠️ Hero image generation failed: ${imageResult.error}`);
           logEvent(`⚠️ Hero image generation failed: ${imageResult.error}`);
@@ -448,7 +464,7 @@ app.post("/generate", async (req, res) => {
         // Keep using placeholder if generation fails
       }
     } else {
-      console.log(`🎨 Custom hero image: ${useCustomHeroImage}, Image context: ${!!imageContext}`);
+      console.log(`🎨 Custom hero image: ${useCustomHeroImage}, Image context: ${!!imageContext}, Generate custom hero: ${generateCustomHero}`);
     }
     
     // Pick example image for layout reference
