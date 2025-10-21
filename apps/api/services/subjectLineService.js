@@ -32,7 +32,7 @@ TASK: Create a compelling email subject line that:
 1. Captures the essence and value from the user context
 2. Reflects the specified tone (${tone})
 3. Encourages opens without being spammy
-4. Is under 50 characters
+4. Is under 60 characters
 5. Focuses on the main benefit or offer mentioned in the context
 
 EXAMPLES:
@@ -67,7 +67,7 @@ Return ONLY the subject line text, nothing else.`;
     console.log("📧 [SUBJECT] Generated:", cleanedSubjectLine);
     
     // Fallback if generated subject line is too long or empty
-    if (!cleanedSubjectLine || cleanedSubjectLine.length > 50) {
+    if (!cleanedSubjectLine || cleanedSubjectLine.length > 60) {
       console.warn("📧 [SUBJECT] Generated subject line too long or empty, using fallback");
       return `${emailType === 'Newsletter' ? 'Update' : 'Special Offer'} from ${brandName}`;
     }

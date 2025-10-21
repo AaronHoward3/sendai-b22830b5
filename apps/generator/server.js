@@ -286,6 +286,32 @@ function getHeroImageUrl(enhancedPayload) {
   }
 }
 
+// 🏷️ Extract brand logo URL from payload
+export function getBrandLogoUrl(enhancedPayload) {
+  // Try multiple possible paths for logo URL
+  const logoUrl = enhancedPayload.brandData?.brand?.logos?.[0]?.url ||
+                  enhancedPayload.brandData?.logo_url ||
+                  enhancedPayload.brand?.logos?.[0]?.url ||
+                  enhancedPayload.logo_url ||
+                  null;
+  
+  console.log(`🏷️ Brand logo URL: ${logoUrl || 'none'}`);
+  return logoUrl;
+}
+
+// 🖼️ Extract brand banner URL from payload
+export function getBrandBannerUrl(enhancedPayload) {
+  // Try multiple possible paths for banner URL
+  const bannerUrl = enhancedPayload.brandData?.brand?.backdrops?.[0]?.url ||
+                    enhancedPayload.brandData?.banner_url ||
+                    enhancedPayload.brand?.backdrops?.[0]?.url ||
+                    enhancedPayload.banner_url ||
+                    null;
+  
+  console.log(`🖼️ Brand banner URL: ${bannerUrl || 'none'}`);
+  return bannerUrl;
+}
+
 // 🧾 Simple logger
 function logEvent(entry) {
   const line = `[${new Date().toISOString()}] ${entry}\n`;
@@ -430,17 +456,25 @@ app.post("/generate", async (req, res) => {
     const generateCustomHero = enhancedPayload.generateCustomHero || enhancedPayload.brandData?.generateCustomHero;
     const imageContext = enhancedPayload.imageContext || enhancedPayload.brandData?.imageContext;
     
+    // CRITICAL: Only upload to Supabase if useCustomHeroImage is true (newly generated images only)
+    // No other images (logos, banners, products, etc.) should ever be uploaded to Supabase
+    
     let heroImageUrl = getHeroImageUrl(enhancedPayload);
+    
+    // Extract brand logo and banner URLs
+    const brandLogoUrl = getBrandLogoUrl(enhancedPayload);
+    const brandBannerUrl = getBrandBannerUrl(enhancedPayload);
     
     // Generate hero image synchronously if needed
     if (useCustomHeroImage && imageContext) {
       console.log(`🎨 Starting hero image generation...`);
       console.log(`🎨 Image context: ${imageContext.substring(0, 100)}...`);
-      console.log(`🎨 Generate custom hero: ${generateCustomHero}`);
+      console.log(`🎨 Use custom hero image: ${useCustomHeroImage}`);
       
       try {
-        // Only upload to Supabase if generateCustomHero is true
-        const shouldUploadToSupabase = generateCustomHero === true;
+        // CRITICAL: Only upload to Supabase if useCustomHeroImage is true (newly generated images only)
+        // No other images (logos, banners, products, etc.) should ever be uploaded to Supabase
+        const shouldUploadToSupabase = useCustomHeroImage === true;
         const imageResult = await generateAndUploadHeroImage(
           imageContext, 
           enhancedPayload.brandData, 
@@ -464,7 +498,7 @@ app.post("/generate", async (req, res) => {
         // Keep using placeholder if generation fails
       }
     } else {
-      console.log(`🎨 Custom hero image: ${useCustomHeroImage}, Image context: ${!!imageContext}, Generate custom hero: ${generateCustomHero}`);
+      console.log(`🎨 Custom hero image: ${useCustomHeroImage}, Image context: ${!!imageContext}`);
     }
     
     // Pick example image for layout reference
@@ -492,7 +526,14 @@ CRITICAL SPACING & LAYOUT REQUIREMENTS:
 - All text must be readable with proper contrast
 - Do NOT use emojis.
 - Must be mobile friendly.
-- can use brand logo in header
+
+BRAND IMAGES REQUIREMENTS:
+- Brand logo: ${brandLogoUrl || 'none'} - Use in header if available, maintain aspect ratio, no text overlays
+- Brand banner: ${brandBannerUrl || 'none'} - Use as background or hero section if available, maintain aspect ratio, no text overlays
+- Hero image: ${heroImageUrl} - Use as main content image
+- CRITICAL: Brand logos and banners must maintain their original aspect ratios
+- CRITICAL: No text, buttons, or other elements should overlay brand logos or banners
+- Use mj-image with proper width/height attributes to preserve aspect ratios
 
 DESIGN AESTHETIC: ${designAesthetic.toUpperCase()}
 Typography:
@@ -502,12 +543,11 @@ Typography:
 
 Requirements:
 - Brand colors: ${enhancedPayload.brandData?.primary_color || '#4f46e5'}, ${enhancedPayload.brandData?.link_color || '#22d3ee'}
-- Brand image: ${heroImageUrl}
 - Brand name: ${enhancedPayload.brandData?.brand?.title || 'Brand'}
 - Font: ${enhancedPayload.scrapedStyles?.primaryFont || 'Inter'}
 - Random seed: ${randomSeed}
 
-Output: Start with <mjml>, end with </mjml>. Max width 600px. Include hero, products (if any), footer. Create unique layout variations.`;
+Output: Start with <mjml>, end with </mjml>. Max width 600px. Include header with logo (if available), hero/banner section, products (if any), footer. Create unique layout variations.`;
 
     // Extract only essential data to reduce token usage
     const essentialData = {
@@ -517,6 +557,8 @@ Output: Start with <mjml>, end with </mjml>. Max width 600px. Include hero, prod
         link: enhancedPayload.brandData?.link_color || '#22d3ee'
       },
       heroImage: heroImageUrl,
+      brandLogo: brandLogoUrl,
+      brandBanner: brandBannerUrl,
       font: enhancedPayload.scrapedStyles?.primaryFont || 'Inter',
       products: enhancedPayload.brandData?.products || [],
       userContext: enhancedPayload.userContext || '',
@@ -546,7 +588,7 @@ Output: Start with <mjml>, end with </mjml>. Max width 600px. Include hero, prod
     const resp = await openai.chat.completions.create({
       model,
       messages,
-      max_completion_tokens: 6000
+      max_completion_tokens: 10000
     });
 
     const rawOutput = resp.choices?.[0]?.message?.content?.trim() || "";
