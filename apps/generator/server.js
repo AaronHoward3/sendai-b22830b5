@@ -215,6 +215,50 @@ async function generateAndUploadHeroImage(imageContext, brandData, emailType, de
   };
 }
 
+// 🎨 Get design aesthetic specific styling
+function getDesignAestheticStyles(designAesthetic) {
+  const styles = {
+    minimal_clean: {
+      sectionPadding: "20px 0px",
+      columnPadding: "10px",
+      elementSpacing: "15px",
+      lineHeight: "1.6",
+      headingFontSize: "28px",
+      headingFontWeight: "700",
+      bodyFontSize: "16px", 
+      bodyFontWeight: "400",
+      buttonFontSize: "16px",
+      buttonFontWeight: "600"
+    },
+    bold_contrasting: {
+      sectionPadding: "25px 0px",
+      columnPadding: "15px",
+      elementSpacing: "20px",
+      lineHeight: "1.5",
+      headingFontSize: "32px",
+      headingFontWeight: "800",
+      bodyFontSize: "18px",
+      bodyFontWeight: "600", 
+      buttonFontSize: "18px",
+      buttonFontWeight: "700"
+    },
+    magazine_serif: {
+      sectionPadding: "30px 0px",
+      columnPadding: "20px",
+      elementSpacing: "25px",
+      lineHeight: "1.7",
+      headingFontSize: "30px",
+      headingFontWeight: "300",
+      bodyFontSize: "17px",
+      bodyFontWeight: "300",
+      buttonFontSize: "16px", 
+      buttonFontWeight: "500"
+    }
+  };
+  
+  return styles[designAesthetic] || styles.minimal_clean;
+}
+
 // 🔗 Static placeholder URL for custom hero images
 const CUSTOM_HERO_PLACEHOLDER = "https://via.placeholder.com/600x300/4f46e5/ffffff?text=Generating+Hero+Image...";
 
@@ -364,11 +408,10 @@ app.post("/generate", async (req, res) => {
     const skipScraping = payload.skipScraping || payload.fastMode;
     const enhancedPayload = skipScraping ? payload : await enhancePayloadWithWebsiteStyles(payload);
 
-    // Extract emailType and designAesthetic from payload
+    // Extract emailType from payload
     const emailType = enhancedPayload.emailType || enhancedPayload.brandData?.emailType;
-    const designAesthetic = enhancedPayload.designAesthetic || enhancedPayload.brandData?.designAesthetic;
     
-    console.log(`🔍 Extracted emailType: ${emailType}, designAesthetic: ${designAesthetic}`);
+    console.log(`🔍 Extracted emailType: ${emailType}`);
     
     // Check if we need to generate a custom hero image
     const useCustomHeroImage = enhancedPayload.useCustomHeroImage || enhancedPayload.brandData?.useCustomHeroImage || enhancedPayload.customHeroImage || enhancedPayload.brandData?.customHeroImage;
@@ -415,9 +458,28 @@ app.post("/generate", async (req, res) => {
     const layoutVariations = ['modern', 'classic', 'creative', 'minimalist', 'bold'];
     const randomLayout = layoutVariations[Math.floor(Math.random() * layoutVariations.length)];
     
+    // Get design aesthetic specific styling
+    const designAesthetic = enhancedPayload.designAesthetic || enhancedPayload.brandData?.designAesthetic || 'minimal_clean';
+    const aestheticStyles = getDesignAestheticStyles(designAesthetic);
+    
     const systemPrompt = `Generate unique MJML email code only. No explanations.
 
 Layout: ${layoutType} - Use example image structure, ignore colors/content. Style: ${randomLayout} approach.
+
+CRITICAL SPACING & LAYOUT REQUIREMENTS:
+- Use proper mj-section padding: ${aestheticStyles.sectionPadding}
+- Use proper mj-column padding: ${aestheticStyles.columnPadding}
+- Ensure adequate spacing between elements: ${aestheticStyles.elementSpacing}
+- Use proper line-height: ${aestheticStyles.lineHeight}
+- Ensure images have proper margins and don't overlap text
+- Use mj-spacer elements for consistent vertical spacing
+- All text must be readable with proper contrast
+
+DESIGN AESTHETIC: ${designAesthetic.toUpperCase()}
+Typography:
+- Headings: ${aestheticStyles.headingFontSize}, ${aestheticStyles.headingFontWeight}
+- Body text: ${aestheticStyles.bodyFontSize}, ${aestheticStyles.bodyFontWeight}
+- Button text: ${aestheticStyles.buttonFontSize}, ${aestheticStyles.buttonFontWeight}
 
 Requirements:
 - Brand colors: ${enhancedPayload.brandData?.primary_color || '#4f46e5'}, ${enhancedPayload.brandData?.link_color || '#22d3ee'}
@@ -440,7 +502,8 @@ Output: Start with <mjml>, end with </mjml>. Max width 600px. Include hero, prod
       products: enhancedPayload.brandData?.products || [],
       userContext: enhancedPayload.userContext || '',
       emailType: emailType,
-      designAesthetic: designAesthetic
+      designAesthetic: designAesthetic,
+      aestheticStyles: aestheticStyles
     };
 
     const messages = [
