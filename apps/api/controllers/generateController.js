@@ -2,6 +2,7 @@ import { getStoredBrand } from "../utils/dataStore.js";
 import mjml2html from "mjml";
 import { storeUserImageFromUrl, storeUserImageFromDataUrl } from "./imagesController.js";
 import { supabase } from "../utils/supabaseClient.js";
+import { generateSubjectLine, generatePreviewSubjectLine } from '../services/subjectLineService.js';
 
 // ---- helpers to avoid heavy regex on untrusted strings ----
 function trimTrailingSlashes(p) {
@@ -303,24 +304,24 @@ export async function generateEmailsController(req, res) {
     // First try to get the response as text to check if it's MJML
     const responseText = await generatorResponse.text();
     
-    // Check if the response looks like MJML (starts with <mjml>)
-    if (responseText.trim().startsWith('<mjml>')) {
-      console.log("🎯 [CONTROLLER] Detected MJML response, processing directly");
-      
-      // Create a mock structure that matches the expected format
-      generated = {
-        emails: [{
-          content: responseText,
-          subject: brandJson.subject || "Generated Email",
-          preview: brandJson.preview || ""
-        }]
-      };
-    } else {
-      // Try to parse as JSON (fallback for backward compatibility)
-      try {
-        generated = JSON.parse(responseText);
-        console.log("🎯 [CONTROLLER] Generator JSON parsed successfully");
-      } catch (parseError) {
+    // Try to parse as JSON first (new format with subject line)
+    try {
+      generated = JSON.parse(responseText);
+      console.log("🎯 [CONTROLLER] Generator JSON parsed successfully");
+    } catch (parseError) {
+      // Fallback: Check if the response looks like MJML (starts with <mjml>)
+      if (responseText.trim().startsWith('<mjml>')) {
+        console.log("🎯 [CONTROLLER] Detected MJML response, processing directly");
+        
+        // Create a mock structure that matches the expected format
+        generated = {
+          emails: [{
+            content: responseText,
+            subject: brandJson.subject || "Generated Email",
+            preview: brandJson.preview || ""
+          }]
+        };
+      } else {
         console.error("[generateController] Failed to parse generator response as JSON:", parseError);
         return res.status(500).json({ error: "Invalid response from generator service" });
       }
@@ -433,10 +434,30 @@ export async function generateEmailsController(req, res) {
     } catch (e) {
       console.warn("[generateController] Hero image save skipped:", e?.message || e);
     }
+    // Generate subject line based on user context
+    let finalSubjectLine = "";
+    try {
+      const userContext = brandJson.userContext || "";
+      const brandName = brandJson.brand?.title || brandJson.name || normalizedDomain;
+      const emailType = brandJson.emailType || "Promotion";
+      const tone = brandJson.tone || "bold";
+      
+      if (isPreviewMode) {
+        finalSubjectLine = generatePreviewSubjectLine(userContext, brandName, emailType);
+      } else {
+        finalSubjectLine = await generateSubjectLine(userContext, brandName, emailType, tone);
+      }
+      
+      console.log("📧 [CONTROLLER] Generated subject line:", finalSubjectLine);
+    } catch (error) {
+      console.error("📧 [CONTROLLER] Error generating subject line:", error);
+      finalSubjectLine = generated.subjectLine || generated.subject || (htmlEmails[0]?.subject ?? "");
+    }
+
     // ================================================================
     const response = {
       success: true,
-      subjectLine: generated.subjectLine || generated.subject || (htmlEmails[0]?.subject ?? ""),
+      subjectLine: finalSubjectLine,
       totalTokens: generated.totalTokens,
       emails: htmlEmails,
       savedHeroImage: savedHero ? { id: savedHero.id, url: savedHero.public_url } : null,

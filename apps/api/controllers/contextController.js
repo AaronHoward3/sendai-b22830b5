@@ -90,7 +90,7 @@ Make it specific and visual. Focus on what the image should look like, not what 
 Return ONLY the image prompt text, nothing else.
 `.trim();
 
-    // Generate both contexts in parallel
+    // Generate user and image contexts in parallel
     const [userContextResponse, imageContextResponse] = await Promise.all([
       openai.chat.completions.create({
         model: process.env.CONTEXT_MODEL || "gpt-4o-mini",
