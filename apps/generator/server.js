@@ -105,7 +105,7 @@ function generateSafeImagePrompt(imageContext, brandName, emailType, designAesth
     // Remove potentially problematic words and limit length
     safeContext = imageContext
       .replace(/[^\w\s\-.,!?]/g, '') // Remove special characters except basic punctuation
-      .substring(0, 100) // Limit length
+      .substring(0, 50) // Limit length to 50 chars for better performance
       .trim();
   }
 
@@ -114,21 +114,28 @@ function generateSafeImagePrompt(imageContext, brandName, emailType, designAesth
   return `${basePrompt}, ${brandPart}${safeContext ? `, ${safeContext}` : ''}, professional photography style, high quality, marketing appropriate`.trim();
 }
 
-// 🖼️ Generate image using DALL-E
+// 🖼️ Generate image using GPT Image 1
 async function generateHeroImage(prompt, brandId) {
   try {
     console.log(`🎨 Generating image with prompt: ${prompt}`);
     
     const response = await openai.images.generate({
-      model: "dall-e-3",
+      model: "gpt-image-1",
       prompt: prompt,
       size: "1024x1024",
-      quality: "standard",
+      quality: "high",
       n: 1,
     });
 
-    const imageUrl = response.data[0].url;
-    console.log(`✅ Image generated: ${imageUrl}`);
+    // GPT Image 1 returns b64_json instead of url
+    const imageData = response.data[0].b64_json;
+    if (!imageData) {
+      throw new Error('No image data returned from GPT Image 1');
+    }
+
+    // Convert base64 to data URL
+    const imageUrl = `data:image/png;base64,${imageData}`;
+    console.log(`✅ Image generated: ${imageUrl.substring(0, 50)}...`);
     
     return { success: true, imageUrl, prompt };
   } catch (error) {
@@ -145,9 +152,18 @@ async function uploadImageToSupabase(imageUrl, brandId, domain, filename) {
   }
 
   try {
-    // Download image from OpenAI
-    const imageResponse = await fetch(imageUrl);
-    const imageBuffer = await imageResponse.arrayBuffer();
+    let imageBuffer;
+    
+    // Handle data URLs (from GPT Image 1) vs regular URLs (from DALL-E)
+    if (imageUrl.startsWith('data:')) {
+      // Extract base64 data from data URL
+      const base64Data = imageUrl.split(',')[1];
+      imageBuffer = Buffer.from(base64Data, 'base64');
+    } else {
+      // Download image from URL
+      const imageResponse = await fetch(imageUrl);
+      imageBuffer = await imageResponse.arrayBuffer();
+    }
     
     // Upload to Supabase storage with consistent path structure
     const bucketName = process.env.SUPABASE_IMAGES_BUCKET || 'hero-images';
@@ -179,7 +195,7 @@ async function uploadImageToSupabase(imageUrl, brandId, domain, filename) {
 }
 
 // 🔄 Generate and upload hero image
-async function generateAndUploadHeroImage(imageContext, brandData, emailType, designAesthetic, shouldUploadToSupabase = true) {
+async function generateAndUploadHeroImage(imageContext, brandData, emailType, designAesthetic) {
   // Extract proper identifiers, avoid 'default' fallbacks
   const brandId = brandData?.brand?.id || brandData?.id || 
                   brandData?.brand?.title?.toLowerCase().replace(/[^a-z0-9]/g, '') || 
@@ -198,32 +214,37 @@ async function generateAndUploadHeroImage(imageContext, brandData, emailType, de
     return { success: false, error: imageResult.error };
   }
   
-  // Only upload to Supabase if explicitly requested (for newly generated images)
-  if (shouldUploadToSupabase) {
-    const filename = `hero-${Date.now()}.png`;
-    console.log(`🔍 Image upload path: ${brandId}/${domain}/${filename}`);
-    const uploadResult = await uploadImageToSupabase(imageResult.imageUrl, brandId, domain, filename);
-    
-    if (!uploadResult.success) {
-      return { success: false, error: uploadResult.error };
-    }
-    
-    return { 
-      success: true, 
-      imageUrl: uploadResult.publicUrl,
-      prompt: imageResult.prompt,
-      cost: IMAGE_COST
-    };
-  } else {
-    // Return the OpenAI URL directly without uploading to Supabase
-    console.log(`🎨 Generated image URL (not uploaded to Supabase): ${imageResult.imageUrl}`);
-    return { 
-      success: true, 
-      imageUrl: imageResult.imageUrl,
-      prompt: imageResult.prompt,
-      cost: IMAGE_COST
-    };
+  // Upload to Supabase
+  const filename = `hero-${Date.now()}.png`;
+  console.log(`🔍 Image upload path: ${brandId}/${domain}/${filename}`);
+  const uploadResult = await uploadImageToSupabase(imageResult.imageUrl, brandId, domain, filename);
+  
+  if (!uploadResult.success) {
+    return { success: false, error: uploadResult.error };
   }
+  
+  return { 
+    success: true, 
+    imageUrl: uploadResult.publicUrl,
+    prompt: imageResult.prompt,
+    cost: IMAGE_COST
+  };
+}
+
+// 🚀 Start hero image generation asynchronously
+function startHeroImageGeneration(imageContext, brandData, emailType, designAesthetic) {
+  return new Promise((resolve) => {
+    // Start the generation process asynchronously
+    generateAndUploadHeroImage(imageContext, brandData, emailType, designAesthetic)
+      .then(result => {
+        console.log(`✅ Async hero image generation completed: ${result.success ? 'Success' : 'Failed'}`);
+        resolve(result);
+      })
+      .catch(error => {
+        console.error(`❌ Async hero image generation failed:`, error.message);
+        resolve({ success: false, error: error.message });
+      });
+  });
 }
 
 // 🎨 Get design aesthetic specific styling
@@ -475,38 +496,22 @@ app.post("/generate", async (req, res) => {
     const brandLogoUrl = getBrandLogoUrl(enhancedPayload);
     const brandBannerUrl = getBrandBannerUrl(enhancedPayload);
     
-    // Generate hero image synchronously if needed
+    // Start hero image generation asynchronously if needed
+    let heroImagePromise = null;
     if (useCustomHeroImage && imageContext) {
-      console.log(`🎨 Starting hero image generation...`);
+      console.log(`🎨 Starting async hero image generation...`);
       console.log(`🎨 Image context: ${imageContext.substring(0, 100)}...`);
       console.log(`🎨 Use custom hero image: ${useCustomHeroImage}`);
       
-      try {
-        // CRITICAL: Only upload to Supabase if useCustomHeroImage is true (newly generated images only)
-        // No other images (logos, banners, products, etc.) should ever be uploaded to Supabase
-        const shouldUploadToSupabase = useCustomHeroImage === true;
-        const imageResult = await generateAndUploadHeroImage(
-          imageContext, 
-          enhancedPayload.brandData, 
-          emailType, 
-          designAesthetic,
-          shouldUploadToSupabase
-        );
-        
-        if (imageResult.success) {
-          console.log(`✅ Hero image generated: ${imageResult.imageUrl}`);
-          heroImageUrl = imageResult.imageUrl; // Use the actual generated image URL
-          logEvent(`🎨 Hero image generated: ${imageResult.imageUrl} | Cost: $${imageResult.cost} | Uploaded to Supabase: ${shouldUploadToSupabase}`);
-        } else {
-          console.warn(`⚠️ Hero image generation failed: ${imageResult.error}`);
-          logEvent(`⚠️ Hero image generation failed: ${imageResult.error}`);
-          // Keep using placeholder if generation fails
-        }
-      } catch (error) {
-        console.error(`❌ Hero image generation error:`, error.message);
-        logEvent(`❌ Hero image generation error: ${error.message}`);
-        // Keep using placeholder if generation fails
-      }
+      // Start the generation process asynchronously
+      heroImagePromise = startHeroImageGeneration(
+        imageContext, 
+        enhancedPayload.brandData, 
+        emailType, 
+        designAesthetic
+      );
+      
+      logEvent(`🎨 Async hero image generation started`);
     } else {
       console.log(`🎨 Custom hero image: ${useCustomHeroImage}, Image context: ${!!imageContext}`);
     }
@@ -758,6 +763,30 @@ Output: Start with <mjml>, end with </mjml>. Max width 600px. Include header wit
     // Return MJML with actual image URL (or placeholder if generation failed)
     let finalMjml = cleanedMjml;
     
+    // Wait for hero image generation to complete if it was started
+    let finalHeroImageUrl = heroImageUrl;
+    if (heroImagePromise) {
+      try {
+        const imageResult = await heroImagePromise;
+        if (imageResult.success) {
+          console.log(`✅ Hero image generation completed: ${imageResult.imageUrl}`);
+          finalHeroImageUrl = imageResult.imageUrl;
+          logEvent(`🎨 Hero image generated: ${imageResult.imageUrl} | Cost: $${imageResult.cost} | Uploaded to Supabase: true`);
+          
+          // Update the MJML with the actual image URL - replace placeholder
+          const placeholderPattern = /https:\/\/via\.placeholder\.com[^"'\s]*/g;
+          finalMjml = cleanedMjml.replace(placeholderPattern, finalHeroImageUrl);
+          console.log(`🔄 Replaced placeholder with actual image URL in MJML`);
+        } else {
+          console.warn(`⚠️ Hero image generation failed: ${imageResult.error}`);
+          logEvent(`⚠️ Hero image generation failed: ${imageResult.error}`);
+        }
+      } catch (error) {
+        console.error(`❌ Hero image generation error:`, error.message);
+        logEvent(`❌ Hero image generation error: ${error.message}`);
+      }
+    }
+    
     // Update total cost
     const totalCost = cost;
     
@@ -768,7 +797,8 @@ Output: Start with <mjml>, end with </mjml>. Max width 600px. Include header wit
         preview: ""
       }],
       totalTokens: totalTokens,
-      cost: cost
+      cost: cost,
+      heroImageUrl: finalHeroImageUrl // Include the final hero image URL
     });
   } catch (err) {
     console.error("❌ Error:", err);

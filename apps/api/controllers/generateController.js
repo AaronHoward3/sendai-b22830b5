@@ -65,7 +65,8 @@ function resolveEffectiveColors(brandJson) {
 function extractHeroUrl({ generated, headerHero, mjml, html }) {
   const candidates = [];
 
-  // 1) Direct signals
+  // 1) Direct signals - prioritize these as they're most reliable
+  if (typeof generated?.heroImageUrl === "string") candidates.push(generated.heroImageUrl);
   if (typeof generated?.heroImageUrlUsed === "string") candidates.push(generated.heroImageUrlUsed);
   if (typeof headerHero === "string") candidates.push(headerHero);
 
@@ -97,21 +98,35 @@ function extractHeroUrl({ generated, headerHero, mjml, html }) {
     const cssUrl = s.match(/url\((?:"|')?(https?:\/\/[^'")]+)(?:"|')?\)/i); // no backrefs
     if (cssUrl?.[1]) candidates.push(cssUrl[1]);
 
-    // Any <img src="..."> in MJML
-    const imgMj = s.match(/<img[^>]+src=["']([^"']+)["']/i);
-    if (imgMj?.[1]) candidates.push(imgMj[1]);
+    // Only extract hero images from MJML - skip product images
+    // Look for images in hero sections or with hero-related attributes
+    const heroImgMj = s.match(/<mj-hero[^>]*>[\s\S]*?<img[^>]+src=["']([^"']+)["'][\s\S]*?<\/mj-hero>/i);
+    if (heroImgMj?.[1]) candidates.push(heroImgMj[1]);
+    
+    // Also check for images with hero-related data attributes
+    const heroDataImgMj = s.match(/<img[^>]+data-hero=["']true["'][^>]+src=["']([^"']+)["']/i);
+    if (heroDataImgMj?.[1]) candidates.push(heroDataImgMj[1]);
 
     // Data attributes sometimes used by templates
     const dataBg = s.match(/\bdata-(?:bg|background|background-image)=["'](https?:\/\/[^"']+)["']/i);
     if (dataBg?.[1]) candidates.push(dataBg[1]);
   }
 
-  // 3) Compiled HTML-side clues (after mjml2html)
+  // 3) Compiled HTML-side clues (after mjml2html) - Only extract hero images
   if (typeof html === "string" && html) {
     const s = safeSlice(html);
-    // First <img src="...">
-    const imgHtml = s.match(/<img[^>]+src=["']([^"']+)["']/i);
-    if (imgHtml?.[1]) candidates.push(imgHtml[1]);
+    
+    // Only extract images that are likely hero images (first image or in hero context)
+    // Look for the first image in the HTML (usually the hero image)
+    const firstImgHtml = s.match(/<img[^>]+src=["']([^"']+)["']/i);
+    if (firstImgHtml?.[1]) {
+      // Only include if it's likely a hero image (not a product image)
+      const imgContext = s.substring(0, s.indexOf(firstImgHtml[0]) + 1000); // Get context around the image
+      if (!imgContext.includes('product') && !imgContext.includes('item') && 
+          !imgContext.includes('price') && !imgContext.includes('buy')) {
+        candidates.push(firstImgHtml[1]);
+      }
+    }
 
     // CSS background-image: url(...)
     const cssHtml = s.match(/background(?:-image)?:\s*url\((?:"|')?(https?:\/\/[^'")]+)(?:"|')?\)/i);
@@ -133,13 +148,17 @@ function extractHeroUrl({ generated, headerHero, mjml, html }) {
     }
   }
 
-  // Filter placeholders / invalids / duplicates
+  // Filter placeholders / invalids / duplicates / product images
   const seen = new Set();
   for (const u of candidates) {
     if (!u || seen.has(u)) continue;
     seen.add(u);
     if (/CUSTOMHEROIMAGE\.COM|SAVEDHEROIMAGE\.COM/i.test(u)) continue;
     if (!/^https?:\/\//i.test(u) && !String(u).startsWith("data:")) continue;
+    
+    // Skip product images - look for common product image patterns
+    if (/product|item|thumbnail|small|mini|cart|shop/i.test(u)) continue;
+    
     return u;
   }
   return null;
