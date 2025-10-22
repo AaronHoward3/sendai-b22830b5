@@ -498,6 +498,7 @@ app.post("/generate", async (req, res) => {
     
     // Start hero image generation asynchronously if needed
     let heroImagePromise = null;
+    const heroImageStartTime = performance.now();
     if (useCustomHeroImage && imageContext) {
       console.log(`🎨 Starting async hero image generation...`);
       console.log(`🎨 Image context: ${imageContext.substring(0, 100)}...`);
@@ -526,6 +527,10 @@ app.post("/generate", async (req, res) => {
     
     // Get design aesthetic specific styling
     const aestheticStyles = getDesignAestheticStyles(designAesthetic);
+    
+    // Log MJML generation start time
+    const mjmlStartTime = performance.now();
+    console.log(`📝 Starting MJML generation (parallel to hero image)...`);
     
     const systemPrompt = `Generate unique MJML email code only. No explanations.
 
@@ -744,6 +749,9 @@ Output: Start with <mjml>, end with </mjml>. Max width 600px. Include header wit
     const totalTokens = inputTokens + outputTokens;
     const cost = inputTokens * INPUT_COST + outputTokens * OUTPUT_COST;
     const elapsedSec = ((performance.now() - startTime) / 1000).toFixed(2);
+    const mjmlElapsedSec = ((performance.now() - mjmlStartTime) / 1000).toFixed(2);
+    
+    console.log(`📝 MJML generation completed in ${mjmlElapsedSec}s`);
 
     // 🧾 Detailed log entry
     const scrapedInfo = enhancedPayload.scrapedStyles ? 
@@ -764,12 +772,18 @@ Output: Start with <mjml>, end with </mjml>. Max width 600px. Include header wit
     let finalMjml = cleanedMjml;
     
     // Wait for hero image generation to complete if it was started
+    // This is the ONLY place we wait for hero image - everything else runs in parallel
     let finalHeroImageUrl = heroImageUrl;
     if (heroImagePromise) {
+      const heroImageWaitStart = performance.now();
+      console.log(`⏳ Waiting for hero image completion to inject URL into MJML...`);
       try {
         const imageResult = await heroImagePromise;
+        const heroImageTotalTime = ((performance.now() - heroImageStartTime) / 1000).toFixed(2);
+        const heroImageWaitTime = ((performance.now() - heroImageWaitStart) / 1000).toFixed(2);
+        
         if (imageResult.success) {
-          console.log(`✅ Hero image generation completed: ${imageResult.imageUrl}`);
+          console.log(`✅ Hero image generation completed in ${heroImageTotalTime}s (waited ${heroImageWaitTime}s): ${imageResult.imageUrl}`);
           finalHeroImageUrl = imageResult.imageUrl;
           logEvent(`🎨 Hero image generated: ${imageResult.imageUrl} | Cost: $${imageResult.cost} | Uploaded to Supabase: true`);
           
