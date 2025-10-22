@@ -570,15 +570,9 @@ SPACING & LAYOUT:
 - Line-height: ${aestheticStyles.lineHeight}
 - Mobile friendly, no emojis
 
-GRID REQUIREMENTS:
-- All cards in grids must have identical heights
-- Use mj-table with table-layout="fixed" and explicit height
-- 2-column: width="50%", 3-column: width="33.33%", 4-column: width="25%"
-- Fixed height prevents content from affecting card size
-
 BRAND IMAGES:
-- Logo: ${brandLogoUrl || 'none'} - Use in header, maintain aspect ratio
-- Banner: ${brandBannerUrl || 'none'} - Use as background/hero section
+- Logo: ${brandLogoUrl || 'none'} - Use in header or footer, maintain aspect ratio
+- Banner: ${brandBannerUrl || 'none'} - use as a separation block near end of emails.
 - Hero: ${heroImageUrl} - Main content image
 - No text overlays on brand images
 
@@ -588,12 +582,9 @@ TYPOGRAPHY (${designAesthetic.toUpperCase()}):
 - Body: ${aestheticStyles.bodyFontSize}, ${aestheticStyles.bodyFontWeight}
 - Buttons: ${aestheticStyles.buttonFontSize}, ${aestheticStyles.buttonFontWeight}
 
-BRAND STYLE:
-- Colors: ${enhancedPayload.brandData?.primary_color || '#4f46e5'}, ${enhancedPayload.brandData?.link_color || '#22d3ee'}
-- Brand: ${enhancedPayload.brandData?.brand?.title || 'Brand'}
-- Font: ${enhancedPayload.scrapedStyles?.primaryFont || 'Inter'}
+MUST USE BRAND COLORS and a font as close as possible to the brands font.
 
-
+only return mjml no other text.
 Output: Start with <mjml>, end with </mjml>. Max width 600px. Include header, hero section, products, footer.`;
 
     // Extract only essential data to reduce token usage
@@ -628,7 +619,7 @@ Output: Start with <mjml>, end with </mjml>. Max width 600px. Include header, he
       }
     ];
 
-    const model = process.env.OPENAI_MODEL_ID || "gpt-5";
+    const model = process.env.OPENAI_MODEL_ID || "gpt-5-mini";
     console.log("🧠 Using model:", model);
     console.log("🔍 Essential data size:", JSON.stringify(essentialData).length, "characters");
 
