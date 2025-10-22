@@ -119,11 +119,11 @@ async function generateHeroImage(prompt, brandId) {
   try {
     console.log(`🎨 Generating image with prompt: ${prompt}`);
     
-    // Add timeout to prevent hanging requests
-    const timeoutMs = 120000; // 2 minutes timeout
+    // Add timeout to prevent hanging requests - increased to 4 minutes for image generation
+    const timeoutMs = 240000; // 4 minutes timeout (was 2 minutes)
     const timeoutPromise = new Promise((_, reject) => {
       setTimeout(() => {
-        reject(new Error('Image generation timeout after 2 minutes'));
+        reject(new Error('Image generation timeout after 4 minutes'));
       }, timeoutMs);
     });
 
@@ -543,153 +543,59 @@ app.post("/generate", async (req, res) => {
     const mjmlStartTime = performance.now();
     console.log(`📝 Starting MJML generation (parallel to hero image)...`);
     
-    const systemPrompt = `Generate unique MJML email code only. No explanations.
+    const systemPrompt = `Generate MJML email code only. No explanations.
 
-Layout: ${layoutType} - Use example image structure, and use the color weights (not exact colors from examples, just the general application of them). Style: ${randomLayout} approach.
+Layout: ${layoutType} - Use example image structure. Style: ${randomLayout} approach.
 
-CRITICAL SPACING & LAYOUT REQUIREMENTS:
-- Use proper mj-section padding: ${aestheticStyles.sectionPadding}
-- Use proper mj-column padding: ${aestheticStyles.columnPadding}
-- Ensure adequate spacing between elements: ${aestheticStyles.elementSpacing}
-- Use proper line-height: ${aestheticStyles.lineHeight}
-- Ensure images have proper margins and don't overlap text
-- Use mj-spacer elements for consistent vertical spacing
-- All text must be readable with proper contrast
-- Do NOT use emojis.
-- Must be mobile friendly.
+SPACING & LAYOUT:
+- mj-section padding: ${aestheticStyles.sectionPadding}
+- mj-column padding: ${aestheticStyles.columnPadding}
+- Element spacing: ${aestheticStyles.elementSpacing}
+- Line-height: ${aestheticStyles.lineHeight}
+- Mobile friendly, no emojis
 
-UNIFORM GRID & CARD SIZING REQUIREMENTS (CRITICAL):
-- For ANY grid layouts (2x2, 3x3, etc.) or side-by-side cards, ALL cards MUST be IDENTICAL in height
-- MANDATORY: Use mj-table with table-layout="fixed" and explicit height for ALL cards
-- MANDATORY: Set identical height on ALL table cells (e.g., height: 280px !important)
-- MANDATORY: Use vertical-align: top !important on all table cells
-- MANDATORY: Apply overflow: hidden !important to prevent content from affecting height
-- Use mj-column with equal widths (e.g., width="50%" for 2-column, "33.33%" for 3-column)
-- For product/service cards, use consistent padding and margins regardless of text length
-- Text content MUST be contained within fixed height boundaries
-- Use mj-spacer elements to fill remaining space in shorter cards
-- Ensure all cards in a row have the same visual weight and spacing
-- For 2-column grids: width="50%" for each column
-- For 3-column grids: width="33.33%" for each column
-- For 4-column grids: width="25%" for each column
-- CRITICAL: Never let content determine card height - always use fixed heights
-- CRITICAL: All cards in the same row must have EXACTLY the same height value
+GRID REQUIREMENTS:
+- All cards in grids must have identical heights
+- Use mj-table with table-layout="fixed" and explicit height
+- 2-column: width="50%", 3-column: width="33.33%", 4-column: width="25%"
+- Fixed height prevents content from affecting card size
 
-BRAND IMAGES REQUIREMENTS:
-- Brand logo: ${brandLogoUrl || 'none'} - Use in header if available, maintain aspect ratio, no text overlays
-- Brand banner: ${brandBannerUrl || 'none'} - Use as background or hero section if available, maintain aspect ratio, no text overlays
-- Hero image: ${heroImageUrl} - Use as main content image
-- CRITICAL: Brand logos and banners must maintain their original aspect ratios
-- CRITICAL: No text, buttons, or other elements should overlay brand logos or banners
-- Use mj-image with proper width/height attributes to preserve aspect ratios
+BRAND IMAGES:
+- Logo: ${brandLogoUrl || 'none'} - Use in header, maintain aspect ratio
+- Banner: ${brandBannerUrl || 'none'} - Use as background/hero section
+- Hero: ${heroImageUrl} - Main content image
+- No text overlays on brand images
 
-DESIGN AESTHETIC: ${designAesthetic.toUpperCase()}
-Typography Hierarchy:
-- Main Headings (H1): ${aestheticStyles.headingFontSize}, ${aestheticStyles.headingFontWeight}
-- Subheadings (H2/H3): ${aestheticStyles.subheadingFontSize}, ${aestheticStyles.subheadingFontWeight}
-- Body text: ${aestheticStyles.bodyFontSize}, ${aestheticStyles.bodyFontWeight}
-- Button text: ${aestheticStyles.buttonFontSize}, ${aestheticStyles.buttonFontWeight}
+TYPOGRAPHY (${designAesthetic.toUpperCase()}):
+- H1: ${aestheticStyles.headingFontSize}, ${aestheticStyles.headingFontWeight}
+- H2/H3: ${aestheticStyles.subheadingFontSize}, ${aestheticStyles.subheadingFontWeight}
+- Body: ${aestheticStyles.bodyFontSize}, ${aestheticStyles.bodyFontWeight}
+- Buttons: ${aestheticStyles.buttonFontSize}, ${aestheticStyles.buttonFontWeight}
 
-CRITICAL TYPOGRAPHY REQUIREMENTS:
-- Use main headings for primary section titles (largest, most prominent)
-- Use subheadings for secondary titles, product names, or section dividers
-- Ensure clear visual hierarchy with proper size differences between heading levels
-- Main headings should be significantly larger than subheadings
-- Subheadings should be noticeably larger than body text
-- Use proper mj-text styling with font-size and font-weight attributes
-
-Requirements:
-- Brand colors: ${enhancedPayload.brandData?.primary_color || '#4f46e5'}, ${enhancedPayload.brandData?.link_color || '#22d3ee'}
-- Brand name: ${enhancedPayload.brandData?.brand?.title || 'Brand'}
+BRAND STYLE:
+- Colors: ${enhancedPayload.brandData?.primary_color || '#4f46e5'}, ${enhancedPayload.brandData?.link_color || '#22d3ee'}
+- Brand: ${enhancedPayload.brandData?.brand?.title || 'Brand'}
 - Font: ${enhancedPayload.scrapedStyles?.primaryFont || 'Inter'}
-- Random seed: ${randomSeed}
 
-MJML GRID IMPLEMENTATION EXAMPLES (MANDATORY TEMPLATE):
-For 2x2 service cards - USE THIS EXACT STRUCTURE:
+GRID TEMPLATE (for 2x2 cards):
 <mj-section>
-  <mj-column width="50%" css-class="card-column">
-    <mj-table css-class="card-container" table-layout="fixed" width="100%" height="280px">
-      <tr>
-        <td style="height: 280px !important; vertical-align: top !important; padding: 20px !important; border: 1px solid #e5e7eb !important; background: #ffffff !important; overflow: hidden !important; max-height: 280px !important; min-height: 280px !important;">
-          <div class="card-content">
-            <!-- Card content here - will be constrained to exact height -->
-          </div>
-        </td>
-      </tr>
+  <mj-column width="50%">
+    <mj-table table-layout="fixed" width="100%" height="280px">
+      <tr><td style="height: 280px !important; vertical-align: top !important; padding: 20px !important; border: 1px solid #e5e7eb !important; background: #ffffff !important; overflow: hidden !important;">
+        <!-- Card content -->
+      </td></tr>
     </mj-table>
   </mj-column>
-  <mj-column width="50%" css-class="card-column">
-    <mj-table css-class="card-container" table-layout="fixed" width="100%" height="280px">
-      <tr>
-        <td style="height: 280px !important; vertical-align: top !important; padding: 20px !important; border: 1px solid #e5e7eb !important; background: #ffffff !important; overflow: hidden !important; max-height: 280px !important; min-height: 280px !important;">
-          <div class="card-content">
-            <!-- Card content here - will be constrained to exact height -->
-          </div>
-        </td>
-      </tr>
+  <mj-column width="50%">
+    <mj-table table-layout="fixed" width="100%" height="280px">
+      <tr><td style="height: 280px !important; vertical-align: top !important; padding: 20px !important; border: 1px solid #e5e7eb !important; background: #ffffff !important; overflow: hidden !important;">
+        <!-- Card content -->
+      </td></tr>
     </mj-table>
   </mj-column>
 </mj-section>
 
-CRITICAL: Both cards MUST have identical height values (280px) and identical styling. Never vary the height based on content.
-
-CSS CLASSES TO INCLUDE (MANDATORY FOR UNIFORM SIZING):
-<style>
-.card-column {
-  width: 50% !important;
-  vertical-align: top !important;
-  height: 100% !important;
-}
-.card-container {
-  width: 100% !important;
-  table-layout: fixed !important;
-  height: 280px !important;
-}
-.card-container td {
-  height: 280px !important;
-  vertical-align: top !important;
-  padding: 20px !important;
-  border: 1px solid #e5e7eb !important;
-  background: #ffffff !important;
-  word-wrap: break-word !important;
-  overflow: hidden !important;
-  max-height: 280px !important;
-  min-height: 280px !important;
-  position: relative !important;
-}
-.card-content {
-  height: 100% !important;
-  overflow: hidden !important;
-  display: flex !important;
-  flex-direction: column !important;
-  justify-content: space-between !important;
-}
-.card-text {
-  flex: 1 !important;
-  overflow: hidden !important;
-  text-overflow: ellipsis !important;
-  display: -webkit-box !important;
-  -webkit-line-clamp: 4 !important;
-  -webkit-box-orient: vertical !important;
-}
-/* Mobile responsive */
-@media only screen and (max-width: 600px) {
-  .card-column {
-    width: 100% !important;
-    display: block !important;
-  }
-  .card-container {
-    height: 300px !important;
-  }
-  .card-container td {
-    height: 300px !important;
-    min-height: 300px !important;
-    max-height: 300px !important;
-  }
-}
-</style>
-
-Output: Start with <mjml>, end with </mjml>. Max width 600px. Include header with logo (if available), hero/banner section, products (if any), footer. Create unique layout variations. ALWAYS use the uniform sizing approach above for any grid layouts.`;
+Output: Start with <mjml>, end with </mjml>. Max width 600px. Include header, hero section, products, footer.`;
 
     // Extract only essential data to reduce token usage
     const essentialData = {
@@ -727,11 +633,11 @@ Output: Start with <mjml>, end with </mjml>. Max width 600px. Include header wit
     console.log("🧠 Using model:", model);
     console.log("🔍 Essential data size:", JSON.stringify(essentialData).length, "characters");
 
-    // Add timeout to prevent hanging requests
-    const timeoutMs = 120000; // 2 minutes timeout
+    // Add timeout to prevent hanging requests - increased to 4 minutes for complex generations
+    const timeoutMs = 240000; // 4 minutes timeout (was 2 minutes)
     const timeoutPromise = new Promise((_, reject) => {
       setTimeout(() => {
-        reject(new Error('GPT API request timeout after 2 minutes'));
+        reject(new Error('GPT API request timeout after 4 minutes'));
       }, timeoutMs);
     });
 
@@ -739,7 +645,7 @@ Output: Start with <mjml>, end with </mjml>. Max width 600px. Include header wit
       openai.chat.completions.create({
         model,
         messages,
-        max_completion_tokens: 10000
+        max_completion_tokens: 6000 // Reduced from 10000 to speed up generation
       }),
       timeoutPromise
     ]);
