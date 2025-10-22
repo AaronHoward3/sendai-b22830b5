@@ -134,15 +134,23 @@ export const Step4Generation: React.FC<Step4GenerationProps> = ({ formData, upda
         if (!generateResponse.ok) {
           const errorText = await generateResponse.text();
           let errorMessage = `HTTP ${generateResponse.status} ${generateResponse.statusText}`;
+          
+          // Try to parse error as JSON, but handle non-JSON responses gracefully
+          try {
+            const errorJson = JSON.parse(errorText);
+            errorMessage = errorJson.error || errorMessage;
+          } catch (parseError) {
+            // If it's not JSON, use the raw text (truncated)
+            errorMessage = errorText.slice(0, 200) || errorMessage;
+          }
+          
           if (generateResponse.status === 429) {
-            errorMessage = JSON.parse(errorText)?.error || "Too many requests. Please wait a moment before trying again.";
             stopFake();
             setStatus("Rate limit exceeded. Please wait before trying again.");
             handleErrorAndGoBack("Too many requests. Please wait a moment before trying again.");
             return
           }
           if (generateResponse.status >= 500) {
-            errorMessage = JSON.parse(errorText)?.error || "Email generator service is temporarily unavailable. Please try again later.";
             stopFake();
             setStatus("Service temporarily unavailable. Please try again later.");
             handleErrorAndGoBack("Email generator service is temporarily unavailable. Please try again later.");

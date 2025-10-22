@@ -297,6 +297,19 @@ export async function generateEmailsController(req, res) {
       const errorText = await generatorResponse.text().catch(() => "Unknown error");
       console.error("[generateController] Generator error:", errorText);
       
+      // Try to parse error as JSON, but handle non-JSON responses gracefully
+      let errorMessage = "Email generator service error";
+      let errorType = "generator_error";
+      
+      try {
+        const errorJson = JSON.parse(errorText);
+        errorMessage = errorJson.error || errorMessage;
+        errorType = errorJson.type || errorType;
+      } catch (parseError) {
+        // If it's not JSON, use the raw text (truncated)
+        errorMessage = errorText.slice(0, 200) || errorMessage;
+      }
+      
       // Handle specific error types
       if (generatorResponse.status === 429) {
         return res.status(429).json({ 
@@ -308,14 +321,15 @@ export async function generateEmailsController(req, res) {
       
       if (generatorResponse.status >= 500) {
         return res.status(500).json({ 
-          error: "Email generator service is temporarily unavailable. Please try again later.",
-          type: "server_error"
+          error: errorMessage,
+          type: errorType,
+          originalStatus: generatorResponse.status
         });
       }
       return res.status(500).json({ 
-        error: "Email generator failed", 
+        error: errorMessage, 
         status: generatorResponse.status,
-        type: "generator_error"
+        type: errorType
       });
     }
     console.log("🎯 [CONTROLLER] Generator response OK, parsing response...");

@@ -119,13 +119,24 @@ async function generateHeroImage(prompt, brandId) {
   try {
     console.log(`🎨 Generating image with prompt: ${prompt}`);
     
-    const response = await openai.images.generate({
-      model: "gpt-image-1",
-      prompt: prompt,
-      size: "1024x1024",
-      quality: "high",
-      n: 1,
+    // Add timeout to prevent hanging requests
+    const timeoutMs = 120000; // 2 minutes timeout
+    const timeoutPromise = new Promise((_, reject) => {
+      setTimeout(() => {
+        reject(new Error('Image generation timeout after 2 minutes'));
+      }, timeoutMs);
     });
+
+    const response = await Promise.race([
+      openai.images.generate({
+        model: "gpt-image-1",
+        prompt: prompt,
+        size: "1024x1024",
+        quality: "high",
+        n: 1,
+      }),
+      timeoutPromise
+    ]);
 
     // GPT Image 1 returns b64_json instead of url
     const imageData = response.data[0].b64_json;
@@ -716,11 +727,22 @@ Output: Start with <mjml>, end with </mjml>. Max width 600px. Include header wit
     console.log("🧠 Using model:", model);
     console.log("🔍 Essential data size:", JSON.stringify(essentialData).length, "characters");
 
-    const resp = await openai.chat.completions.create({
-      model,
-      messages,
-      max_completion_tokens: 10000
+    // Add timeout to prevent hanging requests
+    const timeoutMs = 120000; // 2 minutes timeout
+    const timeoutPromise = new Promise((_, reject) => {
+      setTimeout(() => {
+        reject(new Error('GPT API request timeout after 2 minutes'));
+      }, timeoutMs);
     });
+
+    const resp = await Promise.race([
+      openai.chat.completions.create({
+        model,
+        messages,
+        max_completion_tokens: 10000
+      }),
+      timeoutPromise
+    ]);
 
     const rawOutput = resp.choices?.[0]?.message?.content?.trim() || "";
     const usage = resp.usage || {};
@@ -817,7 +839,13 @@ Output: Start with <mjml>, end with </mjml>. Max width 600px. Include header wit
   } catch (err) {
     console.error("❌ Error:", err);
     logEvent(`❌ Error: ${err.message}`);
-    res.status(500).type("text/plain").send(err.message);
+    
+    // Return JSON error response instead of plain text
+    res.status(500).json({
+      error: err.message,
+      type: 'generator_error',
+      timestamp: new Date().toISOString()
+    });
   }
 });
 
