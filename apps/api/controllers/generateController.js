@@ -163,6 +163,22 @@ function extractHeroUrl({ generated, headerHero, mjml, html }) {
   }
   return null;
 }
+// Test endpoint to verify API service is working
+export async function testController(req, res) {
+  res.json({
+    service: "irios-api",
+    status: "running",
+    timestamp: new Date().toISOString(),
+    generatorUrl: process.env.GENERATOR_URL ? "configured" : "not configured",
+    env: {
+      hasSupabaseUrl: !!process.env.SUPABASE_URL,
+      hasSupabaseKey: !!process.env.SUPABASE_SERVICE_ROLE_KEY,
+      hasOpenAIKey: !!process.env.OPENAI_API_KEY,
+      hasGeneratorUrl: !!process.env.GENERATOR_URL
+    }
+  });
+}
+
 export async function generateEmailsController(req, res) {
   const startTime = Date.now();
   const isPreviewMode = req.isPreviewMode || false;
@@ -286,11 +302,15 @@ export async function generateEmailsController(req, res) {
       return res.status(500).json({ error: "Generator service not configured" });
     }
     
+    console.log(`[generateController] Calling generator at: ${process.env.GENERATOR_URL}`);
+    console.log(`[generateController] Payload size: ${JSON.stringify(payloadToSend).length} characters`);
+    
     const genStart = Date.now();
     const generatorResponse = await fetch(process.env.GENERATOR_URL, {
       method: "POST",
       headers: { "Content-Type": "application/json", "Accept": "application/json" },
       body: JSON.stringify(payloadToSend),
+      timeout: 300000 // 5 minute timeout for the fetch request
     });
 
     if (!generatorResponse.ok) {

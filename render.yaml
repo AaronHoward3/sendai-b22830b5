@@ -10,8 +10,6 @@ services:
     envVars:
       - key: NODE_VERSION
         value: 20
-      - key: PORT
-        value: 10000
       - key: SUPABASE_URL
         sync: false
       - key: SUPABASE_SERVICE_ROLE_KEY
@@ -30,7 +28,7 @@ services:
         value: https://www.irios.ai
       - key: ALLOW_ALL_ORIGINS
         value: "true"
-    healthCheckPath: /healthz
+    healthCheckPath: /api/healthz
 
   - type: web
     name: irios-generator
@@ -43,8 +41,6 @@ services:
     envVars:
       - key: NODE_VERSION
         value: 20
-      - key: PORT
-        value: 10000
       - key: OPENAI_API_KEY
         sync: false
       - key: SUPABASE_URL

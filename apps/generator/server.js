@@ -10,7 +10,7 @@ const app = express();
 app.use(express.json({ limit: "10mb" }));
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
-const PORT = process.env.PORT || 3001;
+const PORT = process.env.PORT || 3002;
 
 // Supabase client for image storage
 const supabase = (process.env.SUPABASE_URL && process.env.SUPABASE_SERVICE_ROLE_KEY)
@@ -476,9 +476,25 @@ async function enhancePayloadWithWebsiteStyles(payload, timeoutMs = 2000) {
 
 app.get("/healthz", (_, res) => res.json({ ok: true }));
 
+// Test endpoint to verify service is working
+app.get("/test", (_, res) => {
+  res.json({
+    service: "irios-generator",
+    status: "running",
+    timestamp: new Date().toISOString(),
+    port: PORT,
+    env: {
+      hasOpenAIKey: !!process.env.OPENAI_API_KEY,
+      hasSupabaseUrl: !!process.env.SUPABASE_URL,
+      hasSupabaseKey: !!process.env.SUPABASE_SERVICE_ROLE_KEY
+    }
+  });
+});
+
 // POST /generate  -> returns raw MJML
 app.post("/generate", async (req, res) => {
   const startTime = performance.now();
+  console.log(`📝 [GENERATOR] Received generation request at ${new Date().toISOString()}`);
 
   try {
     const payload = req.body && typeof req.body === "object" ? req.body : {};
@@ -577,23 +593,6 @@ BRAND STYLE:
 - Brand: ${enhancedPayload.brandData?.brand?.title || 'Brand'}
 - Font: ${enhancedPayload.scrapedStyles?.primaryFont || 'Inter'}
 
-GRID TEMPLATE (for 2x2 cards):
-<mj-section>
-  <mj-column width="50%">
-    <mj-table table-layout="fixed" width="100%" height="280px">
-      <tr><td style="height: 280px !important; vertical-align: top !important; padding: 20px !important; border: 1px solid #e5e7eb !important; background: #ffffff !important; overflow: hidden !important;">
-        <!-- Card content -->
-      </td></tr>
-    </mj-table>
-  </mj-column>
-  <mj-column width="50%">
-    <mj-table table-layout="fixed" width="100%" height="280px">
-      <tr><td style="height: 280px !important; vertical-align: top !important; padding: 20px !important; border: 1px solid #e5e7eb !important; background: #ffffff !important; overflow: hidden !important;">
-        <!-- Card content -->
-      </td></tr>
-    </mj-table>
-  </mj-column>
-</mj-section>
 
 Output: Start with <mjml>, end with </mjml>. Max width 600px. Include header, hero section, products, footer.`;
 

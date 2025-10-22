@@ -3,7 +3,7 @@ import { Router } from "express";
 import rateLimit from "express-rate-limit";
 import { requireAuth } from "../middleware/requireAuth.js";
 import { requireEmailCredit } from "../middleware/credits.js";
-import { generateEmailsController } from "../controllers/generateController.js";
+import { generateEmailsController, testController } from "../controllers/generateController.js";
 import { maybeConsumeImageCredit } from "../middleware/credits.js";
 import { validateRequest, generateEmailSchema } from "../middleware/validation.js";
 import { checkTrialUsage, markTrialUsed } from "../middleware/trialTracking.js";
@@ -32,6 +32,9 @@ router.get("/test", (req, res) => {
     }
   });
 });
+
+// GET /api/generate/service-test - Test service communication
+router.get("/service-test", testController);
 
 // GET /api/generate/trial-status - Check trial status without consuming it
 router.get("/trial-status", checkTrialUsage, (req, res) => {
