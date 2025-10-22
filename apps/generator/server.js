@@ -4,7 +4,7 @@ import fs from "fs";
 import path from "path";
 import OpenAI from "openai";
 import { createClient } from '@supabase/supabase-js';
-import { scrapeWebsiteStyles, findClosestGoogleFont } from "./utils/websiteScraper.js";
+import { scrapeWebsiteStyles, findClosestGoogleFont, scrapeWebsiteStylesEnhanced } from "./utils/websiteScraper.js";
 
 const app = express();
 app.use(express.json({ limit: "10mb" }));
@@ -405,27 +405,28 @@ function cleanMjmlOutput(rawOutput) {
 }
 
 // 🌐 Enhance payload with website-scraped styles (with timeout)
-async function enhancePayloadWithWebsiteStyles(payload, timeoutMs = 2000) {
-  try {
-    // Debug: Log payload structure to understand the format
-    console.log("🔍 Payload structure:", JSON.stringify(payload, null, 2));
-    
-    // Try multiple possible domain paths
-    const domain = payload.brandData?.brand?.domain || 
-                  payload.brandData?.domain || 
-                  payload.domain || 
-                  payload.brandData?.brandData?.domain ||
-                  payload.brandData?.website?.replace(/^https?:\/\//, '').replace(/\/$/, '');
-    
-    console.log("🔍 Extracted domain:", domain);
-    
-    if (!domain) {
-      console.log("⚠️ No domain found in payload, skipping website scraping");
-      console.log("Available keys:", Object.keys(payload));
-      return payload;
-    }
+async function enhancePayloadWithWebsiteStyles(payload, timeoutMs = 5000) {
+  // Debug: Log payload structure to understand the format
+  console.log("🔍 Payload structure:", JSON.stringify(payload, null, 2));
+  
+  // Try multiple possible domain paths
+  const domain = payload.brandData?.brand?.domain || 
+                payload.brandData?.domain || 
+                payload.domain || 
+                payload.brandData?.brandData?.domain ||
+                payload.brandData?.website?.replace(/^https?:\/\//, '').replace(/\/$/, '');
+  
+  console.log("🔍 Extracted domain:", domain);
+  
+  if (!domain) {
+    console.log("⚠️ No domain found in payload, skipping website scraping");
+    console.log("Available keys:", Object.keys(payload));
+    return payload;
+  }
 
-    console.log(`🔍 Scraping website styles for: ${domain} (timeout: ${timeoutMs}ms)`);
+  try {
+
+    console.log(`🔍 Enhanced scraping website styles for: ${domain} (timeout: ${timeoutMs}ms)`);
     
     // Create a promise that rejects after timeout
     const timeoutPromise = new Promise((_, reject) => {
@@ -435,33 +436,30 @@ async function enhancePayloadWithWebsiteStyles(payload, timeoutMs = 2000) {
       }, timeoutMs);
     });
     
-    // Race between scraping and timeout
+    // Use enhanced scraping with both CSS and vision analysis
     const scrapedData = await Promise.race([
-      scrapeWebsiteStyles(domain),
+      scrapeWebsiteStylesEnhanced(domain),
       timeoutPromise
     ]);
     
     if (scrapedData.success) {
-      // Find closest Google Font
-      const primaryFont = scrapedData.fonts[0];
-      const closestGoogleFont = findClosestGoogleFont(primaryFont);
-      
       // Enhance payload with scraped data
       const enhancedPayload = {
         ...payload,
         scrapedStyles: {
           fonts: scrapedData.fonts,
-          primaryFont: closestGoogleFont,
+          primaryFont: scrapedData.primaryFont,
           buttonStyles: scrapedData.buttonStyles,
           scrapedAt: new Date().toISOString(),
-          source: scrapedData.url
+          source: scrapedData.url,
+          sources: scrapedData.sources
         }
       };
       
-      console.log(`✅ Scraped styles: Fonts: ${scrapedData.fonts.join(', ')}, Primary: ${closestGoogleFont}`);
+      console.log(`✅ Enhanced scraping complete: Fonts: ${scrapedData.fonts.join(', ')}, Primary: ${scrapedData.primaryFont}, Sources: CSS=${scrapedData.sources?.css}, Vision=${scrapedData.sources?.vision}`);
       return enhancedPayload;
     } else {
-      console.log(`⚠️ Website scraping failed for ${domain}: ${scrapedData.error}`);
+      console.log(`⚠️ Enhanced website scraping failed for ${domain}: ${scrapedData.error}`);
       return payload;
     }
   } catch (error) {
@@ -555,38 +553,6 @@ app.post("/generate", async (req, res) => {
     // Get design aesthetic specific styling
     const aestheticStyles = getDesignAestheticStyles(designAesthetic);
     
-    // Log MJML generation start time
-    const mjmlStartTime = performance.now();
-    console.log(`📝 Starting MJML generation (parallel to hero image)...`);
-    
-    const systemPrompt = `Generate MJML email code only. No explanations.
-
-Layout: ${layoutType} - Use example image structure. Style: ${randomLayout} approach.
-
-SPACING & LAYOUT:
-- mj-section padding: ${aestheticStyles.sectionPadding}
-- mj-column padding: ${aestheticStyles.columnPadding}
-- Element spacing: ${aestheticStyles.elementSpacing}
-- Line-height: ${aestheticStyles.lineHeight}
-- Mobile friendly, no emojis
-
-BRAND IMAGES:
-- Logo: ${brandLogoUrl || 'none'} - Use in header or footer, maintain aspect ratio
-- Banner: ${brandBannerUrl || 'none'} - use as a separation block near end of emails.
-- Hero: ${heroImageUrl} - Main content image
-- No text overlays on brand images
-
-TYPOGRAPHY (${designAesthetic.toUpperCase()}):
-- H1: ${aestheticStyles.headingFontSize}, ${aestheticStyles.headingFontWeight}
-- H2/H3: ${aestheticStyles.subheadingFontSize}, ${aestheticStyles.subheadingFontWeight}
-- Body: ${aestheticStyles.bodyFontSize}, ${aestheticStyles.bodyFontWeight}
-- Buttons: ${aestheticStyles.buttonFontSize}, ${aestheticStyles.buttonFontWeight}
-
-MUST USE BRAND COLORS and a font as close as possible to the brands font.
-
-only return mjml no other text.
-Output: Start with <mjml>, end with </mjml>. Max width 600px. Include header, hero section, products, footer.`;
-
     // Extract only essential data to reduce token usage
     const essentialData = {
       brandName: enhancedPayload.brandData?.brand?.title || 'Brand',
@@ -604,6 +570,37 @@ Output: Start with <mjml>, end with </mjml>. Max width 600px. Include header, he
       designAesthetic: designAesthetic,
       aestheticStyles: aestheticStyles
     };
+    
+    // Log MJML generation start time
+    const mjmlStartTime = performance.now();
+    console.log(`📝 Starting MJML generation (parallel to hero image)...`);
+    
+    const systemPrompt = `You are a vision-aware MJML generator.
+Before writing MJML, study the example image(s) carefully and infer:
+- layout sections (hero, grid, footer)
+- proportions (padding, spacing)
+- dominant color placement
+Then design the MJML to mirror that structure while using the brand info and color palette from payload.brand.colors.
+Must use brand colors.
+Return ONLY raw MJML (no markdown fences, no explanations).
+Do not copy exact colors from example image.
+Include:
+  • Hero section using the provided example image
+  • Product/offer grid if payload.products exists
+  • Footer using payload.brand.links/socials if present
+Width <= 600px, mobile-first, accessible, valid MJML.
+
+BRAND IMAGES:
+- Logo: ${brandLogoUrl || 'none'} - Use in header or footer, maintain aspect ratio
+- Banner: ${brandBannerUrl || 'none'} - use as a separation block near end of emails.
+- Hero: ${heroImageUrl} - Main content image
+- No text overlays on brand images
+
+
+CRITICAL: MUST USE BRAND COLORS and the detected brand font "${essentialData.font}" throughout the entire email. This font was specifically detected from the brand's website and should be used consistently for all text elements including headings, body text, and buttons.
+
+only return mjml no other text.
+Output: Start with <mjml>, end with </mjml>. Max width 600px. Include header, hero section, products, footer.`;
 
     const messages = [
       { role: "system", content: systemPrompt },
