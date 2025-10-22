@@ -256,7 +256,9 @@ export async function generateEmailsController(req, res) {
       imageContext: brandJson.imageContext,
       designAesthetic: brandJson.designAesthetic,
       styleId: brandJson.designAesthetic,
-      savedHeroImageUrl: brandJson.savedHeroImageUrl
+      savedHeroImageUrl: brandJson.savedHeroImageUrl,
+      customHeroImage: brandJson.customHeroImage,
+      useCustomHeroImage: brandJson.customHeroImage
     };
 
     
@@ -348,8 +350,16 @@ export async function generateEmailsController(req, res) {
       const urlToStore = extractedUrl ? normalizeUrl(extractedUrl) : null;
       const selectedUrl = savedHeroImageUrl ? normalizeUrl(savedHeroImageUrl) : null;
 
-      // Only proceed if we have a user + domain + a URL to store AND not in preview mode
-      if (uid && normalizedDomain && urlToStore && !isPreviewMode) {
+      // CRITICAL: Only upload to Supabase if useCustomHeroImage is true (newly generated images only)
+      // No other images (logos, banners, products, etc.) should ever be uploaded to Supabase
+      const useCustomHeroImage = brandJson.customHeroImage ?? brandJson.useCustomHeroImage ?? true;
+      
+      if (!useCustomHeroImage) {
+        console.log(`[generateController] Skipping image upload - useCustomHeroImage is false`);
+      }
+      
+      // Only proceed if we have a user + domain + a URL to store AND not in preview mode AND useCustomHeroImage is true
+      if (uid && normalizedDomain && urlToStore && !isPreviewMode && useCustomHeroImage) {
         // If user picked a saved image and it's the same link, just reuse existing DB row
         if (selectedUrl && selectedUrl === urlToStore) {
           const { data: existing } = await supabase

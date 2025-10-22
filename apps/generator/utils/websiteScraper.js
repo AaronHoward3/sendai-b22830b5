@@ -12,9 +12,9 @@ export async function scrapeWebsiteStyles(domain) {
     const url = `https://${domain}`;
     console.log(`🔍 Scraping styles from: ${url}`);
     
-    // Fetch the website
+    // Fetch the website with shorter timeout
     const response = await axios.get(url, {
-      timeout: 10000,
+      timeout: 1500, // Shorter timeout to match outer timeout
       headers: {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
       }

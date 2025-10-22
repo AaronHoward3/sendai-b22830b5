@@ -234,8 +234,10 @@ function getDesignAestheticStyles(designAesthetic) {
       columnPadding: "10px",
       elementSpacing: "15px",
       lineHeight: "1.6",
-      headingFontSize: "28px",
+      headingFontSize: "36px",
       headingFontWeight: "700",
+      subheadingFontSize: "24px",
+      subheadingFontWeight: "600",
       bodyFontSize: "16px", 
       bodyFontWeight: "400",
       buttonFontSize: "16px",
@@ -246,8 +248,10 @@ function getDesignAestheticStyles(designAesthetic) {
       columnPadding: "15px",
       elementSpacing: "20px",
       lineHeight: "1.5",
-      headingFontSize: "32px",
+      headingFontSize: "42px",
       headingFontWeight: "800",
+      subheadingFontSize: "28px",
+      subheadingFontWeight: "700",
       bodyFontSize: "18px",
       bodyFontWeight: "600", 
       buttonFontSize: "18px",
@@ -258,8 +262,10 @@ function getDesignAestheticStyles(designAesthetic) {
       columnPadding: "20px",
       elementSpacing: "25px",
       lineHeight: "1.7",
-      headingFontSize: "30px",
-      headingFontWeight: "300",
+      headingFontSize: "38px",
+      headingFontWeight: "400",
+      subheadingFontSize: "26px",
+      subheadingFontWeight: "300",
       bodyFontSize: "17px",
       bodyFontWeight: "300",
       buttonFontSize: "16px", 
@@ -367,7 +373,7 @@ function cleanMjmlOutput(rawOutput) {
 }
 
 // 🌐 Enhance payload with website-scraped styles (with timeout)
-async function enhancePayloadWithWebsiteStyles(payload, timeoutMs = 5000) {
+async function enhancePayloadWithWebsiteStyles(payload, timeoutMs = 2000) {
   try {
     // Debug: Log payload structure to understand the format
     console.log("🔍 Payload structure:", JSON.stringify(payload, null, 2));
@@ -391,7 +397,10 @@ async function enhancePayloadWithWebsiteStyles(payload, timeoutMs = 5000) {
     
     // Create a promise that rejects after timeout
     const timeoutPromise = new Promise((_, reject) => {
-      setTimeout(() => reject(new Error('Website scraping timeout')), timeoutMs);
+      setTimeout(() => {
+        console.log(`⏰ Website scraping timeout after ${timeoutMs}ms for ${domain}`);
+        reject(new Error('Website scraping timeout'));
+      }, timeoutMs);
     });
     
     // Race between scraping and timeout
@@ -424,9 +433,10 @@ async function enhancePayloadWithWebsiteStyles(payload, timeoutMs = 5000) {
       return payload;
     }
   } catch (error) {
-    console.error(`❌ Error enhancing payload with website styles:`, error.message);
     if (error.message === 'Website scraping timeout') {
-      console.log(`⏰ Website scraping timed out after ${timeoutMs}ms, continuing without scraped styles`);
+      console.log(`⏰ Website scraping timed out after ${timeoutMs}ms for ${domain}, continuing without scraped styles`);
+    } else {
+      console.error(`❌ Error enhancing payload with website styles for ${domain}:`, error.message);
     }
     return payload;
   }
@@ -527,6 +537,23 @@ CRITICAL SPACING & LAYOUT REQUIREMENTS:
 - Do NOT use emojis.
 - Must be mobile friendly.
 
+UNIFORM GRID & CARD SIZING REQUIREMENTS (CRITICAL):
+- For ANY grid layouts (2x2, 3x3, etc.) or side-by-side cards, ALL cards MUST be IDENTICAL in height
+- MANDATORY: Use mj-table with table-layout="fixed" and explicit height for ALL cards
+- MANDATORY: Set identical height on ALL table cells (e.g., height: 280px !important)
+- MANDATORY: Use vertical-align: top !important on all table cells
+- MANDATORY: Apply overflow: hidden !important to prevent content from affecting height
+- Use mj-column with equal widths (e.g., width="50%" for 2-column, "33.33%" for 3-column)
+- For product/service cards, use consistent padding and margins regardless of text length
+- Text content MUST be contained within fixed height boundaries
+- Use mj-spacer elements to fill remaining space in shorter cards
+- Ensure all cards in a row have the same visual weight and spacing
+- For 2-column grids: width="50%" for each column
+- For 3-column grids: width="33.33%" for each column
+- For 4-column grids: width="25%" for each column
+- CRITICAL: Never let content determine card height - always use fixed heights
+- CRITICAL: All cards in the same row must have EXACTLY the same height value
+
 BRAND IMAGES REQUIREMENTS:
 - Brand logo: ${brandLogoUrl || 'none'} - Use in header if available, maintain aspect ratio, no text overlays
 - Brand banner: ${brandBannerUrl || 'none'} - Use as background or hero section if available, maintain aspect ratio, no text overlays
@@ -536,10 +563,19 @@ BRAND IMAGES REQUIREMENTS:
 - Use mj-image with proper width/height attributes to preserve aspect ratios
 
 DESIGN AESTHETIC: ${designAesthetic.toUpperCase()}
-Typography:
-- Headings: ${aestheticStyles.headingFontSize}, ${aestheticStyles.headingFontWeight}
+Typography Hierarchy:
+- Main Headings (H1): ${aestheticStyles.headingFontSize}, ${aestheticStyles.headingFontWeight}
+- Subheadings (H2/H3): ${aestheticStyles.subheadingFontSize}, ${aestheticStyles.subheadingFontWeight}
 - Body text: ${aestheticStyles.bodyFontSize}, ${aestheticStyles.bodyFontWeight}
 - Button text: ${aestheticStyles.buttonFontSize}, ${aestheticStyles.buttonFontWeight}
+
+CRITICAL TYPOGRAPHY REQUIREMENTS:
+- Use main headings for primary section titles (largest, most prominent)
+- Use subheadings for secondary titles, product names, or section dividers
+- Ensure clear visual hierarchy with proper size differences between heading levels
+- Main headings should be significantly larger than subheadings
+- Subheadings should be noticeably larger than body text
+- Use proper mj-text styling with font-size and font-weight attributes
 
 Requirements:
 - Brand colors: ${enhancedPayload.brandData?.primary_color || '#4f46e5'}, ${enhancedPayload.brandData?.link_color || '#22d3ee'}
@@ -547,7 +583,92 @@ Requirements:
 - Font: ${enhancedPayload.scrapedStyles?.primaryFont || 'Inter'}
 - Random seed: ${randomSeed}
 
-Output: Start with <mjml>, end with </mjml>. Max width 600px. Include header with logo (if available), hero/banner section, products (if any), footer. Create unique layout variations.`;
+MJML GRID IMPLEMENTATION EXAMPLES (MANDATORY TEMPLATE):
+For 2x2 service cards - USE THIS EXACT STRUCTURE:
+<mj-section>
+  <mj-column width="50%" css-class="card-column">
+    <mj-table css-class="card-container" table-layout="fixed" width="100%" height="280px">
+      <tr>
+        <td style="height: 280px !important; vertical-align: top !important; padding: 20px !important; border: 1px solid #e5e7eb !important; background: #ffffff !important; overflow: hidden !important; max-height: 280px !important; min-height: 280px !important;">
+          <div class="card-content">
+            <!-- Card content here - will be constrained to exact height -->
+          </div>
+        </td>
+      </tr>
+    </mj-table>
+  </mj-column>
+  <mj-column width="50%" css-class="card-column">
+    <mj-table css-class="card-container" table-layout="fixed" width="100%" height="280px">
+      <tr>
+        <td style="height: 280px !important; vertical-align: top !important; padding: 20px !important; border: 1px solid #e5e7eb !important; background: #ffffff !important; overflow: hidden !important; max-height: 280px !important; min-height: 280px !important;">
+          <div class="card-content">
+            <!-- Card content here - will be constrained to exact height -->
+          </div>
+        </td>
+      </tr>
+    </mj-table>
+  </mj-column>
+</mj-section>
+
+CRITICAL: Both cards MUST have identical height values (280px) and identical styling. Never vary the height based on content.
+
+CSS CLASSES TO INCLUDE (MANDATORY FOR UNIFORM SIZING):
+<style>
+.card-column {
+  width: 50% !important;
+  vertical-align: top !important;
+  height: 100% !important;
+}
+.card-container {
+  width: 100% !important;
+  table-layout: fixed !important;
+  height: 280px !important;
+}
+.card-container td {
+  height: 280px !important;
+  vertical-align: top !important;
+  padding: 20px !important;
+  border: 1px solid #e5e7eb !important;
+  background: #ffffff !important;
+  word-wrap: break-word !important;
+  overflow: hidden !important;
+  max-height: 280px !important;
+  min-height: 280px !important;
+  position: relative !important;
+}
+.card-content {
+  height: 100% !important;
+  overflow: hidden !important;
+  display: flex !important;
+  flex-direction: column !important;
+  justify-content: space-between !important;
+}
+.card-text {
+  flex: 1 !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  display: -webkit-box !important;
+  -webkit-line-clamp: 4 !important;
+  -webkit-box-orient: vertical !important;
+}
+/* Mobile responsive */
+@media only screen and (max-width: 600px) {
+  .card-column {
+    width: 100% !important;
+    display: block !important;
+  }
+  .card-container {
+    height: 300px !important;
+  }
+  .card-container td {
+    height: 300px !important;
+    min-height: 300px !important;
+    max-height: 300px !important;
+  }
+}
+</style>
+
+Output: Start with <mjml>, end with </mjml>. Max width 600px. Include header with logo (if available), hero/banner section, products (if any), footer. Create unique layout variations. ALWAYS use the uniform sizing approach above for any grid layouts.`;
 
     // Extract only essential data to reduce token usage
     const essentialData = {

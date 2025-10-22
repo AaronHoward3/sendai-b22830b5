@@ -846,23 +846,19 @@ export const Step2EmailType: React.FC<Step2EmailTypeProps> = ({formData, updateF
           return <div key={`${product.url || product.name || 'product'}-${index}`} className="space-y-2 rounded-lg border border-border p-4">
               {!isEditing ? (
                 <div className="flex items-center justify-between gap-4">
-                  <div className="flex items-center gap-3 min-w-0">
+                  <div className="flex items-center gap-3 min-w-0 flex-1">
                     {product.image ? (
-                      <div className="relative"><img
+                      <div className="relative flex-shrink-0"><img
                         src={product.image} alt={product.name || 'Product image'}
-                        className="w-12 h-12 rounded-md object-cover border border-border"
+                        className="w-16 h-16 rounded-md object-cover border border-border"
                         onError={(e) => { 
                           // Replace with a placeholder instead of hiding
                           (e.currentTarget as HTMLImageElement).src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDgiIGhlaWdodD0iNDgiIHZpZXdCb3g9IjAgMCA0OCA0OCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjQ4IiBoZWlnaHQ9IjQ4IiBmaWxsPSIjRjNGNEY2Ii8+CjxwYXRoIGQ9Ik0yNCAyOEMyNi4yMDkxIDI4IDI4IDI2LjIwOTEgMjggMjRDMjggMjEuNzkwOSAyNi4yMDkxIDIwIDI0IDIwQzIxLjc5MDkgMjAgMjAgMjEuNzkwOSAyMCAyNEMyMCAyNi4yMDkxIDIxLjc5MDkgMjggMjQgMjhaIiBmaWxsPSIjOUI5QkEwIi8+CjxwYXRoIGQ9Ik0xMiAzNkMxMiAzNiAxOCAyOCAyNCAyOEMzMCAyOCAzNiAzNiAzNiAzNkgxMloiIGZpbGw9IiM5QjlCQTAiLz4KPC9zdmc+';
                         }}
                       /></div>
-                    ) : <div className="w-12 h-12 rounded-md border border-dashed border-border grid place-items-center text-xs text-muted-foreground">N/A</div>}
-                    <div className="min-w-0">
+                    ) : <div className="w-16 h-16 rounded-md border border-dashed border-border grid place-items-center text-xs text-muted-foreground flex-shrink-0">N/A</div>}
+                    <div className="min-w-0 flex-1">
                       <div className="font-medium text-foreground truncate">{product.name}</div>
-                      <a href={product.url} target="_blank" rel="noreferrer" className="text-sm text-muted-foreground underline underline-offset-2 break-all">
-                        {product.url}
-                      </a>
-                      {product.image && <div className="text-xs text-muted-foreground mt-0.5 break-all">Image: {product.image}</div>}
                     </div>
                   </div>
                   <div className="flex items-center gap-2 shrink-0">
@@ -885,8 +881,8 @@ export const Step2EmailType: React.FC<Step2EmailTypeProps> = ({formData, updateF
                   </div>
                   <div className="flex items-center gap-3">
                     {editImage 
-                      ? <img src={editImage} alt="Preview" className="w-12 h-12 rounded-md object-cover border border-border" onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }} />
-                      : <div className="w-12 h-12 rounded-md border border-dashed border-border grid place-items-center text-xs text-muted-foreground">N/A</div>}
+                      ? <img src={editImage} alt="Preview" className="w-16 h-16 rounded-md object-cover border border-border flex-shrink-0" onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }} />
+                      : <div className="w-16 h-16 rounded-md border border-dashed border-border grid place-items-center text-xs text-muted-foreground flex-shrink-0">N/A</div>}
                     <div className="text-sm text-muted-foreground">Preview</div>
                   </div>
                   <div className="flex gap-2">
