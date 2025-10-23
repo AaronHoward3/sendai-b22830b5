@@ -116,7 +116,8 @@ export const Step4Generation: React.FC<Step4GenerationProps> = ({ formData, upda
             designAesthetic: formData.designAesthetic,
             tone: formData.tone,
             userContext: formData.userContext,
-            imageContext: formData.imageContext,
+            // Only send imageContext if useCustomHero is true to avoid wasting tokens
+            ...(formData.useCustomHero ? { imageContext: formData.imageContext } : {}),
             products: formData.products || [],
             brandData: formData.brandData || {},
             customHeroImage: formData.useCustomHero ?? true,

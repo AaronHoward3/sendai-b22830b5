@@ -589,7 +589,8 @@ export const Step2EmailType: React.FC<Step2EmailTypeProps> = ({formData, updateF
       emailType: selectedEmailType,
       useCustomHero,
       userContext,
-      imageContext,
+      // Only include imageContext if useCustomHero is true to avoid wasting tokens
+      ...(useCustomHero ? { imageContext } : {}),
       tone,
       designAesthetic,
       products: safeProducts,

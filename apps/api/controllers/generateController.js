@@ -288,7 +288,8 @@ export async function generateEmailsController(req, res) {
       brandData: brandJson,
       emailType: brandJson.emailType,
       userContext: brandJson.userContext,
-      imageContext: brandJson.imageContext,
+      // Only include imageContext if customHeroImage is true to avoid wasting tokens
+      ...(brandJson.customHeroImage ? { imageContext: brandJson.imageContext } : {}),
       designAesthetic: brandJson.designAesthetic,
       styleId: brandJson.designAesthetic,
       savedHeroImageUrl: brandJson.savedHeroImageUrl,
