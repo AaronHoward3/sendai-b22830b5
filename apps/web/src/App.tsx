@@ -29,12 +29,6 @@ const App = () => (
         <Toaster />
         <Sonner />
 
-        {/* Background blobs */}
-        <div className="fixed inset-0 -z-10 overflow-hidden pointer-events-none">
-          <div className="blob" style={{ top: "20%", left: "10%" }}></div>
-          <div className="blob" style={{ top: "60%", left: "50%" }}></div>
-          <div className="blob" style={{ top: "30%", left: "80%" }}></div>
-        </div>
 
         {/* Trial Guard - blocks site if free trial is used */}
         <TrialGuard>

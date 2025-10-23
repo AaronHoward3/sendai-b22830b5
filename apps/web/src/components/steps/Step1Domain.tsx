@@ -4,7 +4,6 @@ import type { FormData } from '../EmailGenerator';
 import { ArrowRight, Globe } from 'lucide-react';
 import { useTheme } from '@/hooks/useTheme';
 import { supabase } from '@/lib/supabaseClient';
-import Background from '../Background';
 import { apiPath } from '@/lib/api';
 import { useSupabaseAuth } from '@/hooks/useSupabaseAuth';
 import { useToast } from '@/hooks/use-toast';
@@ -359,11 +358,7 @@ export const Step1Domain: React.FC<{
     ${glowColor2} 25%,
     ${glowColor3} 50%,
     ${glowColor4} 75%,
-    ${glowColor1} 100%,
-    ${glowColor2},
-    ${glowColor3},
-    ${glowColor4},
-    ${glowColor1}
+    ${glowColor1} 100%
   )`;
   const containerVariants = { hidden: {}, show: { transition: { staggerChildren: 0.2 } } };
   const fadeInUp = { hidden: { opacity: 0, y: 30 }, show: { opacity: 1, y: 0, transition: { duration: 0.8, ease: easeOut } } };
@@ -376,12 +371,19 @@ export const Step1Domain: React.FC<{
       {showUpgradePrompt 
       ? <SubscriptionUpgradePrompt onUpgrade={handleUpgrade} onBack={handleBack} reason={upgradeReason} />
       : (<div className="relative z-0 bg-transparent overflow-hidden">
-      <div className="absolute inset-0"><Background variant="blobs" /></div>
+        {/* Blob background */}
+        <div className="blob-background">
+          <div className="blob"></div>
+          <div className="blob"></div>
+          <div className="blob"></div>
+          <div className="blob"></div>
+          <div className="blob"></div>
+        </div>
        <div className="relative z-10 h-[calc(100vh-12rem)] flex items-center justify-center px-4">
         <motion.div className="text-center max-w-lg w-full" variants={containerVariants} initial="hidden" animate="show">
           <motion.div className="space-y-2" variants={fadeInUp}>
             <h1 className="text-4xl font-semibold text-foreground tracking-tight">Let's create amazing emails</h1>
-            <p className="text-lg text-muted-foreground max-w-md mx-auto">Enter your website domain to get started</p>
+            <p className="text-lg text-muted-foreground max-w-md mx-auto">Enter your ecommerce website domain to get started</p>
           </motion.div>
 
           <motion.div className="relative w-full max-w-md mx-auto mt-10" variants={fadeInUp}>
@@ -395,9 +397,13 @@ export const Step1Domain: React.FC<{
               </div>
             ) : isTrialBlocked 
             ? <TrialBlockedOverlay onSubscribe={handleTrialSubscribe} onSignIn={handleTrialSignIn} inline={true} />
-            : <><div
-                  className="absolute inset-0 rounded-full p-[2px] blur-xl opacity-90 bg-repeat bg-[length:800%_100%] animate-gradient-sweep pointer-events-none"
-                  style={{ backgroundImage: gradientBg }}
+            : <>                <div
+                  className="absolute inset-0 rounded-full p-[2px] blur-xl opacity-90 animate-gradient-sweep pointer-events-none"
+                  style={{ 
+                    backgroundImage: gradientBg,
+                    backgroundSize: '200% 100%',
+                    backgroundRepeat: 'repeat-x'
+                  }}
                 />
                 <div className="relative z-10 flex items-center rounded-full ring-1 ring-white/20 pl-5 pr-2 py-2 shadow-xl transition" style={{ backgroundColor: inputBg }}>
                   <Globe className={`w-5 h-5 mr-2 mt-1 ${isDark ? 'text-white/70' : 'text-black/70'}`} />
@@ -464,10 +470,10 @@ export const Step1Domain: React.FC<{
       
       <style>{`
         @keyframes gradient-sweep {
-          0% { background-position: 0% 50%; }
+          0% { background-position: -100% 50%; }
           100% { background-position: 100% 50%; }
         }
-        .animate-gradient-sweep { animation: gradient-sweep 10s linear infinite; }
+        .animate-gradient-sweep { animation: gradient-sweep 8s linear infinite; }
       `}</style>
     </div>
       )}

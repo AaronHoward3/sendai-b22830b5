@@ -6,8 +6,8 @@ import { SYS_COMPANY } from '@/utils/constants';
 
 const Footer = () => {
   return (
-    <footer className="bg-background border-t border-border">
-      <div className="container mx-auto py-5">
+    <footer className="bg-background/50 backdrop-blur-sm border-t border-border">
+      <div className="container mx-auto py-3">
         {/* Top Section */}
         <div className="flex flex-col sm:flex-row justify-between items-center mb-3">
           <div className="mb-3 sm:mb-0"><Logo /></div>
