@@ -48,7 +48,6 @@ export function sanitizeInput(input: string, maxLength: number): string {
   if (!input || typeof input !== 'string') return '';
   
   return input
-    .trim()
     .slice(0, maxLength)
     .replace(/[<>]/g, '') // Remove < and >
     .replace(/javascript:/gi, '') // Remove javascript: protocol
