@@ -1,4 +1,5 @@
 @import url("https://fonts.googleapis.com/css2?family=Zen+Kurenaido&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap");
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -155,7 +156,7 @@ body {
   content: "";
   position: absolute;
   inset: 0;
-  background: conic-gradient(#0000 35%, #01311b, #0000 65%);
+  background: conic-gradient(#000000ef 35%, #010f09, #0000 65%);
   animation: l1 1.5s linear infinite;
 }
 @keyframes l1 {
@@ -178,8 +179,8 @@ body {
 
 .dark {
   /* Dark mode colors - adjust as needed */
-  --blob-color-1: #002218;
-  --blob-color-2: #042b3a;
+  --blob-color-1: #001610;
+  --blob-color-2: #02161f;
   --blob-color-3: #101620;
 }
 

@@ -188,7 +188,7 @@ const EmailGenerator: React.FC = () => {
       <Navigation onHomeClick={handleHomeClick} />
       <div className="flex-1 relative">
         <div className="container mx-auto px-4 py-8">
-          <div className="max-w-2xl mx-auto">
+          <div className={currentStep === 1 ? "w-full" : "max-w-2xl mx-auto"}>
             {renderStep()}
           </div>
         </div>
