@@ -1,7 +1,14 @@
 // src/components/steps/Step2EmailType.tsx
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { ChevronDown, Pencil, Save, X, Check, Sparkles, Mail, Zap, Users, Briefcase, Smile, Circle, Contrast, BookOpen, Coffee, Square, Sun, Palette, Layers, Info } from 'lucide-react';
+import { ChevronDown, Pencil, Save, X, Check, Sparkles, Mail, Zap, Users, Briefcase, Smile, Circle, Contrast, BookOpen, Coffee, Square, Sun, Palette, Layers, Info, ArrowRight } from 'lucide-react';
 import { motion, easeOut } from 'framer-motion';
+import Autoplay from 'embla-carousel-autoplay';
+import {
+  Carousel,
+  CarouselContent,
+  CarouselItem,
+  type CarouselApi,
+} from '../ui/carousel';
 
 import { GradientButton } from '../ui/gradient-button';
 import { GradientInput } from '../ui/gradient-input';
@@ -47,6 +54,21 @@ type SavedImage = {
 const EMAIL_TYPES: { value: EmailType; label: string; description: string; tooltip: string }[] = [
   { value: 'Promotion',   label: 'Promotional',       description: 'Sales and special offers', tooltip: 'Product oriented email. Better for ecommerce sites' },
   { value: 'Newsletter',  label: 'Newsletter',        description: 'Regular updates and news', tooltip: 'Information oriented email. Better for sites without ecommerce style products' },
+];
+
+// Sample images for carousels (you can replace these with actual images)
+const PROMOTIONAL_IMAGES = [
+  'https://images.unsplash.com/photo-1607082349566-187342175e2f?w=800&q=80',
+  'https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?w=800&q=80',
+  'https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?w=800&q=80',
+  'https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?w=800&q=80',
+];
+
+const NEWSLETTER_IMAGES = [
+  'https://images.unsplash.com/photo-1451187580459-43490279c0fa?w=800&q=80',
+  'https://images.unsplash.com/photo-1557682250-33bd709cbe85?w=800&q=80',
+  'https://images.unsplash.com/photo-1557682250-33bd709cbe85?w=800&q=80',
+  'https://images.unsplash.com/photo-1557682250-33bd709cbe85?w=800&q=80',
 ];
 
 const TONES: { value: Tone; label: string }[] = [
@@ -370,7 +392,20 @@ export const Step2EmailType: React.FC<Step2EmailTypeProps> = ({formData, updateF
   const { user } = useSupabaseAuth();
   const isAuthenticated = !!user;
   const [selectedEmailType, setSelectedEmailType] = useState<EmailType | null>(formData.emailType);
-  const [useCustomHero, setUseCustomHero] = useState<boolean>(false);
+  const [emailTypeSelected, setEmailTypeSelected] = useState<boolean>(!!formData.emailType);
+  const [customHeroSelected, setCustomHeroSelected] = useState<boolean>(false);
+  const [hasScrolledToCustomHero, setHasScrolledToCustomHero] = useState<boolean>(false);
+  
+  // Autoplay plugins for carousels
+  const promoAutoplayRef = React.useRef(Autoplay({ delay: 3000, stopOnInteraction: false, stopOnMouseEnter: true }));
+  const newsletterAutoplayRef = React.useRef(Autoplay({ delay: 3000, stopOnInteraction: false, stopOnMouseEnter: true }));
+  
+  const customHeroSectionRef = React.useRef<HTMLDivElement>(null);
+  const userContextSectionRef = React.useRef<HTMLDivElement>(null);
+  const imageContextSectionRef = React.useRef<HTMLDivElement>(null);
+  const savedImagesSectionRef = React.useRef<HTMLDivElement>(null);
+  const nextSectionRef = React.useRef<HTMLDivElement>(null);
+  const [useCustomHero, setUseCustomHero] = useState<boolean | null>(null);
   const [isCustomHeroEnabledToChoose, setIsCustomHeroEnabledToChoose] = useState<boolean>(true);
   const [userContext, setUserContext] = useState<string>(formData.userContext ?? '');
   const [imageContext, setImageContext] = useState<string>(formData.imageContext ?? '');
@@ -386,25 +421,27 @@ export const Step2EmailType: React.FC<Step2EmailTypeProps> = ({formData, updateF
   // Helper function to safely get string values from brand data
   const getBrandString = (value: unknown): string => {return typeof value === 'string' ? value : '';};
   // From Step 1 brand payload (now in brand.dev format)
-  const scrapedPrimary = getBrandString(formData?.brandData?.brand?.colors?.[0]?.hex) || '';
-  const scrapedSecondary = getBrandString(formData?.brandData?.brand?.colors?.[1]?.hex) || '';
+  const brandData = formData?.brandData as any;
+  const scrapedPrimary = getBrandString(brandData?.brand?.colors?.[0]?.hex) || '';
+  const scrapedSecondary = getBrandString(brandData?.brand?.colors?.[1]?.hex) || '';
   const brandName = 
-    getBrandString(formData?.brandData?.brand?.title) ||
-    getBrandString(formData?.brandData?.brand?.domain) ||
+    getBrandString(brandData?.brand?.title) ||
+    getBrandString(brandData?.brand?.domain) ||
     normalizeDomain(formData.domain || 'your brand');
   const brandDesc =
-    getBrandString(formData?.brandData?.brand?.description) ||
-    getBrandString(formData?.brandData?.brand?.slogan) ||
+    getBrandString(brandData?.brand?.description) ||
+    getBrandString(brandData?.brand?.slogan) ||
     '';
-  const brandPrimary = scrapedPrimary || getBrandString(formData?.brandData?.primary_color);
-  const brandLink = scrapedSecondary || getBrandString(formData?.brandData?.link_color);
+  const brandPrimary = scrapedPrimary || getBrandString(brandData?.primary_color);
+  const brandLink = scrapedSecondary || getBrandString(brandData?.link_color);
 
   const handleColorsChange = useCallback((colors: { primary_color: string; link_color: string }) => {
     const existing = formData.brandData || {};
-    const updated = {
+    const existingBrand = (existing as any)?.brand || {};
+    const updated: any = {
       ...existing,
       brand: {
-        ...(existing.brand || {}),
+        ...existingBrand,
         colors: [
           { hex: colors.primary_color, name: "Primary" },
           { hex: colors.link_color, name: "Secondary" }
@@ -581,6 +618,58 @@ export const Step2EmailType: React.FC<Step2EmailTypeProps> = ({formData, updateF
      setProducts(updated);
      cancelEdit();
   };
+  const scrollToElement = (element: HTMLDivElement | null) => {
+    if (!element) return;
+    
+    // Use requestAnimationFrame to ensure element is rendered
+    requestAnimationFrame(() => {
+      if (!element || !document.contains(element)) return;
+      
+      const rect = element.getBoundingClientRect();
+      const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+      const elementTop = rect.top + scrollTop;
+      const windowHeight = window.innerHeight;
+      
+      // Center the element vertically in viewport
+      const targetScroll = elementTop - (windowHeight / 2) + (rect.height / 2);
+      
+      window.scrollTo({
+        top: Math.max(0, targetScroll),
+        behavior: 'smooth'
+      });
+    });
+  };
+
+  const handleEmailTypeSelect = (type: EmailType) => {
+    setSelectedEmailType(type);
+    // Scroll to user context section after animation completes
+    setTimeout(() => {
+      scrollToElement(userContextSectionRef.current);
+    }, 600);
+  };
+
+  const handleCustomHeroSelect = (value: boolean) => {
+    const isFirstSelection = !customHeroSelected;
+    setUseCustomHero(value);
+    setCustomHeroSelected(true);
+    
+    // Only scroll on the first selection, not when switching between Yes/No
+    if (isFirstSelection && !hasScrolledToCustomHero) {
+      setHasScrolledToCustomHero(true);
+      // Scroll to the appropriate section based on selection
+      setTimeout(() => {
+        if (value === true && imageContextSectionRef.current) {
+          // If Yes, scroll to Image Context section
+          scrollToElement(imageContextSectionRef.current);
+        } else if (value === false && savedImagesSectionRef.current) {
+          // If No, scroll to Saved Images section
+          scrollToElement(savedImagesSectionRef.current);
+        }
+        // Products section will be revealed automatically but no scroll to it
+      }, 600);
+    }
+  };
+
   const handleContinue = () => {
     if (!selectedEmailType) return;
     // Safety: ensure we always carry products even if local state is momentarily empty.
@@ -608,62 +697,452 @@ export const Step2EmailType: React.FC<Step2EmailTypeProps> = ({formData, updateF
     'placeholder:text-muted-foreground px-4 py-3 ' +
     'focus:outline-none focus-visible:ring-2 focus-visible:ring-ring ' +
     'focus-visible:ring-offset-2 !ring-offset-background';
+
+  // Email Type Selection Step
+  if (!emailTypeSelected) {
+    return (
+      <motion.div className="space-y-8 mt-14 pb-24" variants={containerVariants} initial="hidden" animate="show">
+        <motion.div className="text-center space-y-4" variants={fadeInUp}>
+          <h1 className="text-4xl font-bold text-foreground tracking-tight">Choose Your Email Type</h1>
+          <p className="text-lg text-muted-foreground">Select the type of email you'd like to create</p>
+        </motion.div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 max-w-6xl mx-auto">
+          {/* Promotional Card */}
+          <motion.div variants={fadeInUp}>
+            <button
+              onClick={() => handleEmailTypeSelect('Promotion')}
+              className={`w-full group relative overflow-hidden rounded-2xl border-2 transition-all duration-300 ${
+                selectedEmailType === 'Promotion' 
+                  ? 'border-primary ring-4 ring-primary/20 shadow-xl scale-[1.02]' 
+                  : 'border-border hover:border-primary/50 hover:shadow-lg'
+              }`}
+            >
+              <div className="p-6 bg-card">
+                <div className="flex items-center gap-3 mb-2">
+                  <Zap className={`w-6 h-6 ${selectedEmailType === 'Promotion' ? 'text-primary' : 'text-muted-foreground'}`} />
+                  <h2 className="text-2xl font-bold text-foreground">Promotional</h2>
+                </div>
+                <p className="text-muted-foreground text-base leading-relaxed mb-4">
+                  Perfect for sales, special offers, and product promotions. Ideal for e-commerce sites looking to drive conversions and showcase featured products.
+                </p>
+                {selectedEmailType === 'Promotion' && (
+                  <div className="absolute top-4 right-4 z-10">
+                    <div className="bg-primary text-primary-foreground rounded-full p-2">
+                      <Check className="w-5 h-5" />
+                    </div>
+                  </div>
+                )}
+              </div>
+              <div className="aspect-[4/3] relative overflow-hidden bg-gradient-to-br from-orange-500/10 to-red-500/10">
+                <Carousel 
+                  plugins={[promoAutoplayRef.current]} 
+                  opts={{ loop: true }} 
+                  className="w-full h-full"
+                >
+                  <CarouselContent className="h-full -ml-0">
+                    {PROMOTIONAL_IMAGES.map((img, idx) => (
+                      <CarouselItem key={idx} className="h-full pl-0 basis-full">
+                        <div className="h-full w-full relative">
+                          <img
+                            src={img}
+                            alt={`Promotional example ${idx + 1}`}
+                            className="w-full h-full object-cover"
+                            onError={(e) => {
+                              const target = e.currentTarget as HTMLImageElement;
+                              target.style.display = 'none';
+                              if (!target.parentElement?.querySelector('.placeholder')) {
+                                const placeholder = document.createElement('div');
+                                placeholder.className = 'placeholder absolute inset-0 bg-gradient-to-br from-orange-400 to-red-500 flex items-center justify-center';
+                                placeholder.innerHTML = '<div class="text-white text-2xl font-bold">Promotional Email</div>';
+                                target.parentElement?.appendChild(placeholder);
+                              }
+                            }}
+                          />
+                        </div>
+                      </CarouselItem>
+                    ))}
+                  </CarouselContent>
+                </Carousel>
+              </div>
+            </button>
+          </motion.div>
+
+          {/* Newsletter Card */}
+          <motion.div variants={fadeInUp}>
+            <button
+              onClick={() => handleEmailTypeSelect('Newsletter')}
+              className={`w-full group relative overflow-hidden rounded-2xl border-2 transition-all duration-300 ${
+                selectedEmailType === 'Newsletter' 
+                  ? 'border-primary ring-4 ring-primary/20 shadow-xl scale-[1.02]' 
+                  : 'border-border hover:border-primary/50 hover:shadow-lg'
+              }`}
+            >
+              <div className="p-6 bg-card">
+                <div className="flex items-center gap-3 mb-2">
+                  <Mail className={`w-6 h-6 ${selectedEmailType === 'Newsletter' ? 'text-primary' : 'text-muted-foreground'}`} />
+                  <h2 className="text-2xl font-bold text-foreground">Newsletter</h2>
+                </div>
+                <p className="text-muted-foreground text-base leading-relaxed mb-4">
+                  Great for regular updates, company news, and informational content. Best suited for sites without e-commerce products that want to keep subscribers engaged.
+                </p>
+                {selectedEmailType === 'Newsletter' && (
+                  <div className="absolute top-4 right-4 z-10">
+                    <div className="bg-primary text-primary-foreground rounded-full p-2">
+                      <Check className="w-5 h-5" />
+                    </div>
+                  </div>
+                )}
+              </div>
+              <div className="aspect-[4/3] relative overflow-hidden bg-gradient-to-br from-blue-500/10 to-purple-500/10">
+                <Carousel 
+                  plugins={[newsletterAutoplayRef.current]} 
+                  opts={{ loop: true }} 
+                  className="w-full h-full"
+                >
+                  <CarouselContent className="h-full -ml-0">
+                    {NEWSLETTER_IMAGES.map((img, idx) => (
+                      <CarouselItem key={idx} className="h-full pl-0 basis-full">
+                        <div className="h-full w-full relative">
+                          <img
+                            src={img}
+                            alt={`Newsletter example ${idx + 1}`}
+                            className="w-full h-full object-cover"
+                            onError={(e) => {
+                              const target = e.currentTarget as HTMLImageElement;
+                              target.style.display = 'none';
+                              if (!target.parentElement?.querySelector('.placeholder')) {
+                                const placeholder = document.createElement('div');
+                                placeholder.className = 'placeholder absolute inset-0 bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center';
+                                placeholder.innerHTML = '<div class="text-white text-2xl font-bold">Newsletter Email</div>';
+                                target.parentElement?.appendChild(placeholder);
+                              }
+                            }}
+                          />
+                        </div>
+                      </CarouselItem>
+                    ))}
+                  </CarouselContent>
+                </Carousel>
+              </div>
+            </button>
+          </motion.div>
+        </div>
+
+        {/* User Context Section - Revealed after email type selection */}
+        {selectedEmailType && (
+          <motion.div 
+            ref={userContextSectionRef}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+            className="mt-20 max-w-2xl mx-auto"
+          >
+            <div className="space-y-2">
+              <div className="flex items-center justify-between relative">
+                <label htmlFor="user-context-textarea" className="text-xl font-semibold text-foreground w-full text-center">
+                  User Context
+                </label>
+                <div className="flex gap-2 items-center absolute right-0">
+                  <GradientButton
+                    variant="white-outline" onClick={generateAIContexts} disabled={isGeneratingContext} title="Regenerate User Context with AI"
+                    className="!bg-background !text-foreground !border !border-border hover:!bg-muted px-3 py-1.5 text-sm disabled:opacity-50"
+                  >
+                    <Sparkles className="w-4 h-4 mr-1.5" /> 
+                    {isGeneratingContext ? 'Generating...' : 'AI Regenerate'}
+                  </GradientButton>
+                </div>
+              </div>
+              <div className="relative">
+                <textarea
+                  id="user-context-textarea" 
+                  value={userContext} 
+                  rows={4} 
+                  className={`${plainTextarea} resize-none`}
+                  placeholder="In 2–3 short sentences, say what this email should do (offer, audience, vibe). Avoid labels like 'Tone: …'. End with a natural CTA (e.g., 'Shop Deals')."
+                  onChange={(e) => setUserContext(sanitizeInput(e.target.value, 1000))}
+                />
+              </div>
+            </div>
+          </motion.div>
+        )}
+
+        {/* Custom Hero Image Section - Revealed after email type selection */}
+        {selectedEmailType && (
+          <motion.div 
+            ref={customHeroSectionRef}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+            className="mt-20 max-w-2xl mx-auto"
+          >
+            <fieldset className="space-y-2">
+              <legend className="text-xl font-semibold text-foreground text-center w-full pb-2">Generate custom hero image?</legend>
+              {!userCredits ? (
+                <div className="flex gap-3">
+                  <div className="flex-1 h-12 bg-muted animate-pulse rounded-xl"></div>
+                  <div className="flex-1 h-12 bg-muted animate-pulse rounded-xl"></div>
+                </div>
+              ) : <div className="flex gap-3">
+                  <GradientButton
+                    variant={useCustomHero === true ? 'solid' : 'white-outline'}
+                    onClick={() => handleCustomHeroSelect(true)}
+                    className={`flex-1 ${useCustomHero === true ? '' : unselectedSegBtn}`}
+                    disabled={userCredits.images_remaining === 0 || !isCustomHeroEnabledToChoose}
+                  >Yes{userCredits.images_remaining < 1 && <span className="text-xs text-muted-foreground ml-1">(No credits)</span>}
+                  </GradientButton>
+                  <GradientButton
+                    variant={useCustomHero === false ? 'solid' : 'white-outline'} 
+                    onClick={() => handleCustomHeroSelect(false)}
+                    className={`flex-1 ${useCustomHero === false ? '' : unselectedSegBtn}`}
+                  >No</GradientButton>
+              </div>}
+              {!isCustomHeroEnabledToChoose && <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg">
+                <p className="text-sm text-amber-800 font-medium">⚠️ No image credits remaining</p>
+                <p className="text-xs text-amber-700 mt-1">You don't have any image credits available to generate new custom hero images. You can still use saved images from previous generations.</p>
+              </div>}
+            </fieldset>
+          </motion.div>
+        )}
+
+        {/* Image Context - Shown when Yes is selected */}
+        {useCustomHero === true && (
+          <motion.div 
+            ref={imageContextSectionRef}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+            className="mt-12 max-w-2xl mx-auto"
+          >
+            <div className="space-y-2">
+              <div className="flex items-center justify-between relative">
+                <label htmlFor="image-context-textarea" className="text-xl font-semibold text-foreground w-full text-center">
+                  Image Context
+                </label>
+                <div className="flex gap-2 items-center absolute right-0">
+                  <GradientButton
+                    variant="white-outline" onClick={generateAIContexts} disabled={isGeneratingContext} title="Regenerate Image Context with AI"
+                    className="!bg-background !text-foreground !border !border-border hover:!bg-muted px-3 py-1.5 text-sm disabled:opacity-50"
+                  >
+                    <Sparkles className="w-4 h-4 mr-1.5" /> 
+                    {isGeneratingContext ? 'Generating...' : 'AI Regenerate'}
+                  </GradientButton>
+                </div>
+              </div>
+              <div className="relative">
+                <textarea
+                  id="image-context-textarea" 
+                  value={imageContext} 
+                  rows={4} 
+                  className={`${plainTextarea} resize-none`}
+                  placeholder="Describe the hero vibe (e.g., 'Dynamic splash shot with icy droplets; bold contrast; clean background; no text.')"
+                  onChange={(e) => setImageContext(sanitizeInput(e.target.value, 1000))}
+                />
+              </div>
+            </div>
+          </motion.div>
+        )}
+
+        {/* Saved Images - Shown only when No is selected */}
+        {useCustomHero === false && (
+          <motion.div 
+            ref={savedImagesSectionRef}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+            className="mt-12 max-w-2xl mx-auto"
+          >
+            <fieldset className="space-y-3">
+              <legend className="text-xl font-semibold text-foreground text-center w-full pb-2">
+                Use a saved hero image (optional)
+              </legend>
+              {savedImages.length === 0 ? (
+                <p className="text-sm text-muted-foreground italic">No saved images yet for <span className="underline">{normalizeDomain(formData.domain || '')}</span>.</p>
+              ) : (
+                <>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                    {savedImages.map((img) => {
+                      const active = selectedSavedUrl === img.public_url;
+                      return <button
+                        type="button" key={img.id} aria-pressed={active}
+                        onClick={() => setSelectedSavedUrl(active ? null : img.public_url)}
+                        className={`relative rounded-lg border transition overflow-hidden aspect-[4/3] ${active ? 'border-primary ring-2 ring-primary' : 'border-border hover:bg-muted/40'}`}
+                      ><img
+                            src={img.public_url} alt="Saved" className="w-full h-full object-cover"
+                            onError={(e) => { (e.currentTarget as HTMLImageElement).style.visibility = 'hidden'; }}
+                        />
+                        {active && <div className="absolute top-1 right-1 bg-primary text-primary-foreground text-[11px] rounded px-1.5 py-0.5 flex items-center gap-1"><Check className="w-3 h-3" /> Selected</div>}
+                      </button>;
+                    })}
+                  </div>
+                  {selectedSavedUrl && <div className="flex gap-2">
+                    <GradientButton
+                      variant="white-outline" onClick={() => setSelectedSavedUrl(null)}
+                      className="!bg-background !text-foreground !border !border-border hover:!bg-muted"
+                    >Clear selection</GradientButton>
+                  </div>}
+                </>
+              )}
+            </fieldset>
+          </motion.div>
+        )}
+
+        {/* Rest of configuration options - revealed after custom hero selection */}
+        {customHeroSelected && (
+          <div className="mt-12 max-w-2xl mx-auto space-y-6">
+            {/* Brand Colors */}
+            {formData.brandData && (
+              <div className="space-y-2">
+                <h3 className="text-xl font-semibold text-foreground text-center w-full">Brand Colors</h3>
+                <BrandColorControls
+                  scrapedPrimary={scrapedPrimary} scrapedSecondary={scrapedSecondary}
+                  brandDomain={formData.domain} onChange={handleColorsChange}
+              /></div>
+            )}
+
+            {/* Products */}
+            <div className="space-y-4">
+              <div className="flex items-center gap-2 justify-center">
+                <h3 className="text-xl font-semibold text-foreground">Products</h3>
+                 <div className="flex items-center gap-1">
+                   <span className="px-2 py-1 text-xs font-medium bg-orange-100 text-orange-800 rounded-full border border-orange-200">
+                     BETA
+                   </span>
+                   <TooltipProvider>
+                     <Tooltip delayDuration={300}>
+                       <TooltipTrigger asChild>
+                         <button className="p-1 rounded-full hover:bg-muted transition-colors">
+                           <Info className="w-4 h-4 text-muted-foreground" />
+                         </button>
+                       </TooltipTrigger>
+                       <TooltipContent className="max-w-xs">
+                         <p>This product scraper function is in beta. Products might not get pulled or displayed correctly, double check information for best results.</p>
+                       </TooltipContent>
+                     </Tooltip>
+                   </TooltipProvider>
+                 </div>
+               </div>
+               <p className="text-sm text-muted-foreground">Maximum 4 products allowed ({products.length}/4)</p>
+               {products.length === 0 && scrapedProducts.length === 0 && <p className="text-sm text-muted-foreground italic">No products added yet.</p>}
+               {scrapedProducts.length > 0 && products.length === 0 && (
+                 <div className="text-sm text-muted-foreground mb-4 p-3 bg-muted/50 rounded-lg border border-border">
+                   <p className="font-medium mb-2">Found {scrapedProducts.length} scraped product{scrapedProducts.length !== 1 ? 's' : ''} from your brand data:</p>
+                   <div className="space-y-2">
+                     {scrapedProducts.map((product, index) => (
+                       <div key={`scraped-${index}`} className="flex items-center gap-3 p-2 bg-background rounded border border-border">
+                         {product.image && (
+                           <img src={product.image} alt={product.name || 'Product'} className="w-12 h-12 rounded object-cover" />
+                         )}
+                         <div className="flex-1 min-w-0">
+                           <div className="font-medium text-foreground truncate">{product.name || 'Unnamed Product'}</div>
+                           {product.url && <div className="text-xs text-muted-foreground truncate">{product.url}</div>}
+                         </div>
+                       </div>
+                     ))}
+                   </div>
+                 </div>
+               )}
+              {products.map((product, index) => {
+                const isEditing = editingIndex === index;
+                return <div key={`${product.url || product.name || 'product'}-${index}`} className="space-y-2 rounded-lg border border-border p-4">
+                    {!isEditing ? (
+                      <div className="flex items-center justify-between gap-4">
+                        <div className="flex items-center gap-3 min-w-0 flex-1">
+                          {product.image ? (
+                            <div className="relative flex-shrink-0"><img
+                              src={product.image} alt={product.name || 'Product image'}
+                              className="w-16 h-16 rounded-md object-cover border border-border"
+                              onError={(e) => { 
+                                // Replace with a placeholder instead of hiding
+                                (e.currentTarget as HTMLImageElement).src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDgiIGhlaWdodD0iNDgiIHZpZXdCb3g9IjAgMCA0OCA0OCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjQ4IiBoZWlnaHQ9IjQ4IiBmaWxsPSIjRjNGNEY2Ii8+CjxwYXRoIGQ9Ik0yNCAyOEMyNi4yMDkxIDI4IDI4IDI2LjIwOTEgMjggMjRDMjggMjEuNzkwOSAyNi4yMDkxIDIwIDI0IDIwQzIxLjc5MDkgMjAgMjAgMjEuNzkwOSAyMCAyNEMyMCAyNi4yMDkxIDIxLjc5MDkgMjggMjQgMjhaIiBmaWxsPSIjOUI5QkEwIi8+CjxwYXRoIGQ9Ik0xMiAzNkMxMiAzNiAxOCAyOCAyNCAyOEMzMCAyOCAzNiAzNiAzNiAzNkgxMloiIGZpbGw9IiM5QjlCQTAiLz4KPC9zdmc+';
+                              }}
+                            /></div>
+                          ) : <div className="w-16 h-16 rounded-md border border-dashed border-border grid place-items-center text-xs text-muted-foreground flex-shrink-0">N/A</div>}
+                          <div className="min-w-0 flex-1">
+                            <div className="font-medium text-foreground truncate">{product.name}</div>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2 shrink-0">
+                          <GradientButton
+                            variant="white-outline" onClick={() => startEdit(index)} title="Edit"
+                            className="px-3 py-2 !bg-background !text-foreground !border !border-border hover:!bg-muted"
+                          ><Pencil className="w-4 h-4" /></GradientButton>
+                          <GradientButton
+                            variant="white-outline" title="Remove" onClick={() => handleRemoveProduct(index)}
+                            className="px-3 py-2 !bg-background !text-foreground !border !border-border hover:!bg-muted">
+                            <X className="w-4 h-4" />
+                          </GradientButton>
+                        </div>
+                      </div>
+                    ) : (<div className="space-y-2">
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
+                          <GradientInput placeholder="Product name..." value={editName} onChange={(e) => setEditName(e.target.value)} className="!bg-background !text-foreground !border !border-input placeholder:!text-muted-foreground" />
+                          <GradientInput placeholder="Product URL (https://...)" value={editUrl} onChange={(e) => setEditUrl(e.target.value)} className="!bg-background !text-foreground !border !border-input placeholder:!text-muted-foreground" />
+                          <GradientInput placeholder="Image URL (optional)" value={editImage} onChange={(e) => setEditImage(e.target.value)} className="!bg-background !text-foreground !border !border-input placeholder:!text-muted-foreground" />
+                        </div>
+                        <div className="flex items-center gap-3">
+                          {editImage 
+                            ? <img src={editImage} alt="Preview" className="w-16 h-16 rounded-md object-cover border border-border flex-shrink-0" onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }} />
+                            : <div className="w-16 h-16 rounded-md border border-dashed border-border grid place-items-center text-xs text-muted-foreground flex-shrink-0">N/A</div>}
+                          <div className="text-sm text-muted-foreground">Preview</div>
+                        </div>
+                        <div className="flex gap-2">
+                          <GradientButton variant="solid" onClick={saveEdit} className="px-4" disabled={!editName.trim() || !editUrl.trim()}><Save className="w-4 h-4 mr-2" /> Save</GradientButton>
+                          <GradientButton variant="white-outline" onClick={cancelEdit} className="px-4 !bg-background !text-foreground !border !border-border hover:!bg-muted">Cancel</GradientButton>
+                        </div>
+                    </div>)}
+                </div>
+              })}
+
+              {!showProductForm && (
+                <GradientButton 
+                  onClick={() => setShowProductForm(true)} variant="white-outline" disabled={products.length >= 4}
+                  className="!bg-background !text-foreground !border !border-border hover:!bg-muted"
+                >Add Product {products.length >= 4 ? '(Max Reached)' : ''}</GradientButton>
+              )}
+
+              {showProductForm && (
+                <div className="space-y-2 p-4 border border-border rounded-lg">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
+                    <GradientInput placeholder="Product name..." value={newProductName} onChange={(e) => setNewProductName(e.target.value)} className="!bg-background !text-foreground !border !border-input placeholder:!text-muted-foreground" />
+                    <GradientInput placeholder="Product URL (https://...)" value={newProductUrl} onChange={(e) => setNewProductUrl(e.target.value)} className="!bg-background !text-foreground !border !border-input placeholder:!text-muted-foreground" />
+                    <GradientInput placeholder="Image URL (optional)" value={newProductImage} onChange={(e) => setNewProductImage(e.target.value)} className="!bg-background !text-foreground !border !border-input placeholder:!text-muted-foreground" />
+                  </div>
+                  <div className="flex gap-2">
+                     <GradientButton variant="solid" onClick={handleAddProduct} disabled={!newProductName || !newProductUrl || products.length >= 4} className="disabled:opacity-60">
+                       Add Product {products.length >= 4 ? '(Max Reached)' : ''}
+                     </GradientButton>
+                     <GradientButton variant="white-outline" onClick={() => { setShowProductForm(false); setNewProductName(''); setNewProductUrl(''); setNewProductImage(''); }} className="!bg-background !text-foreground !border !border-border hover:!bg-muted">Cancel</GradientButton>
+                   </div>
+                </div>
+              )}
+            </div>
+
+            {/* Generate Email Button */}
+            <div className="pt-6">
+              <GradientButton variant="solid" onClick={handleContinue} className="w-full py-3 text-lg">
+                <Mail className="w-5 h-5 mr-2" />
+                Generate Email
+              </GradientButton>
+            </div>
+          </div>
+        )}
+
+        <motion.div className="fixed bottom-0 left-0 right-0 z-40 bg-background border-t border-border p-2 shadow-lg" variants={fadeInUp}>
+          <div className="max-w-4xl mx-auto flex justify-between">
+            <GradientButton variant="white-outline" onClick={onPrev} className="!bg-background !text-foreground !border !border-border hover:!bg-muted">Back</GradientButton>
+          </div>
+        </motion.div>
+      </motion.div>
+    );
+  }
+
+  // Fallback: if emailTypeSelected is true (for backward compatibility), show full config
   return <motion.div className="space-y-5 mt-14 pb-24" variants={containerVariants} initial="hidden" animate="show">
       <motion.div className="text-center space-y-4" variants={fadeInUp}>
         <h1 className="text-3xl font-bold text-foreground tracking-tight">Configure your email</h1>
         <p className="text-lg text-muted-foreground">Choose your type, tone, and style — text inputs stay inline.</p>
       </motion.div>
-
-      {/* Email Type */}
-      <motion.div variants={fadeInUp}><fieldset className="space-y-3">
-        <legend className="text-lg font-medium text-foreground">Email Type</legend>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 w-full">
-          {EMAIL_TYPES.map(t => {
-            const active = selectedEmailType === t.value;
-            const icon = t.value === 'Promotion' ? <Zap className="w-4 h-4" /> : <Mail className="w-4 h-4" />;
-            return (
-              <TooltipProvider key={t.value}>
-                <Tooltip delayDuration={300}>
-                  <TooltipTrigger asChild>
-                    <GradientButton
-                      type="button"
-                      variant={active ? 'solid' : 'white-outline'}
-                      onClick={() => setSelectedEmailType(t.value)}
-                      aria-pressed={active}
-                      className={`w-full px-4 py-2 rounded-xl transition flex items-center justify-center gap-2 ${active ? '' : unselectedSegBtn}`}
-                    >
-                      {icon}{t.label}
-                    </GradientButton>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p>{t.tooltip}</p>
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
-            );
-          })}
-      </div></fieldset></motion.div>
-      {/* Tone */}
-      <motion.div variants={fadeInUp}><fieldset className="space-y-3">
-        <legend className="text-lg font-medium text-foreground">Tone</legend>
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 w-full">
-          {TONES.map(tn => {
-            const active = tone === tn.value;
-            const getToneIcon = (toneValue: string) => {
-              switch (toneValue) {
-                case 'bold': return <Zap className="h-4 w-4" />;
-                case 'friendly': return <Users className="h-4 w-4" />;
-                case 'formal': return <Briefcase className="h-4 w-4" />;
-                case 'fun': return <Smile className="h-4 w-4" />;
-                default: return null;
-            }};
-            return <GradientButton
-                key={tn.value} type="button" aria-pressed={active}
-                variant={active ? 'solid' : 'white-outline'} onClick={() => setTone(tn.value)}
-                className={`w-full px-4 py-2 rounded-xl transition ${active ? '' : unselectedSegBtn} flex items-center gap-2`}
-            >{getToneIcon(tn.value)}{tn.label}</GradientButton>
-          })}
-      </div></fieldset></motion.div>
       {/* Design Style */}
       <motion.div className="space-y-2" variants={fadeInUp}>
         <label htmlFor="design-style-trigger" className="text-lg font-medium text-foreground">Design Style</label>
@@ -714,7 +1193,7 @@ export const Step2EmailType: React.FC<Step2EmailTypeProps> = ({formData, updateF
       )}
       {/* Use Custom Hero */}
       <motion.div variants={fadeInUp}><fieldset className="space-y-2">
-          <legend className="text-lg font-medium text-foreground">Use Custom Hero Image?</legend>
+          <legend className="text-lg font-medium text-foreground">Generate custom hero image?</legend>
           {!userCredits ? (
             <div className="flex gap-3">
               <div className="flex-1 h-12 bg-muted animate-pulse rounded-xl"></div>
