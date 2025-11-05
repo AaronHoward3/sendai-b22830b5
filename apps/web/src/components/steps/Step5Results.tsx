@@ -5,7 +5,6 @@ import { Save, Copy } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/lib/supabaseClient";
 import { useSupabaseAuth } from "@/hooks/useSupabaseAuth";
-import { SubscriptionPrompt } from "@/components/SubscriptionPrompt";
 
 interface Step5ResultsProps {
   formData: FormData;
@@ -61,10 +60,6 @@ export const Step5Results: React.FC<Step5ResultsProps> = ({
       setHasUsedFreeTrial(true);
     }
   }, [formData.isPreviewMode, hasUsedFreeTrial]);
-
-  const handleSubscribe = () => {
-    window.location.href = "/dashboard?plan=1";
-  };
 
   const handleSignIn = () => {
     window.location.href = "/signin";
@@ -155,18 +150,30 @@ export const Step5Results: React.FC<Step5ResultsProps> = ({
   if (formData.isPreviewMode && !isAdmin) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center p-4 mt-12">
-        <div className="w-full max-w-4xl space-y-8">
+        <div className="w-full max-w-6xl space-y-8">
           {/* Email Preview */}
           <div className="bg-white rounded-xl border shadow-lg overflow-hidden">
             <div className="px-4 py-3 border-b bg-muted/40">
               <h2 className="text-lg font-semibold truncate" title={computedSubject}>{computedSubject}</h2>
-              <p className="text-sm text-muted-foreground mt-1">Preview - Subscribe to access full features</p>
+              <p className="text-sm text-muted-foreground mt-1">Preview - Sign in to access full features</p>
             </div>
-            <div className="h-[60vh] overflow-auto">
+            <div className="h-[70vh] overflow-auto">
               <iframe srcDoc={html} sandbox="" className="w-full h-full border-0" style={{ background: "white" }} title="Email Preview" />
             </div>
           </div>
-          <SubscriptionPrompt onSubscribe={handleSubscribe} onSignIn={handleSignIn} />
+          
+          {/* Simple Sign In / Sign Up Button */}
+          <div className="text-center space-y-4 pb-8">
+            <h3 className="text-xl font-semibold text-foreground">Ready to save your email?</h3>
+            <p className="text-muted-foreground">Sign in or create an account to access all features</p>
+            <GradientButton 
+              variant="solid" 
+              onClick={handleSignIn}
+              className="!bg-primary !text-primary-foreground hover:!bg-primary/90 px-8 py-3 text-lg"
+            >
+              Sign In / Sign Up
+            </GradientButton>
+          </div>
         </div>
       </div>
     );

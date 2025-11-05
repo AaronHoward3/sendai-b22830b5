@@ -276,21 +276,33 @@ function getFallbackButtonStyles() {
  */
 export function findClosestGoogleFont(fontFamily) {
   const googleFonts = [
-    // Sans-serif fonts
+    // Modern Sans-serif fonts (most common for brands)
     'Inter', 'Roboto', 'Open Sans', 'Lato', 'Montserrat', 'Poppins', 'Source Sans Pro',
-    'Nunito', 'Raleway', 'Ubuntu', 'Fira Sans', 'Work Sans', 'Cabin', 'Droid Sans',
-    'Titillium Web', 'Dosis', 'Abel', 'Josefin Sans', 'Quicksand', 'Cantarell', 
-    'Karla', 'Muli', 'Hind', 'Fjalla One', 'Anton', 'DM Sans', 'Manrope', 'Outfit',
-    'Plus Jakarta Sans', 'Figtree', 'Satoshi', 'Geist', 'SF Pro Display', 'Arial',
+    'Nunito', 'Raleway', 'Ubuntu', 'Fira Sans', 'Work Sans', 'DM Sans', 'Manrope', 
+    'Plus Jakarta Sans', 'Space Grotesk', 'Outfit', 'Figtree', 'Public Sans',
     
-    // Serif fonts
-    'Playfair Display', 'Merriweather', 'PT Serif', 'Crimson Text', 'Libre Baskerville',
-    'Droid Serif', 'Bitter', 'Vollkorn', 'Lora', 'PT Sans', 'Arimo', 'Bree Serif',
+    // Classic Sans-serif fonts
+    'Cabin', 'Karla', 'Hind', 'Quicksand', 'Josefin Sans', 'Titillium Web', 
+    'Dosis', 'Abel', 'Cantarell', 'Muli', 'Rubik', 'Barlow', 'Red Hat Display',
+    
+    // Bold/Display Sans-serif
+    'Oswald', 'Fjalla One', 'Anton', 'Bebas Neue', 'Righteous', 'Russo One',
+    'Archivo Black', 'Exo', 'Lexend', 'Sora', 'Urbanist',
+    
+    // Serif fonts (editorial/magazine style)
+    'Playfair Display', 'Merriweather', 'Lora', 'PT Serif', 'Crimson Text', 
+    'Libre Baskerville', 'Cormorant', 'Spectral', 'Vollkorn', 'Bitter',
     'DM Serif Display', 'Crimson Pro', 'Source Serif Pro', 'Libre Caslon Text',
+    'EB Garamond', 'Cardo', 'Frank Ruhl Libre',
+    
+    // Geometric fonts
+    'Poppins', 'Comfortaa', 'Jost', 'Lexend Deca', 'Mulish', 'Red Hat Text',
+    
+    // Rounded fonts
+    'Nunito', 'Quicksand', 'Varela Round', 'M PLUS Rounded 1c', 'Rounded Sans',
     
     // Display/Decorative fonts
-    'Oswald', 'Dancing Script', 'Pacifico', 'Lobster', 'Righteous', 'Satisfy',
-    'Bebas Neue', 'Fredoka One', 'Comfortaa', 'Orbitron', 'Russo One'
+    'Dancing Script', 'Pacifico', 'Lobster', 'Satisfy', 'Fredoka One', 'Orbitron'
   ];
   
   if (!fontFamily) return 'Inter';
@@ -325,21 +337,65 @@ export function findClosestGoogleFont(fontFamily) {
     'system': ['Inter', 'Roboto', 'Open Sans'],
     'ui': ['Inter', 'Roboto', 'Open Sans'],
     
-    // Brand-specific fonts
-    'netflix': ['Josefin Sans', 'Montserrat', 'Poppins'],
-    'netflixsans': ['Josefin Sans', 'Montserrat', 'Poppins'],
-    'airbnb': ['Inter', 'Roboto', 'Open Sans'],
-    'airbnbcereal': ['Inter', 'Roboto', 'Open Sans'],
-    'cereal': ['Inter', 'Roboto', 'Open Sans'],
-    'spotify': ['Inter', 'Roboto', 'Open Sans'],
-    'spotifycircular': ['Inter', 'Roboto', 'Open Sans'],
-    'circular': ['Inter', 'Roboto', 'Open Sans'],
-    'nike': ['Inter', 'Roboto', 'Open Sans'],
-    'adidas': ['Inter', 'Roboto', 'Open Sans'],
-    'apple': ['Inter', 'Roboto', 'Open Sans'],
-    'google': ['Inter', 'Roboto', 'Open Sans'],
+    // Brand-specific fonts (expanded list)
+    'netflix': ['Bebas Neue', 'Oswald', 'Montserrat'],
+    'netflixsans': ['Bebas Neue', 'Oswald', 'Montserrat'],
+    'airbnb': ['Inter', 'DM Sans', 'Plus Jakarta Sans'],
+    'airbnbcereal': ['Inter', 'DM Sans', 'Plus Jakarta Sans'],
+    'cereal': ['Inter', 'DM Sans', 'Plus Jakarta Sans'],
+    'spotify': ['Montserrat', 'Inter', 'DM Sans'],
+    'spotifycircular': ['Montserrat', 'Inter', 'DM Sans'],
+    'circular': ['Montserrat', 'Inter', 'DM Sans'],
+    'nike': ['Bebas Neue', 'Oswald', 'Anton'],
+    'niketradeGothic': ['Bebas Neue', 'Oswald', 'Anton'],
+    'futuracondensed': ['Bebas Neue', 'Oswald', 'Anton'],
+    'adidas': ['Bebas Neue', 'Oswald', 'Anton'],
+    'adihaus': ['Bebas Neue', 'Oswald', 'Anton'],
+    'apple': ['Inter', 'Roboto', 'DM Sans'],
+    'google': ['Roboto', 'Open Sans', 'Lato'],
+    'googlesans': ['Roboto', 'Open Sans', 'DM Sans'],
+    'productsans': ['Roboto', 'Open Sans', 'DM Sans'],
     'microsoft': ['Inter', 'Roboto', 'Open Sans'],
+    'segoeui': ['Inter', 'Roboto', 'Open Sans'],
     'amazon': ['Inter', 'Roboto', 'Open Sans'],
+    'amazonember': ['Inter', 'Roboto', 'Open Sans'],
+    'uber': ['Inter', 'DM Sans', 'Manrope'],
+    'ubermove': ['Inter', 'DM Sans', 'Manrope'],
+    'stripe': ['Inter', 'DM Sans', 'Manrope'],
+    'slack': ['Lato', 'Inter', 'Open Sans'],
+    'slackcircular': ['Lato', 'Inter', 'Open Sans'],
+    'twitter': ['Inter', 'Roboto', 'DM Sans'],
+    'twitterchirp': ['Inter', 'Roboto', 'DM Sans'],
+    'chirp': ['Inter', 'Roboto', 'DM Sans'],
+    'facebook': ['Inter', 'Roboto', 'Open Sans'],
+    'instagram': ['Montserrat', 'Poppins', 'Inter'],
+    'tiktok': ['Montserrat', 'Poppins', 'Nunito'],
+    'youtube': ['Roboto', 'Open Sans', 'Inter'],
+    'linkedin': ['Inter', 'Roboto', 'Open Sans'],
+    'reddit': ['Inter', 'Roboto', 'DM Sans'],
+    'pinterest': ['Inter', 'Roboto', 'Open Sans'],
+    'shopify': ['Inter', 'DM Sans', 'Manrope'],
+    'squarespace': ['Inter', 'DM Sans', 'Manrope'],
+    'wix': ['Poppins', 'Montserrat', 'Inter'],
+    'wordpress': ['Open Sans', 'Inter', 'Roboto'],
+    'mailchimp': ['Montserrat', 'Poppins', 'Inter'],
+    'notion': ['Inter', 'DM Sans', 'Manrope'],
+    'figma': ['Inter', 'DM Sans', 'Manrope'],
+    'canva': ['Poppins', 'Montserrat', 'Inter'],
+    'dropbox': ['Inter', 'Roboto', 'Open Sans'],
+    'zoom': ['Inter', 'Roboto', 'Open Sans'],
+    'discord': ['Inter', 'Roboto', 'DM Sans'],
+    'tesla': ['Montserrat', 'Oswald', 'Bebas Neue'],
+    'coca': ['Lora', 'Merriweather', 'Playfair Display'],
+    'pepsi': ['Montserrat', 'Poppins', 'Bebas Neue'],
+    'mcdonalds': ['Inter', 'Montserrat', 'Poppins'],
+    'starbucks': ['Lato', 'Open Sans', 'Inter'],
+    'target': ['Inter', 'DM Sans', 'Manrope'],
+    'walmart': ['Roboto', 'Inter', 'Open Sans'],
+    'ikea': ['Inter', 'Roboto', 'Open Sans'],
+    'zara': ['Playfair Display', 'Lora', 'Merriweather'],
+    'h&m': ['Inter', 'Roboto', 'DM Sans'],
+    'uniqlo': ['Inter', 'Roboto', 'DM Sans'],
     
     // Serif characteristics
     'times': ['Merriweather', 'Crimson Text', 'Libre Baskerville'],
@@ -460,7 +516,27 @@ export async function analyzeWebsiteWithVision(domain) {
             content: [
               {
                 type: "text",
-                text: "Look at this website screenshot and identify the fonts used. Focus on the main headings, navigation text, and body text. Look for distinctive typography characteristics like serif vs sans-serif, weight (bold/light), and style (modern/classic). If you can identify specific font names, list them. If not, describe the font characteristics (e.g., 'modern sans-serif', 'classic serif', 'bold condensed'). Return only font names or characteristics separated by commas, in order of prominence."
+                text: `Analyze this website screenshot and identify the PRIMARY font used for headings and body text.
+
+FOCUS ON:
+1. Main headline/title text (most important)
+2. Navigation menu text
+3. Body paragraph text
+4. Button text
+
+WHAT TO IDENTIFY:
+- Exact font name if recognizable (e.g., "Helvetica", "Inter", "Roboto", "Montserrat", "Playfair Display")
+- Font characteristics: serif vs sans-serif, geometric vs humanist, condensed vs extended
+- Weight: thin, light, regular, medium, semibold, bold, black
+- Style: modern/contemporary, classic/traditional, rounded, angular, geometric
+
+COMMON BRAND FONTS TO LOOK FOR:
+- Sans-serif: Inter, Roboto, Helvetica, Montserrat, Poppins, DM Sans, Open Sans, Lato
+- Serif: Playfair Display, Merriweather, Lora, Georgia, Times
+- Display: Bebas Neue, Oswald, Anton
+
+Return ONLY the most likely font names (up to 3), separated by commas, starting with the primary heading font.
+Example responses: "Helvetica Neue, Arial", "Montserrat, Open Sans", "Playfair Display, Georgia"`
               },
               {
                 type: "image_url",
@@ -578,31 +654,54 @@ export async function scrapeWebsiteStylesEnhanced(domain) {
     const cssData = cssResult.status === 'fulfilled' ? cssResult.value : { success: false };
     const visionData = visionResult.status === 'fulfilled' ? visionResult.value : { success: false };
     
-    // Combine results intelligently
+    // Combine results intelligently - PRIORITIZE vision analysis as it's more accurate
     let combinedFonts = [];
+    let primaryFont = 'Inter'; // Default fallback
     
-    if (cssData.success && cssData.fonts) {
+    // Vision analysis gets highest priority as it actually "sees" the fonts
+    if (visionData.success && visionData.fonts && visionData.fonts.length > 0) {
+      console.log(`🎯 Prioritizing vision-detected fonts: ${visionData.fonts.join(', ')}`);
+      combinedFonts = [...visionData.fonts];
+      
+      // Add CSS fonts that aren't already detected by vision
+      if (cssData.success && cssData.fonts) {
+        const newFonts = cssData.fonts.filter(font => 
+          !combinedFonts.some(existing => 
+            existing.toLowerCase().includes(font.toLowerCase()) || 
+            font.toLowerCase().includes(existing.toLowerCase())
+          )
+        );
+        combinedFonts = [...combinedFonts, ...newFonts];
+      }
+    } else if (cssData.success && cssData.fonts) {
+      // Fall back to CSS detection if vision fails
+      console.log(`🔍 Using CSS-detected fonts: ${cssData.fonts.join(', ')}`);
       combinedFonts = [...cssData.fonts];
-    }
-    
-    if (visionData.success && visionData.fonts) {
-      // Add vision-detected fonts that aren't already in CSS results
-      const newFonts = visionData.fonts.filter(font => 
-        !combinedFonts.some(existing => 
-          existing.toLowerCase().includes(font.toLowerCase()) || 
-          font.toLowerCase().includes(existing.toLowerCase())
-        )
-      );
-      combinedFonts = [...combinedFonts, ...newFonts];
     }
     
     // If we have no fonts from either method, use fallback
     if (combinedFonts.length === 0) {
+      console.log(`⚠️ No fonts detected, using fallback fonts`);
       combinedFonts = getFallbackFonts();
     }
     
     // Find the best Google Font match for the primary font
-    const primaryFont = findClosestGoogleFont(combinedFonts[0]);
+    // Try multiple fonts to find the best match
+    for (const font of combinedFonts) {
+      const matchedFont = findClosestGoogleFont(font);
+      if (matchedFont !== 'Inter') {
+        // Found a better match than default
+        primaryFont = matchedFont;
+        console.log(`✅ Matched "${font}" to Google Font: "${primaryFont}"`);
+        break;
+      }
+    }
+    
+    // If no good match found, use the first font and try to match it
+    if (primaryFont === 'Inter' && combinedFonts.length > 0) {
+      primaryFont = findClosestGoogleFont(combinedFonts[0]);
+      console.log(`✅ Using best match for "${combinedFonts[0]}": "${primaryFont}"`);
+    }
     
     console.log(`✅ Enhanced scraping complete: CSS fonts: ${cssData.fonts?.join(', ') || 'none'}, Vision fonts: ${visionData.fonts?.join(', ') || 'none'}, Primary: ${primaryFont}`);
     

@@ -280,14 +280,14 @@ function getDesignAestheticStyles(designAesthetic) {
       columnPadding: "15px",
       elementSpacing: "20px",
       lineHeight: "1.5",
-      headingFontSize: "42px",
-      headingFontWeight: "800",
-      subheadingFontSize: "28px",
-      subheadingFontWeight: "700",
+      headingFontSize: "44px",
+      headingFontWeight: "900",
+      subheadingFontSize: "30px",
+      subheadingFontWeight: "800",
       bodyFontSize: "18px",
       bodyFontWeight: "600", 
       buttonFontSize: "18px",
-      buttonFontWeight: "700"
+      buttonFontWeight: "800"
     },
     magazine_serif: {
       sectionPadding: "30px 0px",
@@ -402,6 +402,221 @@ function cleanMjmlOutput(rawOutput) {
   
   console.log("🔍 Cleaned output preview:", cleaned.substring(0, 200));
   return cleaned.trim();
+}
+
+// 🔍 Validate MJML against brand website using vision AI
+async function validateMjmlWithVision(mjmlCode, domain, brandFont, brandColors, designAesthetic) {
+  try {
+    console.log(`🔍 Starting vision validation for ${domain}...`);
+    
+    // Import mjml2html dynamically
+    const mjml2html = (await import('mjml')).default;
+    
+    // Convert MJML to HTML
+    const { html, errors } = mjml2html(mjmlCode, {
+      validationLevel: 'soft'
+    });
+    
+    if (errors && errors.length > 0) {
+      console.warn(`⚠️ MJML conversion warnings:`, errors.slice(0, 3));
+    }
+    
+    // Convert HTML to base64 data URL for screenshot
+    const htmlDataUrl = `data:text/html;base64,${Buffer.from(html).toString('base64')}`;
+    
+    // Get brand website screenshot
+    const brandScreenshot = `https://shot.screenshotapi.net/screenshot?token=${process.env.SCREENSHOT_API_KEY || 'demo'}&url=https://${domain}&width=1280&height=720&format=png&full_page=true`;
+    
+    console.log(`📸 Comparing email render to brand website...`);
+    
+    // Use vision AI to compare and validate
+    const validationPrompt = `You are a design quality inspector. Compare these two images:
+
+IMAGE 1: Brand website (reference)
+IMAGE 2: Generated email design
+
+ANALYZE AND REPORT ISSUES:
+
+1. TYPOGRAPHY ISSUES:
+   - Is the email using a font that looks similar to the website?
+   - Expected font: ${brandFont}
+   - Are font sizes appropriate and readable?
+   - Are font weights consistent with the brand?
+   - Is text properly spaced and not compressed/stretched?
+
+2. SPACING ISSUES:
+   - Is there adequate padding around elements?
+   - Are sections properly spaced (not too cramped or too spread out)?
+   - Do columns have balanced spacing?
+   - Are buttons and images properly aligned?
+
+3. LAYOUT ISSUES:
+   - Are any elements overlapping or cut off?
+   - Are images maintaining proper aspect ratios (not stretched/squished)?
+   - Is the layout balanced and symmetrical?
+   - Are product grids evenly spaced?
+
+4. COLOR CONSISTENCY:
+   - Primary color: ${brandColors.primary}
+   - Link color: ${brandColors.link}
+   - Are brand colors being used effectively?
+
+5. DESIGN AESTHETIC (${designAesthetic}):
+   - Does the email match the intended aesthetic style?
+   - Is the visual hierarchy clear?
+
+RESPONSE FORMAT:
+If NO issues found: "PASS - No issues detected"
+If issues found: List specific problems in order of severity (most critical first), each on a new line starting with "ISSUE:"
+
+Example: 
+ISSUE: Text appears compressed in product grid section - needs more padding
+ISSUE: Font weight too light for headings - should be bolder for ${designAesthetic} aesthetic
+ISSUE: Product images appear stretched - aspect ratio not maintained`;
+
+    const response = await openai.chat.completions.create({
+      model: "gpt-4o",
+      messages: [
+        {
+          role: "user",
+          content: [
+            {
+              type: "text",
+              text: validationPrompt
+            },
+            {
+              type: "image_url",
+              image_url: { url: brandScreenshot }
+            },
+            {
+              type: "text",
+              text: "Email design (analyze this):"
+            },
+            {
+              type: "image_url",
+              image_url: { url: htmlDataUrl }
+            }
+          ]
+        }
+      ],
+      max_tokens: 500
+    });
+    
+    const validationResult = response.choices[0].message.content;
+    console.log(`🔍 Validation result:`, validationResult);
+    
+    // Parse validation result
+    const isPassed = validationResult.includes('PASS') && validationResult.includes('No issues');
+    
+    if (isPassed) {
+      console.log(`✅ Validation passed - no issues detected`);
+      return {
+        passed: true,
+        issues: [],
+        recommendation: null
+      };
+    }
+    
+    // Extract issues
+    const issues = validationResult
+      .split('\n')
+      .filter(line => line.trim().startsWith('ISSUE:'))
+      .map(line => line.replace(/^ISSUE:\s*/i, '').trim());
+    
+    console.log(`⚠️ Validation found ${issues.length} issues:`, issues);
+    
+    // Generate recommendations for fixes
+    const recommendation = issues.length > 0 
+      ? `Fix these issues: ${issues.slice(0, 3).join('; ')}`
+      : null;
+    
+    return {
+      passed: false,
+      issues,
+      recommendation,
+      fullReport: validationResult
+    };
+    
+  } catch (error) {
+    console.warn(`⚠️ Vision validation failed:`, error.message);
+    // Don't fail the entire generation if validation fails
+    return {
+      passed: true,
+      issues: [],
+      error: error.message,
+      recommendation: null
+    };
+  }
+}
+
+// 🔄 Regenerate MJML with fixes based on validation issues
+async function regenerateMjmlWithFixes(originalMjml, validationIssues, essentialData, imagePart, aestheticStyles, designAesthetic) {
+  try {
+    console.log(`🔄 Regenerating MJML with fixes...`);
+    
+    const issuesList = validationIssues.slice(0, 5).join('\n- ');
+    
+    const fixPrompt = `You are fixing an email design that has quality issues.
+
+ORIGINAL MJML HAD THESE ISSUES:
+- ${issuesList}
+
+CRITICAL FIXES NEEDED:
+1. If font issues mentioned: Ensure font-family="${essentialData.font}, Arial, sans-serif" is on ALL text elements
+2. If spacing issues mentioned: Add proper padding (min 15px) and use <mj-spacer> elements
+3. If stretched/squished images mentioned: Set height="auto" on all images
+4. If compressed text mentioned: Increase container width or reduce font-size
+5. If layout issues mentioned: Fix column widths and alignment
+
+DESIGN SPECIFICATIONS:
+- Brand font: ${essentialData.font}
+- Brand colors: primary=${essentialData.brandColors.primary}, link=${essentialData.brandColors.link}
+- Design aesthetic: ${designAesthetic}
+- Heading: ${aestheticStyles.headingFontSize}, weight ${aestheticStyles.headingFontWeight}
+- Body: ${aestheticStyles.bodyFontSize}, weight ${aestheticStyles.bodyFontWeight}
+
+Generate CORRECTED MJML that fixes all the issues mentioned above.
+Return ONLY raw MJML (no markdown fences, no explanations).`;
+
+    const messages = [
+      { 
+        role: "system", 
+        content: "You are an expert MJML email designer fixing quality issues. Return only corrected MJML code."
+      },
+      {
+        role: "user",
+        content: [
+          {
+            type: "text",
+            text: `${fixPrompt}\n\nBrand data: ${JSON.stringify(essentialData, null, 2)}\n\nORIGINAL MJML:\n${originalMjml.substring(0, 3000)}...`
+          },
+          ...(imagePart ? [imagePart] : [])
+        ]
+      }
+    ];
+
+    const model = process.env.OPENAI_MODEL_ID || "gpt-5-mini";
+    
+    const response = await openai.chat.completions.create({
+      model,
+      messages,
+      max_completion_tokens: 6000
+    });
+
+    const fixedMjml = cleanMjmlOutput(response.choices?.[0]?.message?.content?.trim() || "");
+    
+    if (fixedMjml && fixedMjml.startsWith('<mjml')) {
+      console.log(`✅ MJML regenerated with fixes`);
+      return fixedMjml;
+    } else {
+      console.warn(`⚠️ Fix regeneration failed, using original`);
+      return originalMjml;
+    }
+    
+  } catch (error) {
+    console.error(`❌ Fix regeneration failed:`, error.message);
+    return originalMjml;
+  }
 }
 
 // 🌐 Enhance payload with website-scraped styles (with timeout)
@@ -575,32 +790,72 @@ app.post("/generate", async (req, res) => {
     const mjmlStartTime = performance.now();
     console.log(`📝 Starting MJML generation (parallel to hero image)...`);
     
-    const systemPrompt = `You are a vision-aware MJML generator.
-Before writing MJML, study the example image(s) carefully and infer:
-- layout sections (hero, grid, footer)
-- proportions (padding, spacing)
-- dominant color placement
-Then design the MJML to mirror that structure while using the brand info and color palette from payload.brand.colors.
-Must use brand colors.
-Return ONLY raw MJML (no markdown fences, no explanations).
-Do not copy exact colors from example image.
-Include:
-  • Hero section using the provided example image
-  • Product/offer grid if payload.products exists
-  • Footer using payload.brand.links/socials if present
-Width <= 600px, mobile-first, accessible, valid MJML.
+    const systemPrompt = `You are a vision-aware MJML generator that EXACTLY REPLICATES example layouts with brand customization.
 
-BRAND IMAGES:
-- Logo: ${brandLogoUrl || 'none'} - Use in header or footer, maintain aspect ratio
-- Banner: ${brandBannerUrl || 'none'} - use as a separation block near end of emails.
-- Hero: ${heroImageUrl} - Main content image
-- No text overlays on brand images
+STEP 1 - STUDY THE EXAMPLE IMAGE CAREFULLY:
+Analyze the example image to extract:
+- Exact layout structure (header, hero, content sections, footer)
+- Section arrangement and order (vertical flow)
+- Column layouts (single column, 2-column, 3-column grids)
+- Spacing and padding between sections (measure proportions)
+- Image placement and sizing (aspect ratios, full-width vs contained)
+- Text alignment (center, left, right)
+- Button placement and styling (centered, inline, block)
+- Overall visual hierarchy and balance
 
+STEP 2 - REPLICATE STRUCTURE WITH BRAND CUSTOMIZATION:
+- COPY the exact section order and layout structure from the example
+- COPY the spacing, padding, and proportions from the example
+- COPY the column arrangements and grid layouts from the example
+- REPLACE example colors with brand colors: primary=${essentialData.brandColors.primary}, link=${essentialData.brandColors.link}
+- REPLACE example content with brand content from payload
+- REPLACE example images with brand images (logo, hero, products)
+- MAINTAIN the exact visual balance and hierarchy from the example
 
-CRITICAL: MUST USE BRAND COLORS and the detected brand font "${essentialData.font}" throughout the entire email. This font was specifically detected from the brand's website and should be used consistently for all text elements including headings, body text, and buttons.
+CRITICAL LAYOUT RULES - PREVENT STRETCHING/SQUISHING:
+1. ALL images MUST maintain aspect ratio - NEVER stretch or compress images
+2. Use width="100%" for full-width images, but ALWAYS set height="auto"
+3. For contained images, specify both width AND height to maintain aspect ratio
+4. Product grids MUST be symmetrical - use equal column widths
+5. Text containers MUST have proper width constraints (never 100% without padding)
+6. Use padding-left and padding-right on all text containers (minimum 15px each side)
+7. Buttons MUST be inline-block or have auto width - never full width unless intentional
+8. If text looks cramped, increase container width or reduce font size - NEVER compress
+9. Use <mj-spacer height="20px"/> between sections for proper spacing
+10. All sections should be centered and aligned properly with consistent padding
 
-only return mjml no other text.
-Output: Start with <mjml>, end with </mjml>. Max width 600px. Include header, hero section, products, footer.`;
+BRAND IMAGES (maintain aspect ratios, no distortion):
+- Logo: ${brandLogoUrl || 'none'} - Use in header, max-height: 60px, width: auto
+- Banner: ${brandBannerUrl || 'none'} - Full width separator, height: auto
+- Hero: ${heroImageUrl} - Main image, full width, height: auto
+- Product images: Contained in columns, equal sizing, height: auto
+- NO text overlays on brand images
+
+CRITICAL TYPOGRAPHY - USE BRAND FONT "${essentialData.font}" EVERYWHERE:
+You MUST use font-family="${essentialData.font}, Arial, sans-serif" on EVERY text element including:
+- <mj-text font-family="${essentialData.font}, Arial, sans-serif">
+- <mj-button font-family="${essentialData.font}, Arial, sans-serif">
+- All headings, body text, links, and buttons
+This font was detected from the brand's actual website - use it consistently throughout.
+
+DESIGN AESTHETIC SPECIFICATIONS - ${designAesthetic.toUpperCase()}:
+Apply these EXACT styling specifications:
+- Headings: font-size="${aestheticStyles.headingFontSize}" font-weight="${aestheticStyles.headingFontWeight}" font-family="${essentialData.font}, Arial, sans-serif"
+- Subheadings: font-size="${aestheticStyles.subheadingFontSize}" font-weight="${aestheticStyles.subheadingFontWeight}" font-family="${essentialData.font}, Arial, sans-serif"
+- Body text: font-size="${aestheticStyles.bodyFontSize}" font-weight="${aestheticStyles.bodyFontWeight}" font-family="${essentialData.font}, Arial, sans-serif"
+- Buttons: font-size="${aestheticStyles.buttonFontSize}" font-weight="${aestheticStyles.buttonFontWeight}" font-family="${essentialData.font}, Arial, sans-serif"
+- Section padding: ${aestheticStyles.sectionPadding}
+- Element spacing: ${aestheticStyles.elementSpacing}
+- Line height: ${aestheticStyles.lineHeight}
+${designAesthetic === 'bold_contrasting' ? '- USE EXTRA BOLD WEIGHTS (900) for all headings to create strong visual impact\n- Make headlines thick and prominent with maximum font-weight' : ''}
+
+OUTPUT REQUIREMENTS:
+- Return ONLY raw MJML (no markdown fences, no explanations)
+- Start with <mjml>, end with </mjml>
+- Max width 600px, mobile-responsive
+- Include: header, hero section, content sections (matching example structure), footer
+- All elements properly aligned, nothing stretched or cut off
+- Symmetrical layouts with balanced proportions`;
 
     const messages = [
       { role: "system", content: systemPrompt },
@@ -657,16 +912,72 @@ Output: Start with <mjml>, end with </mjml>. Max width 600px. Include header, he
     }
 
     // Clean and validate MJML output
-    const cleanedMjml = cleanMjmlOutput(rawOutput);
+    let cleanedMjml = cleanMjmlOutput(rawOutput);
 
     const inputTokens = usage.prompt_tokens || 0;
     const outputTokens = usage.completion_tokens || 0;
-    const totalTokens = inputTokens + outputTokens;
-    const cost = inputTokens * INPUT_COST + outputTokens * OUTPUT_COST;
+    let totalTokens = inputTokens + outputTokens;
+    let cost = inputTokens * INPUT_COST + outputTokens * OUTPUT_COST;
     const elapsedSec = ((performance.now() - startTime) / 1000).toFixed(2);
     const mjmlElapsedSec = ((performance.now() - mjmlStartTime) / 1000).toFixed(2);
     
     console.log(`📝 MJML generation completed in ${mjmlElapsedSec}s`);
+    
+    // 🔍 SECOND PASS: Vision validation and auto-fix (optional, can be disabled)
+    const enableValidation = process.env.ENABLE_MJML_VALIDATION !== 'false'; // Default: enabled
+    const domain = enhancedPayload.brandData?.brand?.domain || 
+                   enhancedPayload.brandData?.domain || 
+                   enhancedPayload.domain;
+    
+    if (enableValidation && cleanedMjml && domain) {
+      console.log(`🔍 Starting second validation pass...`);
+      const validationStartTime = performance.now();
+      
+      const validationResult = await validateMjmlWithVision(
+        cleanedMjml,
+        domain,
+        essentialData.font,
+        essentialData.brandColors,
+        designAesthetic
+      );
+      
+      const validationTime = ((performance.now() - validationStartTime) / 1000).toFixed(2);
+      console.log(`🔍 Validation completed in ${validationTime}s`);
+      
+      // If validation failed and found issues, attempt to regenerate with fixes
+      if (!validationResult.passed && validationResult.issues.length > 0) {
+        console.log(`⚠️ Validation found ${validationResult.issues.length} issues, attempting auto-fix...`);
+        logEvent(`⚠️ Validation found issues: ${validationResult.issues.join('; ')}`);
+        
+        const fixStartTime = performance.now();
+        const fixedMjml = await regenerateMjmlWithFixes(
+          cleanedMjml,
+          validationResult.issues,
+          essentialData,
+          imagePart,
+          aestheticStyles,
+          designAesthetic
+        );
+        
+        const fixTime = ((performance.now() - fixStartTime) / 1000).toFixed(2);
+        
+        if (fixedMjml && fixedMjml !== cleanedMjml) {
+          cleanedMjml = fixedMjml;
+          console.log(`✅ Applied auto-fixes in ${fixTime}s`);
+          logEvent(`✅ Auto-fixed MJML after validation (${fixTime}s)`);
+          
+          // Note: We don't update token counts for the fix pass to keep original metrics
+          // In production, you might want to track these separately
+        } else {
+          console.log(`⚠️ Auto-fix did not improve MJML, using original`);
+        }
+      } else {
+        console.log(`✅ Validation passed - email quality approved`);
+        logEvent(`✅ Validation passed`);
+      }
+    } else {
+      console.log(`⏭️ Skipping validation pass (${enableValidation ? 'no domain' : 'disabled'})`);
+    }
 
     // 🧾 Detailed log entry
     const scrapedInfo = enhancedPayload.scrapedStyles ? 

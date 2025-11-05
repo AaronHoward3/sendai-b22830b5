@@ -35,6 +35,7 @@ import { sanitizeInput, validateUrl } from '@/lib/security';
 import { useSupabaseAuth } from '@/hooks/useSupabaseAuth';
 import { checkUserCredits } from '@/lib/api';
 import { API_ROOT } from '@/utils/constants';
+
 interface Step2EmailTypeProps {
   formData: FormData;
   updateFormData: (updates: Partial<FormData>) => void;
@@ -395,6 +396,7 @@ export const Step2EmailType: React.FC<Step2EmailTypeProps> = ({formData, updateF
   const [emailTypeSelected, setEmailTypeSelected] = useState<boolean>(!!formData.emailType);
   const [customHeroSelected, setCustomHeroSelected] = useState<boolean>(false);
   const [hasScrolledToCustomHero, setHasScrolledToCustomHero] = useState<boolean>(false);
+  const [showOutOfCreditsCard, setShowOutOfCreditsCard] = useState<boolean>(false);
   
   // Autoplay plugins for carousels
   const promoAutoplayRef = React.useRef(Autoplay({ delay: 3000, stopOnInteraction: false, stopOnMouseEnter: true }));
@@ -670,8 +672,37 @@ export const Step2EmailType: React.FC<Step2EmailTypeProps> = ({formData, updateF
     }
   };
 
+  const handleUpgradeClick = async () => {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const token = session?.access_token;
+      const res = await fetch(`${API_ROOT}/billing/portal`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+      });
+      const json = await res.json();
+      if (json?.url) {
+        window.location.href = json.url;
+      } else {
+        // Fallback to dashboard if portal URL not available
+        window.location.href = '/dashboard';
+      }
+    } catch (error) {
+      console.error('Failed to open billing portal:', error);
+      // Fallback to dashboard on error
+      window.location.href = '/dashboard';
+    }
+  };
+
   const handleContinue = () => {
     if (!selectedEmailType) return;
+    
+    // Check if user has email credits before proceeding
+    if (userCredits && userCredits.emails_remaining < 1) {
+      setShowOutOfCreditsCard(true);
+      return;
+    }
+    
     // Safety: ensure we always carry products even if local state is momentarily empty.
     const safeProducts = products.length > 0 ? products : scrapedProducts;
     updateFormData({
@@ -867,6 +898,120 @@ export const Step2EmailType: React.FC<Step2EmailTypeProps> = ({formData, updateF
           </motion.div>
         )}
 
+        {/* Design Aesthetic Section - Revealed after email type selection */}
+        {selectedEmailType && (
+          <motion.div 
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+            className="mt-20 max-w-4xl mx-auto"
+          >
+            <div className="space-y-4">
+              <h2 className="text-xl font-semibold text-foreground text-center">Design Aesthetic</h2>
+              <p className="text-sm text-muted-foreground text-center">Choose the visual style for your email</p>
+              
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                {DESIGN_STYLES.map((style) => {
+                  const isSelected = designAesthetic === style.value;
+                  const getIcon = () => {
+                    switch (style.value) {
+                      case 'minimal_clean': return <Circle className="w-6 h-6" />;
+                      case 'bold_contrasting': return <Contrast className="w-6 h-6" />;
+                      case 'magazine_serif': return <BookOpen className="w-6 h-6" />;
+                      default: return <Palette className="w-6 h-6" />;
+                    }
+                  };
+                  
+                  return (
+                    <button
+                      key={style.value}
+                      onClick={() => setDesignAesthetic(style.value)}
+                      className={`relative p-6 rounded-xl border-2 transition-all duration-300 ${
+                        isSelected 
+                          ? 'border-primary ring-4 ring-primary/20 shadow-lg scale-[1.02] bg-primary/5' 
+                          : 'border-border hover:border-primary/50 hover:shadow-md bg-card'
+                      }`}
+                    >
+                      <div className="flex flex-col items-center text-center space-y-3">
+                        <div className={`${isSelected ? 'text-primary' : 'text-muted-foreground'} transition-colors`}>
+                          {getIcon()}
+                        </div>
+                        <h3 className="text-lg font-bold text-foreground">{style.label}</h3>
+                        {style.blurb && (
+                          <p className="text-sm text-muted-foreground">{style.blurb}</p>
+                        )}
+                      </div>
+                      {isSelected && (
+                        <div className="absolute top-3 right-3">
+                          <div className="bg-primary text-primary-foreground rounded-full p-1.5">
+                            <Check className="w-4 h-4" />
+                          </div>
+                        </div>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          </motion.div>
+        )}
+
+        {/* Tone Section - Revealed after email type selection */}
+        {selectedEmailType && (
+          <motion.div 
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+            className="mt-12 max-w-4xl mx-auto"
+          >
+            <div className="space-y-4">
+              <h2 className="text-xl font-semibold text-foreground text-center">Tone</h2>
+              <p className="text-sm text-muted-foreground text-center">Set the voice of your email</p>
+              
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                {TONES.map((toneOption) => {
+                  const isSelected = tone === toneOption.value;
+                  const getIcon = () => {
+                    switch (toneOption.value) {
+                      case 'bold': return <Zap className="w-5 h-5" />;
+                      case 'friendly': return <Smile className="w-5 h-5" />;
+                      case 'formal': return <Briefcase className="w-5 h-5" />;
+                      case 'fun': return <Sparkles className="w-5 h-5" />;
+                      default: return <Mail className="w-5 h-5" />;
+                    }
+                  };
+                  
+                  return (
+                    <button
+                      key={toneOption.value}
+                      onClick={() => setTone(toneOption.value)}
+                      className={`relative p-4 rounded-lg border-2 transition-all duration-300 ${
+                        isSelected 
+                          ? 'border-primary ring-2 ring-primary/20 shadow-md bg-primary/5' 
+                          : 'border-border hover:border-primary/50 hover:shadow-sm bg-card'
+                      }`}
+                    >
+                      <div className="flex flex-col items-center text-center space-y-2">
+                        <div className={`${isSelected ? 'text-primary' : 'text-muted-foreground'} transition-colors`}>
+                          {getIcon()}
+                        </div>
+                        <span className="text-sm font-semibold text-foreground">{toneOption.label}</span>
+                      </div>
+                      {isSelected && (
+                        <div className="absolute top-2 right-2">
+                          <div className="bg-primary text-primary-foreground rounded-full p-1">
+                            <Check className="w-3 h-3" />
+                          </div>
+                        </div>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          </motion.div>
+        )}
+
         {/* Custom Hero Image Section - Revealed after email type selection */}
         {selectedEmailType && (
           <motion.div 
@@ -874,7 +1019,7 @@ export const Step2EmailType: React.FC<Step2EmailTypeProps> = ({formData, updateF
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
-            className="mt-20 max-w-2xl mx-auto"
+            className="mt-12 max-w-2xl mx-auto"
           >
             <fieldset className="space-y-2">
               <legend className="text-xl font-semibold text-foreground text-center w-full pb-2">Generate custom hero image?</legend>
@@ -1124,6 +1269,32 @@ export const Step2EmailType: React.FC<Step2EmailTypeProps> = ({formData, updateF
                 <Mail className="w-5 h-5 mr-2" />
                 Generate Email
               </GradientButton>
+            </div>
+          </div>
+        )}
+
+        {/* Out of Credits Modal */}
+        {showOutOfCreditsCard && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm">
+            <div className="w-full max-w-md rounded-2xl bg-background border border-border shadow-xl p-6">
+              <h3 className="text-lg font-semibold">No email credits remaining</h3>
+              <p className="mt-2 text-sm text-muted-foreground">
+                You've used all your email credits. Upgrade your plan to continue generating emails.
+              </p>
+              <div className="mt-6 flex justify-end gap-2">
+                <button 
+                  onClick={() => setShowOutOfCreditsCard(false)}
+                  className="btn px-4 py-2 bg-secondary text-secondary-foreground hover:bg-secondary/90 hover:text-secondary-foreground transition-colors border border-border rounded-md"
+                >
+                  Close
+                </button>
+                <button 
+                  className="btn px-4 py-2 bg-primary text-primary-foreground hover:bg-primary/90 transition-colors rounded-md"
+                  onClick={handleUpgradeClick}
+                >
+                  Upgrade
+                </button>
+              </div>
             </div>
           </div>
         )}
@@ -1396,6 +1567,33 @@ export const Step2EmailType: React.FC<Step2EmailTypeProps> = ({formData, updateF
           </div>
         )}
       </motion.div>
+
+      {/* Out of Credits Modal (Fallback View) */}
+      {showOutOfCreditsCard && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm">
+          <div className="w-full max-w-md rounded-2xl bg-background border border-border shadow-xl p-6">
+            <h3 className="text-lg font-semibold">No email credits remaining</h3>
+            <p className="mt-2 text-sm text-muted-foreground">
+              You've used all your email credits. Upgrade your plan to continue generating emails.
+            </p>
+            <div className="mt-6 flex justify-end gap-2">
+              <button 
+                onClick={() => setShowOutOfCreditsCard(false)}
+                className="btn px-4 py-2 bg-secondary text-secondary-foreground hover:bg-secondary/90 hover:text-secondary-foreground transition-colors border border-border rounded-md"
+              >
+                Close
+              </button>
+              <button 
+                className="btn px-4 py-2 bg-primary text-primary-foreground hover:bg-primary/90 transition-colors rounded-md"
+                onClick={handleUpgradeClick}
+              >
+                Upgrade
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <motion.div className="fixed bottom-0 left-0 right-0 z-40 bg-background border-t border-border p-2 shadow-lg" variants={fadeInUp}>
         <div className="max-w-4xl mx-auto flex justify-between">
           <GradientButton variant="white-outline" onClick={onPrev} className="!bg-background !text-foreground !border !border-border hover:!bg-muted">Back</GradientButton>
